@@ -108,8 +108,13 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .pl-lig { font: 600 12px "Inter"; color: #5a6272; }
 .pl-grille input { text-align: center; }
 .btn-mini { flex: none; width: 30px; height: 30px; border: 1px solid #eceae3; border-radius: 8px; background: #fff; color: #5a6272; font: 700 13px "Inter"; cursor: pointer; padding: 0; }
+.btn-mini.large { width: auto; padding: 0 8px; font: 600 11px "Inter"; }
 .btn-mini:hover { background: #f7f6f1; color: #1b2a4a; }
 .btn-mini.rouge:hover { color: #b3382f; border-color: #e6c4c1; }
+.gcm-ligne { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
+.gcm-cat-nom { flex: 1; font: 700 13px "Inter"; color: #1b2a4a; }
+.gcm-mach-nom { flex: 1; font: 400 13px "Inter"; color: #2c3345; }
+.gcm-dest { max-width: 150px; font: 600 11px "Inter"; color: #5a6272; border: 1px solid #eceae3; border-radius: 8px; padding: 6px 6px; background: #fff; cursor: pointer; }
 .th-bloc { border: 1px solid #e3e0d8; border-radius: 12px; padding: 12px; margin: 0 0 12px; background: #fbfaf7; }
 .th-barre { display: flex; gap: 6px; align-items: center; margin: 0 0 4px; }
 .th-barre input.th-titre { flex: 1; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #5a6272; background: #fff; }
@@ -255,6 +260,8 @@ function classify(c, sem, mod) {
   return "rth";
 }
 
+// Catégories de machines (hiérarchiques : parent = id d'une autre catégorie ou null).
+var CATS = (typeof CATEGORIES !== "undefined" && Array.isArray(CATEGORIES)) ? CATEGORIES : [];
 var BORD = "A-Za-z0-9\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF";
 function motifAlias(a) {
   return a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -364,6 +371,32 @@ function slugId(texte, prises) {
   while (prises.indexOf(s) !== -1) { s = base + "-" + k; k += 1; }
   return s;
 }
+function slugCat(nom) {
+  var prises = CATS.map(function (c) { return c.id; });
+  var s = String(nom || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!s) s = "categorie";
+  var base = s, k = 2;
+  while (prises.indexOf(s) !== -1) { s = base + "-" + k; k += 1; }
+  return s;
+}
+function enfantsCat(parent) {
+  return CATS.filter(function (c) { return (c.parent || null) === parent; })
+    .sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
+}
+function machinesDeCat(cat) {
+  return MACHINES.filter(function (m) { return (m.cat || null) === cat; })
+    .sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
+}
+function descendantesCat(id) {
+  var out = [];
+  enfantsCat(id).forEach(function (c) {
+    out.push(c.id);
+    out = out.concat(descendantesCat(c.id));
+  });
+  return out;
+}
 function copieData(c) {
   return {
     nom: c.nom || "",
@@ -461,7 +494,7 @@ var ENTETE_INFOS = [
   "// FICHES DÉTAILLÉES DES CENTRES (source : tableau « Infos centres » des promos)",
   "// La clé de chaque bloc = l'id du centre dans data.js. Champ vide \"\" = non affiché, à compléter.",
   "//   site : adresse du site web du centre",
-  "//   photos : liste d'images, ex. [\"photos/lille-col.jpg\", \"https://...\"]",
+  "//   photos : liste d'images, adresses https://...",
   "//   equipe : effectifs du service de physique médicale",
   "//   ailleurs : parties de formation dans d'autres centres,",
   "//     { texte: \"...\", id: \"id-dun-centre-de-la-carte\" } ou { texte: \"...\", url: \"https://...\" }",
@@ -472,15 +505,23 @@ var ENTETE_INFOS = [
   "//   machinesListe : machines du centre (noms de la liste MACHINES) — null = détection",
   "//     automatique par mots-clés dans les textes",
   "//   machines, avis, avisAnciens, contacts : textes libres entre accents graves `...`",
-  "// MACHINES : liste des machines connues (filtre « Machine… » et fiches).",
+  "// CATEGORIES : classement des machines (parent = id d'une autre catégorie, ou null).",
+  "// MACHINES : liste des machines connues (filtre « Machine… » et fiches) ;",
+  "//   cat = id de la catégorie de rangement (absent = sans catégorie).",
   "// Tout se modifie aussi depuis la carte : « Modifier les infos » sur une fiche,",
   "// puis « Exporter infos.js » pour publier le fichier mis à jour.",
   ""
 ].join("\n");
-function serialiserFichierInfos(machines, infos, ordreIds) {
-  var out = ENTETE_INFOS + "\nconst MACHINES = [\n";
+function serialiserFichierInfos(machines, categories, infos, ordreIds) {
+  var out = ENTETE_INFOS + "\nconst CATEGORIES = [";
+  if (categories && categories.length) {
+    out += "\n" + categories.map(function (c) {
+      return "  { id: " + JSON.stringify(c.id) + ", nom: " + JSON.stringify(c.nom) + ", parent: " + (c.parent ? JSON.stringify(c.parent) : "null") + " },";
+    }).join("\n") + "\n";
+  }
+  out += "];\n\nconst MACHINES = [\n";
   machines.forEach(function (m) {
-    out += "  { nom: " + JSON.stringify(m.nom) + ", alias: [" + m.alias.map(function (a) { return JSON.stringify(a); }).join(", ") + "] },\n";
+    out += "  { nom: " + JSON.stringify(m.nom) + ", alias: [" + m.alias.map(function (a) { return JSON.stringify(a); }).join(", ") + "]" + (m.cat ? ", cat: " + JSON.stringify(m.cat) : "") + " },\n";
   });
   out += "];\n\nconst INFOS = {\n";
   out += ordreIds.map(function (id) { return serialiserEntree(id, infos[id]); }).join(",\n");
@@ -604,7 +645,7 @@ function serialiserFichierData(centres) {
   }
   function sauverMachines() {
     if (!BASE || !enLigne) return;
-    apiEcrire("reglages", [{ cle: "machines", valeur: MACHINES }], function (ok) {
+    apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok) {
       majEtat(ok ? "enligne" : "echec");
     });
   }
@@ -616,7 +657,7 @@ function serialiserFichierData(centres) {
         // Première ouverture : la base se remplit avec les données embarquées.
         var graine = CENTRES.map(function (c) { return { id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }; });
         apiEcrire("centres", graine, function (ok1) {
-          apiEcrire("reglages", [{ cle: "machines", valeur: MACHINES }], function (ok2) {
+          apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok2) {
             enLigne = ok1 && ok2;
             majEtat(enLigne ? "enligne" : "horsligne");
           });
@@ -630,9 +671,14 @@ function serialiserFichierData(centres) {
         INFOS[l.id] = l.infos || {};
       });
       apiLire("reglages?select=*&cle=eq.machines", function (regs) {
-        if (regs && regs.length && Array.isArray(regs[0].valeur) && regs[0].valeur.length) {
+        var val = regs && regs.length ? regs[0].valeur : null;
+        var lm = Array.isArray(val) ? val : (val && Array.isArray(val.machines) ? val.machines : null);
+        var lc = (val && Array.isArray(val.categories)) ? val.categories : null;
+        if (lm && lm.length) {
           MACHINES.length = 0;
-          regs[0].valeur.forEach(function (m) { if (m && m.nom) MACHINES.push({ nom: m.nom, alias: m.alias && m.alias.length ? m.alias : [m.nom] }); });
+          lm.forEach(function (m) { if (m && m.nom) MACHINES.push({ nom: m.nom, alias: m.alias && m.alias.length ? m.alias : [m.nom], cat: m.cat || null }); });
+          CATS.length = 0;
+          (lc || []).forEach(function (c) { if (c && c.id && c.nom) CATS.push({ id: c.id, nom: c.nom, parent: c.parent || null }); });
         }
         enLigne = true;
         majEtat("enligne");
@@ -789,6 +835,7 @@ function serialiserFichierData(centres) {
     var h = '<p class="sur-titre">Gestion</p><h2>Centres</h2>';
     h += '<p class="etab">Cochez pour afficher un centre sur la carte, décochez pour le masquer. Cliquez sur un nom pour ouvrir sa fiche.</p>';
     h += '<button type="button" id="gc-nouveau" class="gc-nouveau">+ Nouveau centre (placer un point sur la carte)</button>';
+    h += '<button type="button" id="gc-machines" class="gc-nouveau">Gérer les machines et catégories \u2192</button>';
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
       return '<div class="gc-item">' +
@@ -797,6 +844,49 @@ function serialiserFichierData(centres) {
         "</div>";
     }).join("");
     h += '<p class="gc-sauv">Sauvegarde des données : <button type="button" class="lien-sauv" id="exp-data">data.js</button> · <button type="button" class="lien-sauv" id="exp-infos">infos.js</button></p>';
+    return h;
+  }
+
+  function optionsDestCat(interdites, courant) {
+    var h = '<option value=""' + (courant ? "" : " selected") + ">Sans catégorie</option>";
+    function indent(p) { var s = "", i; for (i = 0; i < p; i++) s += "\u00a0\u00a0"; return s; }
+    function niveau(parent, prof) {
+      enfantsCat(parent).forEach(function (c) {
+        if (interdites.indexOf(c.id) !== -1) return;
+        h += '<option value="' + esc(c.id) + '"' + (courant === c.id ? " selected" : "") + ">" + indent(prof) + esc(c.nom) + "</option>";
+        niveau(c.id, prof + 1);
+      });
+    }
+    niveau(null, 0);
+    return h;
+  }
+  function gestionMachinesHtml() {
+    var h = '<p class="sur-titre">Gestion</p><h2>Machines</h2>';
+    h += '<p class="etab">Rangez les machines dans des catégories, elles-mêmes rangables dans d\u2019autres catégories. Les menus « Machine\u2026 » suivent ce classement.</p>';
+    h += '<button type="button" id="gcm-cat" class="gc-nouveau">+ Nouvelle catégorie</button>';
+    h += '<button type="button" class="gc-nouveau gcm-machplus" data-cat="">+ Nouvelle machine (sans catégorie)</button>';
+    function ligneMach(m, prof) {
+      return '<div class="gcm-ligne" style="margin-left:' + (prof * 16) + 'px">' +
+        '<span class="gcm-mach-nom">' + esc(m.nom) + "</span>" +
+        '<select class="gcm-dest" data-type="mach" data-nom="' + esc(m.nom) + '" title="Ranger dans\u2026">' + optionsDestCat([], m.cat || null) + "</select>" +
+        "</div>";
+    }
+    function ligneCat(c, prof) {
+      var interdites = [c.id].concat(descendantesCat(c.id));
+      var s = '<div class="gcm-ligne" style="margin-left:' + (prof * 16) + 'px">' +
+        '<span class="gcm-cat-nom">\u25b8 ' + esc(c.nom) + "</span>" +
+        '<button type="button" class="btn-mini large gcm-souscat" data-id="' + esc(c.id) + '" title="Créer une sous-catégorie">+ cat.</button>' +
+        '<button type="button" class="btn-mini large gcm-machplus" data-cat="' + esc(c.id) + '" title="Créer une machine dans cette catégorie">+ mach.</button>' +
+        '<select class="gcm-dest" data-type="cat" data-id="' + esc(c.id) + '" title="Ranger dans\u2026">' + optionsDestCat(interdites, c.parent || null) + "</select>" +
+        "</div>";
+      enfantsCat(c.id).forEach(function (sc) { s += ligneCat(sc, prof + 1); });
+      machinesDeCat(c.id).forEach(function (m) { s += ligneMach(m, prof + 1); });
+      return s;
+    }
+    var corps = "";
+    enfantsCat(null).forEach(function (c) { corps += ligneCat(c, 0); });
+    machinesDeCat(null).forEach(function (m) { corps += ligneMach(m, 0); });
+    h += '<div class="gcm-arbre">' + corps + "</div>";
     return h;
   }
 
@@ -825,6 +915,10 @@ function serialiserFichierData(centres) {
       ficheCentre = null;
       ficheMode = "gestion";
       ficheContenu.innerHTML = gestionHtml();
+    } else if (v.type === "gestion-machines") {
+      ficheCentre = null;
+      ficheMode = "gestion-machines";
+      ficheContenu.innerHTML = gestionMachinesHtml();
     } else if (v.type === "machine") {
       ficheCentre = null;
       ficheMode = "machine";
@@ -879,7 +973,7 @@ function serialiserFichierData(centres) {
     s = s || { titre: "", texte: "" };
     return '<div class="ssec-item">' +
       '<div class="ssec-haut">' +
-      '<input class="ssec-titre" placeholder="Titre de la case (ex. Salaire (net))" value="' + esc(s.titre || "") + '">' +
+      '<input class="ssec-titre" placeholder="Titre de la case" value="' + esc(s.titre || "") + '">' +
       '<button type="button" class="btn-mini ssec-up" title="Monter">&uarr;</button>' +
       '<button type="button" class="btn-mini ssec-down" title="Descendre">&darr;</button>' +
       '<button type="button" class="btn-mini rouge ssec-del" title="Supprimer la case">&times;</button>' +
@@ -890,12 +984,24 @@ function serialiserFichierData(centres) {
   function mchipHtml(nom) {
     return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="mchip-del" title="Retirer">&times;</button></span>';
   }
-  function optionsMachSel(deja) {
-    var h = '<option value="">Ajouter une machine de la liste…</option>';
-    MACHINES.forEach(function (m) {
-      if (deja.indexOf(m.nom) === -1) h += '<option value="' + esc(m.nom) + '">' + esc(m.nom) + "</option>";
-    });
+  function optionsMachinesArbre(exclues) {
+    var h = "";
+    function indent(p) { var s = "", i; for (i = 0; i < p; i++) s += "\u00a0\u00a0\u00a0"; return s; }
+    function niveau(parent, prof) {
+      enfantsCat(parent).forEach(function (c) {
+        h += "<option disabled>" + indent(prof) + "\u25b8 " + esc(c.nom) + "</option>";
+        niveau(c.id, prof + 1);
+      });
+      machinesDeCat(parent).forEach(function (m) {
+        if (exclues.indexOf(m.nom) !== -1) return;
+        h += '<option value="' + esc(m.nom) + '">' + indent(prof) + esc(m.nom) + "</option>";
+      });
+    }
+    niveau(null, 0);
     return h;
+  }
+  function optionsMachSel(deja) {
+    return '<option value="">Ajouter une machine de la liste…</option>' + optionsMachinesArbre(deja);
   }
   function corpsThemeForm(inf, cle) {
     var h = "";
@@ -973,14 +1079,13 @@ function serialiserFichierData(centres) {
     h += "</div>";
     h += '<p class="astuce">Les filtres et pastilles de la carte s\u2019adaptent aussitôt. Publier ensuite via « Exporter data.js ».</p>';
     h += champ("Site du centre", "site", inf.site);
-    h += zone("Photos (une par ligne)", "photos", (inf.photos || []).join("\n"), false, "Chemin relatif (ex. photos/nom.jpg, à déposer dans le dépôt) ou adresse https://…");
+    h += zone("Photos (une par ligne)", "photos", (inf.photos || []).join("\n"), false, "Une image par ligne, sous forme d\u2019adresse https://\u2026");
     h += '<div class="duo"><div>' + champ("Resp. imagerie", "resp-im", resp.im) + "</div><div>" + champ("Resp. radiothérapie", "resp-rth", resp.rth) + "</div></div>";
     h += '<div class="duo"><div>' + champ("Partenariat imagerie", "part-im", part.im) + "</div><div>" + champ("Partenariat radiothérapie", "part-rth", part.rth) + "</div></div>";
     h += zone("Formation en partie ailleurs (une par ligne)", "ailleurs", aill, false, "Format : texte | id-d-un-centre-de-la-carte ou texte | https://… (ou texte seul)");
     h += "<label>Blocs de la fiche (déplaçables)</label>";
     h += '<div id="themes-edit">' + themesDe(inf).map(function (th) { return blocThemeHtml(inf, th); }).join("") + "</div>";
     h += '<button type="button" id="th-add">+ Ajouter un bloc (thème)</button>';
-    h += '<p class="astuce">Chaque bloc regroupe ses cases « titre + contenu ». Les flèches réorganisent blocs et cases.</p>';
     h += '<div class="form-btns"><button type="button" class="btn-val">' + (creation ? "Créer le centre" : "Valider") + '</button><button type="button" class="btn-ann">Annuler</button></div>';
     h += "</div>";
     return h;
@@ -1175,6 +1280,39 @@ function serialiserFichierData(centres) {
       return;
     }
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
+    if (ev.target.closest("#gc-machines")) { naviguer({ type: "gestion-machines" }); return; }
+    if (ev.target.closest("#gcm-cat")) {
+      var nomCat = (prompt("Nom de la nouvelle catégorie :") || "").trim();
+      if (nomCat) {
+        CATS.push({ id: slugCat(nomCat), nom: nomCat, parent: null });
+        sauverMachines();
+        remplirSelectMachines();
+        afficherVue(vueCourante);
+      }
+      return;
+    }
+    if ((b = ev.target.closest(".gcm-souscat"))) {
+      var nomSous = (prompt("Nom de la nouvelle sous-catégorie :") || "").trim();
+      if (nomSous) {
+        CATS.push({ id: slugCat(nomSous), nom: nomSous, parent: b.dataset.id });
+        sauverMachines();
+        remplirSelectMachines();
+        afficherVue(vueCourante);
+      }
+      return;
+    }
+    if ((b = ev.target.closest(".gcm-machplus"))) {
+      var nomMach = (prompt("Nom de la nouvelle machine :") || "").trim();
+      if (nomMach) {
+        var dejaLa = MACHINES.some(function (m) { return m.nom.toLowerCase() === nomMach.toLowerCase(); });
+        if (dejaLa) { alert("Cette machine existe déjà dans la liste."); return; }
+        MACHINES.push({ nom: nomMach, alias: [nomMach], cat: b.dataset.cat || null });
+        sauverMachines();
+        remplirSelectMachines();
+        afficherVue(vueCourante);
+      }
+      return;
+    }
     if (ev.target.closest(".btn-pos")) { demarrerDeplacement(); return; }
     if ((b = ev.target.closest(".th-up"))) { deplacer(b.closest(".th-bloc"), -1); return; }
     if ((b = ev.target.closest(".th-down"))) { deplacer(b.closest(".th-bloc"), 1); return; }
@@ -1247,6 +1385,19 @@ function serialiserFichierData(centres) {
       ajouterChip(sel.closest(".th-bloc"), sel.value);
       return;
     }
+    var dest = ev.target.closest(".gcm-dest");
+    if (dest) {
+      var cible = dest.value || null;
+      if (dest.dataset.type === "mach") {
+        for (var i = 0; i < MACHINES.length; i++) if (MACHINES[i].nom === dest.dataset.nom) MACHINES[i].cat = cible;
+      } else {
+        for (var j = 0; j < CATS.length; j++) if (CATS[j].id === dest.dataset.id) CATS[j].parent = cible;
+      }
+      sauverMachines();
+      remplirSelectMachines();
+      afficherVue(vueCourante);
+      return;
+    }
     var ck = ev.target.closest(".gc-actif");
     if (ck) {
       var c = centreParId(ck.dataset.id);
@@ -1292,11 +1443,7 @@ function serialiserFichierData(centres) {
   var selMach = document.getElementById("sel-mach");
   var filtChips = document.getElementById("filt-chips");
   function remplirSelectMachines() {
-    var h = '<option value="">Filtrer par machine…</option>';
-    MACHINES.forEach(function (m) {
-      if (state.machs.indexOf(m.nom) === -1) h += '<option value="' + esc(m.nom) + '">' + esc(m.nom) + "</option>";
-    });
-    selMach.innerHTML = h;
+    selMach.innerHTML = '<option value="">Filtrer par machine…</option>' + optionsMachinesArbre(state.machs);
   }
   function majFiltChips() {
     filtChips.innerHTML = state.machs.map(function (nom) {
