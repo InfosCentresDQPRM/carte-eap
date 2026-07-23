@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Centres EAP — DQPRM 2026</title>
+<title>Centres EAP — DQPRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
@@ -79,7 +79,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .mach-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .mach-chip { border: 1px solid #cfe0f7; background: #eef4fd; border-radius: 999px; padding: 5px 11px; font: 600 12px "Inter"; color: #1f6fd6; cursor: pointer; }
 .mach-chip:hover { background: #dcebfb; }
-.mach-chip.actif { background: #1f6fd6; border-color: #1f6fd6; color: #fff; }
+.mach-liste-centres { display: grid; gap: 6px; }
 .aills { display: flex; flex-wrap: wrap; gap: 6px; }
 .aill, .aill-lien { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: #fdf3e7; border: 1px solid #f0dcc2; color: #a96a32; font: 600 12px "Inter"; cursor: pointer; text-decoration: none; }
 .aill:hover, .aill-lien:hover { background: #fae7ce; }
@@ -156,6 +156,14 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 
 .leaflet-control-attribution { font-size: 10px; }
 
+.coin-fermer { position: absolute; top: 7px; right: 7px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: #f1efe9; color: #5a6272; font: 700 12px "Inter"; line-height: 1; cursor: pointer; z-index: 8; padding: 0; }
+.coin-fermer:hover { background: #e4e1d8; color: #1b2a4a; }
+.flottant { position: fixed; z-index: 1100; width: 40px; height: 40px; border: 1px solid #e3e0d8; border-radius: 50%; background: rgba(255,255,255,.96); color: #1b2a4a; font: 700 13px "Inter"; cursor: pointer; box-shadow: 0 8px 24px rgba(27,42,74,.18); padding: 0; }
+.flottant:hover { background: #fff; }
+.flottant[hidden] { display: none; }
+#panneau-ouvrir { top: 14px; left: 14px; font-size: 16px; }
+#mini-ouvrir { bottom: 14px; left: 14px; font-size: 11px; }
+
 @media (max-width: 640px) {
   #panneau { width: 208px; padding: 12px 14px 12px; }
   #panneau h1 { font-size: 18px; }
@@ -169,7 +177,8 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 <div id="carte"></div>
 
 <header id="panneau">
-  <p class="sur-titre">DQPRM 2026</p>
+  <button type="button" class="coin-fermer" id="panneau-fermer" aria-label="Masquer le panneau">&times;</button>
+  <p class="sur-titre">DQPRM</p>
   <h1>Centres EAP</h1>
   <div class="seg" id="seg-sem">
     <button type="button" data-val="S1" class="actif">S1</button>
@@ -210,9 +219,12 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 
 <aside id="mini">
   <button id="mini-btn" type="button" aria-label="Aller à la Martinique"></button>
+  <button type="button" class="coin-fermer" id="mini-fermer" aria-label="Masquer l'encart Martinique">&times;</button>
   <p class="mini-titre"><span id="mini-nom">Martinique</span><span id="mini-badge"></span></p>
   <div id="mini-carte"></div>
 </aside>
+<button id="panneau-ouvrir" class="flottant" type="button" hidden aria-label="Afficher le panneau">&#9776;</button>
+<button id="mini-ouvrir" class="flottant" type="button" hidden aria-label="Afficher l'encart Martinique">MQ</button>
 
 <div id="etat" hidden><span id="etat-txt"></span></div>
 
@@ -728,8 +740,7 @@ function serialiserFichierData(centres) {
       var corps = "";
       if (machs.length) {
         corps += '<div class="mach-chips">' + machs.map(function (m) {
-          var actif = state.machs.indexOf(m.nom) !== -1;
-          return '<button type="button" class="mach-chip' + (actif ? " actif" : "") + '" data-mach="' + esc(m.nom) + '" title="Filtrer la carte par cette machine">' + esc(m.nom) + "</button>";
+          return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '" title="Voir les centres possédant cette machine">' + esc(m.nom) + "</button>";
         }).join("") + "</div>";
       }
       corps += texteHtml(inf.machines);
@@ -789,6 +800,22 @@ function serialiserFichierData(centres) {
     return h;
   }
 
+  function centresAvecMachineNom(nom) {
+    var out = CENTRES.filter(function (c) { return c.actif && centreALaMachine(c, nom); });
+    out.sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
+    return out;
+  }
+  function machineHtml(nom) {
+    var liste = centresAvecMachineNom(nom);
+    var h = '<p class="sur-titre">Machine</p><h2>' + esc(nom) + "</h2>";
+    h += '<p class="etab">' + liste.length + " centre" + (liste.length > 1 ? "s" : "") + " la possède" + (liste.length > 1 ? "nt" : "") + ".</p>";
+    if (!liste.length) h += '<p class="texte">Aucun centre actif ne possède cette machine.</p>';
+    else h += '<div class="mach-liste-centres">' + liste.map(function (c) {
+      return '<button type="button" class="res mach-res" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>";
+    }).join("") + "</div>";
+    return h;
+  }
+
   function majRetour() {
     btnRetour.hidden = histo.length === 0;
   }
@@ -798,6 +825,10 @@ function serialiserFichierData(centres) {
       ficheCentre = null;
       ficheMode = "gestion";
       ficheContenu.innerHTML = gestionHtml();
+    } else if (v.type === "machine") {
+      ficheCentre = null;
+      ficheMode = "machine";
+      ficheContenu.innerHTML = machineHtml(v.nom);
     } else {
       var c = centreParId(v.id);
       if (!c) return;
@@ -1136,10 +1167,10 @@ function serialiserFichierData(centres) {
   ficheContenu.addEventListener("click", function (ev) {
     var b;
     if ((b = ev.target.closest(".mach-chip"))) {
-      basculerFiltreMachine(b.dataset.mach);
+      naviguer({ type: "machine", nom: b.dataset.mach });
       return;
     }
-    if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom"))) {
+    if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
       naviguer({ type: "centre", id: b.dataset.id });
       return;
     }
@@ -1320,6 +1351,36 @@ function serialiserFichierData(centres) {
     else carte.setView(VUE_MQ.centre, VUE_MQ.zoom, { animate: false });
   });
   carte.on("moveend", majEncart);
+
+  // ——— Panneau et encart repliables (préférence propre à chaque navigateur) ———
+  var panneauEl = document.getElementById("panneau");
+  var miniEl = document.getElementById("mini");
+  var btnPanneauOuvrir = document.getElementById("panneau-ouvrir");
+  var btnMiniOuvrir = document.getElementById("mini-ouvrir");
+  var ui = (function () {
+    try { return Object.assign({ panneau: true, mini: true }, JSON.parse(localStorage.getItem("eap-ui") || "{}")); }
+    catch (e) { return { panneau: true, mini: true }; }
+  })();
+  function sauverUi() {
+    try { localStorage.setItem("eap-ui", JSON.stringify(ui)); } catch (e) {}
+  }
+  function majUi() {
+    panneauEl.hidden = !ui.panneau;
+    btnPanneauOuvrir.hidden = ui.panneau;
+    miniEl.hidden = !ui.mini;
+    btnMiniOuvrir.hidden = ui.mini;
+  }
+  document.getElementById("panneau-fermer").addEventListener("click", function () { ui.panneau = false; sauverUi(); majUi(); });
+  btnPanneauOuvrir.addEventListener("click", function () { ui.panneau = true; sauverUi(); majUi(); });
+  document.getElementById("mini-fermer").addEventListener("click", function () { ui.mini = false; sauverUi(); majUi(); });
+  btnMiniOuvrir.addEventListener("click", function () {
+    ui.mini = true;
+    sauverUi();
+    majUi();
+    miniCarte.invalidateSize();
+    majEncart();
+  });
+  majUi();
 
   function render() {
     grappe.clearLayers();
