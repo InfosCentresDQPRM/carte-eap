@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centres EAP — DQPRM 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
+#carte { position: fixed; inset: 0; background: #f4f3ef; }
+
+#panneau { position: fixed; top: 14px; left: 14px; z-index: 1100; width: 242px; background: rgba(255,255,255,.96); backdrop-filter: blur(6px); border: 1px solid #e3e0d8; border-radius: 14px; box-shadow: 0 10px 28px rgba(27,42,74,.14); padding: 15px 17px 14px; }
+.sur-titre { margin: 0; font: 600 10.5px "Inter"; letter-spacing: 1.4px; text-transform: uppercase; color: #a96a32; }
+#panneau h1 { margin: 3px 0 0; font: 700 21px "Sora", sans-serif; color: #1b2a4a; }
+.seg { display: flex; background: #f1efe9; border-radius: 999px; padding: 3px; margin: 11px 0 0; }
+.seg button { flex: 1; border: 0; background: none; padding: 6px 0; border-radius: 999px; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
+.seg button.actif { background: #1b2a4a; color: #fff; }
+#sel-mach { width: 100%; margin: 9px 0 0; padding: 7px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
+#filt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+#filt-chips:empty { margin: 0; }
+#btn-centres { width: 100%; margin: 9px 0 0; padding: 8px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; text-align: left; }
+#btn-centres:hover { border-color: #b9b4a6; color: #1b2a4a; }
+.legende { list-style: none; margin: 11px 0 0; padding: 0; display: grid; gap: 5px; font-size: 12px; }
+.legende li { display: flex; align-items: center; gap: 7px; }
+.puce { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.08); }
+.puce.im { background: #1f6fd6; }
+.puce.rth { background: #e07c00; }
+.puce.mixte { background: linear-gradient(135deg, #1f6fd6 0 50%, #e07c00 50% 100%); }
+#stats { margin: 11px 0 0; font: 600 12px "Inter"; color: #1b2a4a; }
+
+.pin { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.28); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.pin span { color: #fff; font: 700 12px "Inter"; }
+.pin.im { background: #1f6fd6; }
+.pin.rth { background: #e07c00; }
+.pin.mixte { background: linear-gradient(135deg, #1f6fd6 0 50%, #e07c00 50% 100%); }
+.pin.pos { background: #1b2a4a; }
+.grappe { width: 34px; height: 34px; border-radius: 50%; background: #1b2a4a; color: #fff; display: flex; align-items: center; justify-content: center; font: 700 13px "Inter"; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3); cursor: pointer; }
+
+#fiche { position: fixed; top: 14px; right: 14px; bottom: 14px; z-index: 1200; width: 440px; max-width: calc(100vw - 28px); background: #fff; border: 1px solid #e3e0d8; border-radius: 14px; box-shadow: 0 14px 36px rgba(27,42,74,.2); display: flex; flex-direction: column; }
+#fiche[hidden] { display: none; }
+.fiche-barre { display: flex; align-items: center; gap: 8px; margin: 8px 8px 0; flex: none; }
+#fiche-retour { border: 0; border-radius: 999px; background: #f1efe9; color: #1b2a4a; font: 600 12px "Inter"; padding: 7px 13px; cursor: pointer; }
+#fiche-retour:hover { background: #e4e1d8; }
+#fiche-retour[hidden] { display: none; }
+#fiche-fermer { margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #f1efe9; color: #1b2a4a; font: 700 15px "Inter"; cursor: pointer; flex: none; }
+#fiche-fermer:hover { background: #e4e1d8; }
+#fiche-contenu { overflow-y: auto; padding: 0 22px 22px; }
+#fiche h2 { margin: 2px 0 4px; font: 700 20px "Sora", sans-serif; color: #1b2a4a; }
+.etab { margin: 0 0 8px; font-size: 13px; color: #5a6272; }
+.ligne-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; }
+.lien-site { font: 600 12.5px "Inter"; color: #1f6fd6; text-decoration: none; }
+.lien-site:hover { text-decoration: underline; }
+.btn-modif { border: 1px solid #e3e0d8; background: none; border-radius: 999px; padding: 4px 11px; font: 600 11px "Inter"; color: #5a6272; cursor: pointer; }
+.btn-modif:hover { border-color: #b9b4a6; color: #1b2a4a; }
+.photos { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 12px; }
+.photos img { height: 86px; border-radius: 8px; display: block; }
+.tab { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0 0 12px; }
+.tab th, .tab td { border: 1px solid #eceae3; padding: 5px 8px; text-align: center; }
+.tab thead th { background: #f7f6f1; font-weight: 600; color: #5a6272; }
+.tab tbody th { background: #f7f6f1; font-weight: 600; color: #5a6272; text-align: left; }
+.tab .cur { background: #eef4fd; color: #1b2a4a; font-weight: 700; }
+.tab thead th.cur { background: #dcebfb; }
+.refs p { margin: 2px 0; font-size: 13px; }
+.sec h3 { margin: 18px 0 6px; font: 700 11px "Inter"; letter-spacing: .9px; text-transform: uppercase; color: #8a8f9c; padding-bottom: 4px; border-bottom: 1px solid #eceae3; }
+.texte { margin: 0; white-space: pre-line; font-size: 13px; line-height: 1.55; }
+.texte a { color: #1f6fd6; }
+.conds { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
+.conds dt { color: #5a6272; font-weight: 600; }
+.conds dd { margin: 0; }
+.conds dd.texte { white-space: pre-line; }
+.sec .texte + .conds, .sec .conds + .texte, .mach-chips + .texte { margin-top: 8px; }
+.mach-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mach-chip { border: 1px solid #cfe0f7; background: #eef4fd; border-radius: 999px; padding: 5px 11px; font: 600 12px "Inter"; color: #1f6fd6; cursor: pointer; }
+.mach-chip:hover { background: #dcebfb; }
+.mach-chip.actif { background: #1f6fd6; border-color: #1f6fd6; color: #fff; }
+.aills { display: flex; flex-wrap: wrap; gap: 6px; }
+.aill, .aill-lien { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: #fdf3e7; border: 1px solid #f0dcc2; color: #a96a32; font: 600 12px "Inter"; cursor: pointer; text-decoration: none; }
+.aill:hover, .aill-lien:hover { background: #fae7ce; }
+.aill-txt { display: inline-flex; padding: 5px 11px; border-radius: 999px; background: #f7f6f1; border: 1px solid #e3e0d8; color: #5a6272; font: 600 12px "Inter"; }
+.res { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; text-align: left; padding: 9px 11px; border: 1px solid #eceae3; border-radius: 10px; background: #fff; margin: 0; font: 600 13px "Inter"; color: #1b2a4a; cursor: pointer; }
+.res span { color: #8a8f9c; font: 400 12px "Inter"; }
+.res:hover { background: #f7f6f1; }
+.gc-nouveau { display: block; width: 100%; margin: 10px 0 12px; border: 1px dashed #cfc9ba; border-radius: 10px; background: none; padding: 9px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
+.gc-nouveau:hover { border-color: #a96a32; color: #a96a32; }
+.gc-item { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.gc-item input { width: 16px; height: 16px; flex: none; accent-color: #1b2a4a; cursor: pointer; }
+.gc-item .res { flex: 1; }
+.form label { display: block; margin: 14px 0 3px; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #8a8f9c; }
+.form input, .form textarea, .form select { width: 100%; border: 1px solid #ddd9cf; border-radius: 8px; padding: 7px 9px; font: 13px "Inter"; color: #2c3345; background: #fff; }
+.form textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
+.form textarea.grand { min-height: 150px; }
+.form .duo, .form .eq { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.form .astuce { margin: 3px 0 0; font-size: 11.5px; color: #8a8f9c; }
+.pos-ligne { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; }
+.btn-pos { border: 1px solid #cfe0f7; border-radius: 8px; background: #eef4fd; color: #1f6fd6; font: 600 12px "Inter"; padding: 0 12px; cursor: pointer; }
+.btn-pos:hover { background: #dcebfb; }
+.form label.case { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font: 600 13px "Inter"; color: #2c3345; cursor: pointer; }
+.form label.case input { width: 16px; height: 16px; accent-color: #1b2a4a; }
+.pl-grille { display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 6px 8px; align-items: center; }
+.pl-tete { text-align: center; font: 700 11px "Inter"; color: #8a8f9c; }
+.pl-lig { font: 600 12px "Inter"; color: #5a6272; }
+.pl-grille input { text-align: center; }
+.btn-mini { flex: none; width: 30px; height: 30px; border: 1px solid #eceae3; border-radius: 8px; background: #fff; color: #5a6272; font: 700 13px "Inter"; cursor: pointer; padding: 0; }
+.btn-mini:hover { background: #f7f6f1; color: #1b2a4a; }
+.btn-mini.rouge:hover { color: #b3382f; border-color: #e6c4c1; }
+.th-bloc { border: 1px solid #e3e0d8; border-radius: 12px; padding: 12px; margin: 0 0 12px; background: #fbfaf7; }
+.th-barre { display: flex; gap: 6px; align-items: center; margin: 0 0 4px; }
+.th-barre input.th-titre { flex: 1; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #5a6272; background: #fff; }
+.ssec-item { border: 1px solid #eceae3; border-radius: 10px; padding: 10px; margin: 8px 0 0; display: grid; gap: 6px; background: #fff; }
+.ssec-haut { display: flex; gap: 6px; }
+.ssec-haut input.ssec-titre { flex: 1; }
+.ssec-add { display: block; width: 100%; margin: 8px 0 0; border: 1px dashed #cfc9ba; border-radius: 10px; background: none; padding: 8px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
+.ssec-add:hover, #th-add:hover { border-color: #a96a32; color: #a96a32; }
+#th-add { display: block; width: 100%; margin: 0 0 4px; border: 1px dashed #cfc9ba; border-radius: 12px; background: none; padding: 10px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
+.mach-edit .mach-chips { margin: 0 0 8px; }
+.mchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px 4px 11px; border-radius: 999px; background: #eef4fd; border: 1px solid #cfe0f7; color: #1f6fd6; font: 600 12px "Inter"; }
+.mchip button { border: 0; background: none; color: #1f6fd6; cursor: pointer; font: 700 13px "Inter"; padding: 0 2px; line-height: 1; }
+.mchip button:hover { color: #b3382f; }
+.mach-creer { display: flex; gap: 6px; margin: 6px 0 0; }
+.mach-creer input { flex: 1; }
+.mach-creer button { flex: none; border: 1px solid #cfe0f7; border-radius: 8px; background: #eef4fd; color: #1f6fd6; font: 600 12px "Inter"; padding: 0 13px; cursor: pointer; }
+.mach-creer button:hover { background: #dcebfb; }
+.form-btns { display: flex; gap: 8px; margin-top: 18px; }
+.btn-val { flex: 1; border: 0; border-radius: 10px; padding: 10px 0; background: #1b2a4a; color: #fff; font: 700 13px "Inter"; cursor: pointer; }
+.btn-ann { flex: 1; border: 0; border-radius: 10px; padding: 10px 0; background: #f1efe9; color: #5a6272; font: 700 13px "Inter"; cursor: pointer; }
+.btn-val:hover { background: #24406e; }
+.btn-ann:hover { background: #e4e1d8; }
+
+#placement { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1400; display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 28px); background: #1b2a4a; color: #fff; border-radius: 999px; padding: 8px 9px 8px 16px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); }
+#placement[hidden] { display: none; }
+#placement button { border: 0; border-radius: 999px; padding: 6px 12px; font: 700 12px "Inter"; cursor: pointer; }
+#placement-val { background: #fff; color: #1b2a4a; }
+#placement-val:disabled { opacity: .35; cursor: default; }
+#placement-ann { background: rgba(255,255,255,.14); color: #fff; }
+
+#mini { position: fixed; left: 14px; bottom: 14px; z-index: 1100; width: 182px; background: #fff; border: 1px solid #e3e0d8; border-radius: 12px; box-shadow: 0 8px 24px rgba(27,42,74,.14); overflow: hidden; }
+#mini:hover { box-shadow: 0 10px 28px rgba(27,42,74,.22); }
+#mini-btn { position: absolute; inset: 0; z-index: 6; background: none; border: 0; cursor: pointer; }
+#mini-btn:focus-visible { outline: 3px solid #1f6fd6; outline-offset: -3px; border-radius: 12px; }
+.mini-titre { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding: 8px 11px 6px; font: 600 12px "Sora", sans-serif; color: #1b2a4a; }
+#mini-badge { font: 600 11px "Inter"; color: #e07c00; }
+#mini-carte { height: 106px; pointer-events: none; background: #f4f3ef; }
+
+#etat { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1300; max-width: calc(100vw - 28px); background: #a96a32; color: #fff; border-radius: 999px; padding: 9px 18px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); text-align: center; }
+#etat[hidden] { display: none; }
+.gc-sauv { margin: 18px 0 0; font-size: 11.5px; color: #b9b4a6; }
+.lien-sauv { border: 0; background: none; padding: 0; font: 600 11.5px "Inter"; color: #8a8f9c; cursor: pointer; text-decoration: underline; }
+.lien-sauv:hover { color: #1b2a4a; }
+
+.leaflet-control-attribution { font-size: 10px; }
+
+@media (max-width: 640px) {
+  #panneau { width: 208px; padding: 12px 14px 12px; }
+  #panneau h1 { font-size: 18px; }
+  #fiche { top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; border-radius: 0; }
+  #mini { width: 148px; }
+  #mini-carte { height: 88px; }
+}
+</style>
+</head>
+<body>
+<div id="carte"></div>
+
+<header id="panneau">
+  <p class="sur-titre">DQPRM 2026</p>
+  <h1>Centres EAP</h1>
+  <div class="seg" id="seg-sem">
+    <button type="button" data-val="S1" class="actif">S1</button>
+    <button type="button" data-val="S2">S2</button>
+    <button type="button" data-val="S3">S3</button>
+  </div>
+  <div class="seg" id="seg-mod">
+    <button type="button" data-val="tous" class="actif">Toutes</button>
+    <button type="button" data-val="im">RX·MN</button>
+    <button type="button" data-val="rth">RTH</button>
+  </div>
+  <select id="sel-mach" aria-label="Filtrer les centres par machine">
+    <option value="">Filtrer par machine…</option>
+  </select>
+  <div id="filt-chips"></div>
+  <button id="btn-centres" type="button">Gérer les centres (activer, créer…)</button>
+  <ul class="legende">
+    <li><span class="puce im"></span>Imagerie (RX / MN)</li>
+    <li><span class="puce rth"></span>Radiothérapie</li>
+    <li><span class="puce mixte"></span>Les deux</li>
+  </ul>
+  <p id="stats"></p>
+</header>
+
+<aside id="fiche" hidden aria-label="Fiche du centre">
+  <div class="fiche-barre">
+    <button id="fiche-retour" type="button" hidden>&larr; Retour</button>
+    <button id="fiche-fermer" type="button" aria-label="Fermer la fiche">&times;</button>
+  </div>
+  <div id="fiche-contenu"></div>
+</aside>
+
+<div id="placement" hidden>
+  <span id="placement-txt"></span>
+  <button id="placement-val" type="button">Valider</button>
+  <button id="placement-ann" type="button">Annuler</button>
+</div>
+
+<aside id="mini">
+  <button id="mini-btn" type="button" aria-label="Aller à la Martinique"></button>
+  <p class="mini-titre"><span id="mini-nom">Martinique</span><span id="mini-badge"></span></p>
+  <div id="mini-carte"></div>
+</aside>
+
+<div id="etat" hidden><span id="etat-txt"></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.20/leaflet-maplibre-gl.js"></script>
+<script src="data.js"></script>
+<script src="infos.js"></script>
+<script src="config.js"></script>
+<script>
+function placesFor(c, sem) {
+  var src = (c.places && c.places[sem]) || {};
+  return { im: src.im || 0, rth: src.rth || 0 };
+}
+function displayedPlaces(c, sem, mod) {
+  var p = placesFor(c, sem);
+  return { im: mod === "rth" ? 0 : p.im, rth: mod === "im" ? 0 : p.rth };
+}
+function totalDisplayed(c, sem, mod) {
+  var p = displayedPlaces(c, sem, mod);
+  return p.im + p.rth;
+}
+function classify(c, sem, mod) {
+  var p = displayedPlaces(c, sem, mod);
+  if (p.im > 0 && p.rth > 0) return "mixte";
+  if (p.im > 0) return "im";
+  return "rth";
+}
+
+var BORD = "A-Za-z0-9\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF";
+function motifAlias(a) {
+  return a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function regexMachine(machine) {
+  var corps = machine.alias.slice().sort(function (a, b) { return b.length - a.length; }).map(motifAlias).join("|");
+  return new RegExp("(^|[^" + BORD + "])(" + corps + ")(?![" + BORD + "])", "i");
+}
+function texteRecherche(inf) {
+  if (!inf) return "";
+  var t = [inf.machines, inf.avis, inf.avisAnciens].filter(Boolean);
+  (inf.sections || []).forEach(function (s) { if (s.texte) t.push(s.texte); });
+  return t.join("\n");
+}
+function machinesDuCentre(machines, inf) {
+  if (inf && Array.isArray(inf.machinesListe)) {
+    return inf.machinesListe.map(function (n) {
+      for (var i = 0; i < machines.length; i++) if (machines[i].nom === n) return machines[i];
+      return { nom: n, alias: [n] };
+    });
+  }
+  var t = texteRecherche(inf);
+  if (!t) return [];
+  return machines.filter(function (m) { return regexMachine(m).test(t); });
+}
+// Présence d'une machine dans un centre : liste explicite si définie, sinon détection dans les textes.
+function centreALaMachine(c, nomMachine) {
+  var inf = INFOS[c.id];
+  if (inf && Array.isArray(inf.machinesListe)) return inf.machinesListe.indexOf(nomMachine) !== -1;
+  var machine = null;
+  for (var i = 0; i < MACHINES.length; i++) if (MACHINES[i].nom === nomMachine) machine = MACHINES[i];
+  if (!machine) return false;
+  return regexMachine(machine).test(texteRecherche(inf));
+}
+// Filtre ET : le centre doit posséder toutes les machines sélectionnées.
+function passeFiltreMachines(c, machs) {
+  if (!machs || !machs.length) return true;
+  for (var i = 0; i < machs.length; i++) if (!centreALaMachine(c, machs[i])) return false;
+  return true;
+}
+function computeStats(centres, sem, mod, machs) {
+  var nc = 0, np = 0;
+  for (var i = 0; i < centres.length; i++) {
+    var c = centres[i];
+    if (!c.actif) continue;
+    if (!passeFiltreMachines(c, machs)) continue;
+    var t = totalDisplayed(c, sem, mod);
+    if (t > 0) { nc += 1; np += t; }
+  }
+  return { centres: nc, places: np };
+}
+
+var THEMES = [
+  ["conditions", "Conditions"],
+  ["service", "Service de physique médicale"],
+  ["machines", "Machines et disponibilités"],
+  ["avisRecents", "Avis des promos récentes"],
+  ["avisPrecedents", "Avis des promos précédentes"],
+  ["contacts", "Contacts étudiants"]
+];
+function estThemeStandard(cle) {
+  for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === cle) return true;
+  return false;
+}
+function titreStandard(cle) {
+  for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === cle) return THEMES[i][1];
+  return cle;
+}
+function themesDe(inf) {
+  var std = THEMES.map(function (t) { return { cle: t[0], titre: t[1] }; });
+  var base = [];
+  if (inf && Array.isArray(inf.themes)) {
+    inf.themes.forEach(function (t) {
+      if (t && typeof t.cle === "string" && t.cle) base.push({ cle: t.cle, titre: (typeof t.titre === "string" && t.titre) ? t.titre : titreStandard(t.cle) });
+    });
+  }
+  if (!base.length) return std;
+  std.forEach(function (t) {
+    var present = false;
+    for (var i = 0; i < base.length; i++) if (base[i].cle === t.cle) present = true;
+    if (!present) base.push(t);
+  });
+  return base;
+}
+function themesEgaleStandard(ths) {
+  if (ths.length !== THEMES.length) return false;
+  for (var i = 0; i < THEMES.length; i++) {
+    if (ths[i].cle !== THEMES[i][0] || ths[i].titre !== THEMES[i][1]) return false;
+  }
+  return true;
+}
+function slugTheme(titre, prises) {
+  var s = String(titre || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!s || estThemeStandard(s)) s = s ? "x-" + s : "theme";
+  var base = s, k = 2;
+  while (prises.indexOf(s) !== -1) { s = base + "-" + k; k += 1; }
+  return s;
+}
+function slugId(texte, prises) {
+  var s = String(texte || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!s) s = "centre";
+  var base = s, k = 2;
+  while (prises.indexOf(s) !== -1) { s = base + "-" + k; k += 1; }
+  return s;
+}
+function copieData(c) {
+  return {
+    nom: c.nom || "",
+    etablissement: c.etablissement || "",
+    ville: c.ville || "",
+    lat: c.lat,
+    lng: c.lng,
+    actif: !!c.actif,
+    places: JSON.parse(JSON.stringify(c.places || { S1: { im: 0, rth: 0 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } }))
+  };
+}
+function appliquerData(c, d) {
+  c.nom = d.nom || "";
+  c.etablissement = d.etablissement || "";
+  c.ville = d.ville || "";
+  c.lat = d.lat;
+  c.lng = d.lng;
+  c.actif = !!d.actif;
+  c.places = d.places || { S1: { im: 0, rth: 0 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } };
+}
+
+function sCourt(v) { return JSON.stringify(v || ""); }
+function sLong(v) {
+  if (!v) return '""';
+  return "`" + String(v).replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${") + "`";
+}
+function sEquipe(e) {
+  e = e || {};
+  return "{ physiciens: " + sCourt(e.physiciens) + ", dosimetristes: " + sCourt(e.dosimetristes) +
+    ", techniciens: " + sCourt(e.techniciens) + ", ingenieurs: " + sCourt(e.ingenieurs) +
+    ", autres: " + sCourt(e.autres) + " }";
+}
+function sDuo(d) {
+  d = d || {};
+  return "{ im: " + sCourt(d.im) + ", rth: " + sCourt(d.rth) + " }";
+}
+function sPhotos(arr) {
+  if (!arr || !arr.length) return "[]";
+  return "[" + arr.map(function (p) { return JSON.stringify(p); }).join(", ") + "]";
+}
+function sAilleurs(arr) {
+  if (!arr || !arr.length) return "[]";
+  var lignes = arr.map(function (a) {
+    var s = "{ texte: " + JSON.stringify(a.texte || "");
+    if (a.id) s += ", id: " + JSON.stringify(a.id);
+    if (a.url) s += ", url: " + JSON.stringify(a.url);
+    return s + " }";
+  });
+  return "[\n      " + lignes.join(",\n      ") + "\n    ]";
+}
+function sThemes(arr) {
+  if (!arr || !arr.length) return "[]";
+  var lignes = arr.map(function (t) {
+    return "{ cle: " + JSON.stringify(t.cle || "") + ", titre: " + JSON.stringify(t.titre || "") + " }";
+  });
+  return "[\n      " + lignes.join(",\n      ") + "\n    ]";
+}
+function sSections(arr) {
+  if (!arr || !arr.length) return "[]";
+  var lignes = arr.map(function (s) {
+    return "{ theme: " + JSON.stringify(s.theme || "conditions") + ", titre: " + JSON.stringify(s.titre || "") + ", texte: " + sLong(s.texte) + " }";
+  });
+  return "[\n      " + lignes.join(",\n      ") + "\n    ]";
+}
+function sMachListe(v) {
+  if (v == null) return "null";
+  if (!v.length) return "[]";
+  return "[" + v.map(function (n) { return JSON.stringify(n); }).join(", ") + "]";
+}
+function serialiserEntree(id, f) {
+  f = f || {};
+  return '  "' + id + '": {\n' +
+    "    responsables: " + sDuo(f.responsables) + ",\n" +
+    "    partenariats: " + sDuo(f.partenariats) + ",\n" +
+    "    site: " + sCourt(f.site) + ",\n" +
+    "    photos: " + sPhotos(f.photos) + ",\n" +
+    "    statut: " + sCourt(f.statut) + ",\n" +
+    "    salaire: " + sCourt(f.salaire) + ",\n" +
+    "    retraite: " + sCourt(f.retraite) + ",\n" +
+    "    chomage: " + sCourt(f.chomage) + ",\n" +
+    "    conges: " + sCourt(f.conges) + ",\n" +
+    "    revisions: " + sCourt(f.revisions) + ",\n" +
+    "    equipe: " + sEquipe(f.equipe) + ",\n" +
+    "    ailleurs: " + sAilleurs(f.ailleurs) + ",\n" +
+    "    themes: " + sThemes(f.themes) + ",\n" +
+    "    sections: " + sSections(f.sections) + ",\n" +
+    "    machinesListe: " + sMachListe(f.machinesListe) + ",\n" +
+    "    machines: " + sLong(f.machines) + ",\n" +
+    "    avis: " + sLong(f.avis) + ",\n" +
+    "    avisAnciens: " + sLong(f.avisAnciens) + ",\n" +
+    "    contacts: " + sLong(f.contacts) + "\n" +
+    "  }";
+}
+var ENTETE_INFOS = [
+  "// FICHES DÉTAILLÉES DES CENTRES (source : tableau « Infos centres » des promos)",
+  "// La clé de chaque bloc = l'id du centre dans data.js. Champ vide \"\" = non affiché, à compléter.",
+  "//   site : adresse du site web du centre",
+  "//   photos : liste d'images, ex. [\"photos/lille-col.jpg\", \"https://...\"]",
+  "//   equipe : effectifs du service de physique médicale",
+  "//   ailleurs : parties de formation dans d'autres centres,",
+  "//     { texte: \"...\", id: \"id-dun-centre-de-la-carte\" } ou { texte: \"...\", url: \"https://...\" }",
+  "//   themes : ordre et titres des grands blocs de la fiche, [{ cle, titre }] — [] = ordre standard.",
+  "//     Clés standard : conditions, service, machines, avisRecents, avisPrecedents, contacts.",
+  "//     Une clé personnalisée crée un nouveau bloc (rempli par ses sections).",
+  "//   sections : cases supplémentaires { theme: cle-du-bloc, titre, texte }",
+  "//   machinesListe : machines du centre (noms de la liste MACHINES) — null = détection",
+  "//     automatique par mots-clés dans les textes",
+  "//   machines, avis, avisAnciens, contacts : textes libres entre accents graves `...`",
+  "// MACHINES : liste des machines connues (filtre « Machine… » et fiches).",
+  "// Tout se modifie aussi depuis la carte : « Modifier les infos » sur une fiche,",
+  "// puis « Exporter infos.js » pour publier le fichier mis à jour.",
+  ""
+].join("\n");
+function serialiserFichierInfos(machines, infos, ordreIds) {
+  var out = ENTETE_INFOS + "\nconst MACHINES = [\n";
+  machines.forEach(function (m) {
+    out += "  { nom: " + JSON.stringify(m.nom) + ", alias: [" + m.alias.map(function (a) { return JSON.stringify(a); }).join(", ") + "] },\n";
+  });
+  out += "];\n\nconst INFOS = {\n";
+  out += ordreIds.map(function (id) { return serialiserEntree(id, infos[id]); }).join(",\n");
+  out += "\n};\n";
+  return out;
+}
+
+var ENTETE_DATA = [
+  "// CARTE DES CENTRES EAP — DQPRM 2026",
+  "// Ce fichier se modifie ici ou depuis la carte : « Modifier les infos » sur une fiche,",
+  "// rubrique « Gérer les centres » (activer/désactiver, créer, déplacer),",
+  "// puis « Exporter data.js » pour publier le fichier mis à jour.",
+  "// Désactiver un centre : actif: false. im = imagerie (RX/MN), rth = radiothérapie.",
+  "// Le reste (site, photos, équipe, avis, contacts...) est dans infos.js.",
+  ""
+].join("\n");
+function sPlaces(p) {
+  p = p || {};
+  function d(x) { x = x || {}; return "{ im: " + (x.im || 0) + ", rth: " + (x.rth || 0) + " }"; }
+  return "{ S1: " + d(p.S1) + ", S2: " + d(p.S2) + ", S3: " + d(p.S3) + " }";
+}
+function serialiserFichierData(centres) {
+  var out = ENTETE_DATA + "\nconst CENTRES = [\n";
+  out += centres.map(function (c) {
+    return "  {\n" +
+      "    id: " + JSON.stringify(c.id) + ",\n" +
+      "    nom: " + JSON.stringify(c.nom || "") + ",\n" +
+      "    etablissement: " + JSON.stringify(c.etablissement || "") + ",\n" +
+      "    ville: " + JSON.stringify(c.ville || "") + ",\n" +
+      "    lat: " + Number(c.lat).toFixed(5) + ", lng: " + Number(c.lng).toFixed(5) + ",\n" +
+      "    actif: " + (c.actif ? "true" : "false") + ",\n" +
+      "    places: " + sPlaces(c.places) + "\n" +
+      "  }";
+  }).join(",\n");
+  out += ",\n];\n";
+  return out;
+}
+
+(function () {
+  "use strict";
+  if (typeof window === "undefined" || typeof L === "undefined") { return; }
+
+  var state = { sem: "S1", mod: "tous", machs: [] };
+  var VUE_METRO = { centre: [46.6, 2.6], zoom: 6 };
+  var VUE_MQ = { centre: [14.64, -61.02], zoom: 10 };
+  // Fond sobre ET en français : Plan IGN « atténué » (tuiles vectorielles Géoplateforme, sans clé).
+  // Autres styles IGN : gris.json (niveaux de gris), standard.json (plus contrasté).
+  var STYLE_VECTEUR = "https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/attenue.json";
+  var ATTRIB = '&copy; <a href="https://www.ign.fr/">IGN</a> — Géoplateforme';
+  // Secours raster si MapLibre indisponible (sobre mais libellés partiellement en anglais) :
+  var TUILES_SECOURS = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
+  var ATTRIB_SECOURS = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+  function poserFond(map, avecAttribution) {
+    if (L.maplibreGL && window.maplibregl && maplibregl.supported !== false) {
+      try {
+        L.maplibreGL({ style: STYLE_VECTEUR }).addTo(map);
+        if (avecAttribution && map.attributionControl) map.attributionControl.addAttribution(ATTRIB);
+        return;
+      } catch (e) {}
+    }
+    L.tileLayer(TUILES_SECOURS, { subdomains: "abcd", maxZoom: 19, attribution: avecAttribution ? ATTRIB_SECOURS : "" }).addTo(map);
+  }
+  // Ville depuis la position (géocodage inverse Géoplateforme, sans clé, silencieux en cas d'échec).
+  function villeDepuis(latlng, cb) {
+    try {
+      fetch("https://data.geopf.fr/geocodage/reverse?lon=" + latlng.lng + "&lat=" + latlng.lat)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var f = d && d.features && d.features[0];
+          cb((f && f.properties && (f.properties.city || f.properties.municipality)) || "");
+        })
+        .catch(function () { cb(""); });
+    } catch (e) { cb(""); }
+  }
+
+  function esc(t) {
+    return String(t).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+  function lierMails(t) {
+    return t.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, function (m) {
+      return '<a href="mailto:' + m + '">' + m + "</a>";
+    });
+  }
+
+  // ——— Base partagée (Supabase, via son API REST — voir config.js et README) ———
+  var BASE = (typeof CONFIG_SUPABASE !== "undefined" && CONFIG_SUPABASE && CONFIG_SUPABASE.url && CONFIG_SUPABASE.cle)
+    ? { url: CONFIG_SUPABASE.url.replace(/\/+$/, "").replace(/\/rest\/v1$/, ""), cle: CONFIG_SUPABASE.cle } : null;
+  var enLigne = false;
+  var etatEl = document.getElementById("etat");
+  var etatTxt = document.getElementById("etat-txt");
+  function majEtat(mode) {
+    if (mode === "enligne") { etatEl.hidden = true; return; }
+    etatEl.hidden = false;
+    if (mode === "local") etatTxt.textContent = "Base non configurée (config.js) — les modifications ne seront pas partagées.";
+    else if (mode === "echec") etatTxt.textContent = "Enregistrement impossible (connexion ?) — dernière modification non partagée, revalidez plus tard.";
+    else etatTxt.textContent = "Base injoignable — les modifications ne seront pas partagées.";
+  }
+  function apiTete(upsert) {
+    var h = { "apikey": BASE.cle, "Authorization": "Bearer " + BASE.cle, "Content-Type": "application/json" };
+    h.Prefer = upsert ? "resolution=merge-duplicates,return=minimal" : "return=minimal";
+    return h;
+  }
+  function apiLire(chemin, cb) {
+    fetch(BASE.url + "/rest/v1/" + chemin, { headers: apiTete(false) })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(cb)
+      .catch(function () { cb(null); });
+  }
+  function apiEcrire(table, lignes, cb) {
+    fetch(BASE.url + "/rest/v1/" + table, { method: "POST", headers: apiTete(true), body: JSON.stringify(lignes) })
+      .then(function (r) { cb(r.ok); })
+      .catch(function () { cb(false); });
+  }
+  function sauverCentre(c) {
+    if (!BASE || !enLigne) { majEtat(BASE ? "echec" : "local"); return; }
+    apiEcrire("centres", [{ id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }], function (ok) {
+      majEtat(ok ? "enligne" : "echec");
+    });
+  }
+  function sauverMachines() {
+    if (!BASE || !enLigne) return;
+    apiEcrire("reglages", [{ cle: "machines", valeur: MACHINES }], function (ok) {
+      majEtat(ok ? "enligne" : "echec");
+    });
+  }
+  function chargerDepuisBase() {
+    if (!BASE) { majEtat("local"); return; }
+    apiLire("centres?select=*&order=id.asc", function (lignes) {
+      if (lignes === null) { majEtat("horsligne"); return; }
+      if (!lignes.length) {
+        // Première ouverture : la base se remplit avec les données embarquées.
+        var graine = CENTRES.map(function (c) { return { id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }; });
+        apiEcrire("centres", graine, function (ok1) {
+          apiEcrire("reglages", [{ cle: "machines", valeur: MACHINES }], function (ok2) {
+            enLigne = ok1 && ok2;
+            majEtat(enLigne ? "enligne" : "horsligne");
+          });
+        });
+        return;
+      }
+      CENTRES.length = 0;
+      lignes.forEach(function (l) {
+        var c = Object.assign({ id: l.id }, l.data || {});
+        CENTRES.push(c);
+        INFOS[l.id] = l.infos || {};
+      });
+      apiLire("reglages?select=*&cle=eq.machines", function (regs) {
+        if (regs && regs.length && Array.isArray(regs[0].valeur) && regs[0].valeur.length) {
+          MACHINES.length = 0;
+          regs[0].valeur.forEach(function (m) { if (m && m.nom) MACHINES.push({ nom: m.nom, alias: m.alias && m.alias.length ? m.alias : [m.nom] }); });
+        }
+        enLigne = true;
+        majEtat("enligne");
+        remplirSelectMachines();
+        render();
+      });
+    });
+  }
+  function centreParId(id) {
+    for (var i = 0; i < CENTRES.length; i++) if (CENTRES[i].id === id) return CENTRES[i];
+    return null;
+  }
+
+  var carte = L.map("carte", { center: VUE_METRO.centre, zoom: VUE_METRO.zoom, zoomControl: false, minZoom: 3, maxZoom: 19 });
+  L.control.zoom({ position: "topright" }).addTo(carte);
+  poserFond(carte, true);
+
+  var grappe = L.markerClusterGroup({
+    maxClusterRadius: 34,
+    showCoverageOnHover: false,
+    iconCreateFunction: function (cl) {
+      return L.divIcon({ html: '<div class="grappe">' + cl.getChildCount() + "</div>", className: "", iconSize: [34, 34], iconAnchor: [17, 17] });
+    }
+  }).addTo(carte);
+
+  var miniCarte = L.map("mini-carte", { center: VUE_MQ.centre, zoom: 8, zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false });
+  poserFond(miniCarte, false);
+  var miniCouche = L.layerGroup().addTo(miniCarte);
+
+  function pastille(cls, n) {
+    return L.divIcon({ html: '<div class="pin ' + cls + '"><span>' + n + "</span></div>", className: "", iconSize: [30, 30], iconAnchor: [15, 15] });
+  }
+
+  var ficheEl = document.getElementById("fiche");
+  var ficheContenu = document.getElementById("fiche-contenu");
+  var btnRetour = document.getElementById("fiche-retour");
+  var ficheCentre = null;
+  var ficheMode = "vue";
+  var histo = [];
+  var vueCourante = null;
+
+  function infosDe(c) {
+    return (c.id && INFOS[c.id]) || {};
+  }
+
+  function tableauPlaces(c) {
+    var sems = ["S1", "S2", "S3"], i, p;
+    var h = '<table class="tab"><thead><tr><th></th>';
+    for (i = 0; i < sems.length; i++) h += '<th class="' + (sems[i] === state.sem ? "cur" : "") + '">' + sems[i] + "</th>";
+    h += "</tr></thead><tbody><tr><th>RX / MN</th>";
+    for (i = 0; i < sems.length; i++) { p = placesFor(c, sems[i]); h += '<td class="' + (sems[i] === state.sem ? "cur" : "") + '">' + (p.im || "·") + "</td>"; }
+    h += "</tr><tr><th>RTH</th>";
+    for (i = 0; i < sems.length; i++) { p = placesFor(c, sems[i]); h += '<td class="' + (sems[i] === state.sem ? "cur" : "") + '">' + (p.rth || "·") + "</td>"; }
+    h += "</tr></tbody></table>";
+    return h;
+  }
+
+  function ddTexte(t, avecMails) {
+    var x = esc(t);
+    if (avecMails) x = lierMails(x);
+    return '<dd class="texte">' + x + "</dd>";
+  }
+  function supsDt(inf, cle, avecMails) {
+    return (inf.sections || []).filter(function (s) { return s.theme === cle; }).map(function (s) {
+      return "<dt>" + esc(s.titre || "") + "</dt>" + ddTexte(s.texte || "", avecMails);
+    }).join("");
+  }
+  function secTheme(titre, corps) {
+    if (!corps) return "";
+    return '<section class="sec"><h3>' + esc(titre) + "</h3>" + corps + "</section>";
+  }
+  function texteHtml(t, avecMails) {
+    if (!t) return "";
+    var x = esc(t);
+    if (avecMails) x = lierMails(x);
+    return '<p class="texte">' + x + "</p>";
+  }
+  function avecSups(corps, sups) {
+    if (sups) corps += '<dl class="conds">' + sups + "</dl>";
+    return corps;
+  }
+
+  function corpsTheme(c, inf, cle) {
+    var i, dl = "";
+    if (cle === "conditions") {
+      var conds = [["statut", "Statut"], ["salaire", "Salaire (net)"], ["retraite", "Cotisation retraite"], ["chomage", "Cotisation chômage"], ["conges", "Congés"], ["revisions", "Révisions sur place"]];
+      for (i = 0; i < conds.length; i++) {
+        var v = inf[conds[i][0]];
+        if (v) dl += "<dt>" + conds[i][1] + "</dt><dd>" + esc(v) + "</dd>";
+      }
+      dl += supsDt(inf, cle);
+      return dl ? '<dl class="conds">' + dl + "</dl>" : "";
+    }
+    if (cle === "service") {
+      var eq = inf.equipe || {};
+      var roles = [["physiciens", "Physiciens"], ["dosimetristes", "Dosimétristes"], ["techniciens", "Techniciens"], ["ingenieurs", "Ingénieurs"], ["autres", "Autres"]];
+      for (i = 0; i < roles.length; i++) {
+        if (eq[roles[i][0]]) dl += "<dt>" + roles[i][1] + "</dt><dd>" + esc(eq[roles[i][0]]) + "</dd>";
+      }
+      dl += supsDt(inf, cle);
+      return dl ? '<dl class="conds">' + dl + "</dl>" : "";
+    }
+    if (cle === "machines") {
+      var machs = machinesDuCentre(MACHINES, inf);
+      var corps = "";
+      if (machs.length) {
+        corps += '<div class="mach-chips">' + machs.map(function (m) {
+          var actif = state.machs.indexOf(m.nom) !== -1;
+          return '<button type="button" class="mach-chip' + (actif ? " actif" : "") + '" data-mach="' + esc(m.nom) + '" title="Filtrer la carte par cette machine">' + esc(m.nom) + "</button>";
+        }).join("") + "</div>";
+      }
+      corps += texteHtml(inf.machines);
+      return avecSups(corps, supsDt(inf, cle));
+    }
+    if (cle === "avisRecents") return avecSups(texteHtml(inf.avis), supsDt(inf, cle));
+    if (cle === "avisPrecedents") return avecSups(texteHtml(inf.avisAnciens), supsDt(inf, cle));
+    if (cle === "contacts") return avecSups(texteHtml(inf.contacts, true), supsDt(inf, cle, true));
+    return avecSups("", supsDt(inf, cle));
+  }
+
+  function ficheHtml(c) {
+    var inf = infosDe(c);
+    var h = '<p class="sur-titre">' + esc(c.ville) + "</p><h2>" + esc(c.nom) + "</h2>";
+    h += '<p class="etab">' + esc(c.etablissement) + "</p>";
+    h += '<p class="ligne-actions">';
+    if (inf.site) h += '<a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a>';
+    h += '<button type="button" class="btn-modif">Modifier les infos</button></p>';
+    if (inf.photos && inf.photos.length) {
+      h += '<div class="photos">' + inf.photos.map(function (p) {
+        return '<a href="' + esc(p) + '" target="_blank" rel="noopener"><img src="' + esc(p) + '" alt="' + esc(c.nom) + '" loading="lazy"></a>';
+      }).join("") + "</div>";
+    }
+    h += tableauPlaces(c);
+    var resp = inf.responsables || {}, part = inf.partenariats || {};
+    var refs = "";
+    if (resp.im) refs += "<p><strong>Resp. imagerie :</strong> " + esc(resp.im) + "</p>";
+    if (resp.rth) refs += "<p><strong>Resp. radiothérapie :</strong> " + esc(resp.rth) + "</p>";
+    if (part.im) refs += "<p><strong>Partenariat imagerie :</strong> " + esc(part.im) + "</p>";
+    if (part.rth) refs += "<p><strong>Partenariat radiothérapie :</strong> " + esc(part.rth) + "</p>";
+    if (refs) h += '<div class="refs">' + refs + "</div>";
+    if (inf.ailleurs && inf.ailleurs.length) {
+      h += '<section class="sec"><h3>Formation en partie ailleurs</h3><div class="aills">' + inf.ailleurs.map(function (a) {
+        if (a.id) return '<button type="button" class="aill" data-id="' + esc(a.id) + '">' + esc(a.texte) + " →</button>";
+        if (a.url) return '<a class="aill-lien" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + esc(a.texte) + " ↗</a>";
+        return '<span class="aill-txt">' + esc(a.texte) + "</span>";
+      }).join("") + "</div></section>";
+    }
+    themesDe(inf).forEach(function (th) {
+      h += secTheme(th.titre, corpsTheme(c, inf, th.cle));
+    });
+    return h;
+  }
+
+  function gestionHtml() {
+    var h = '<p class="sur-titre">Gestion</p><h2>Centres</h2>';
+    h += '<p class="etab">Cochez pour afficher un centre sur la carte, décochez pour le masquer. Cliquez sur un nom pour ouvrir sa fiche.</p>';
+    h += '<button type="button" id="gc-nouveau" class="gc-nouveau">+ Nouveau centre (placer un point sur la carte)</button>';
+    var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
+    h += liste.map(function (c) {
+      return '<div class="gc-item">' +
+        '<input type="checkbox" class="gc-actif" data-id="' + esc(c.id) + '"' + (c.actif ? " checked" : "") + ' title="Afficher / masquer">' +
+        '<button type="button" class="res gc-nom" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>" +
+        "</div>";
+    }).join("");
+    h += '<p class="gc-sauv">Sauvegarde des données : <button type="button" class="lien-sauv" id="exp-data">data.js</button> · <button type="button" class="lien-sauv" id="exp-infos">infos.js</button></p>';
+    return h;
+  }
+
+  function majRetour() {
+    btnRetour.hidden = histo.length === 0;
+  }
+  function afficherVue(v) {
+    if (!v) return;
+    if (v.type === "gestion") {
+      ficheCentre = null;
+      ficheMode = "gestion";
+      ficheContenu.innerHTML = gestionHtml();
+    } else {
+      var c = centreParId(v.id);
+      if (!c) return;
+      ficheCentre = c;
+      ficheMode = "vue";
+      ficheContenu.innerHTML = ficheHtml(c);
+    }
+    ficheEl.hidden = false;
+    ficheContenu.scrollTop = 0;
+    majRetour();
+  }
+  function naviguer(v, racine) {
+    if (racine || ficheEl.hidden || ficheMode === "edition") histo = [];
+    else if (vueCourante) histo.push(vueCourante);
+    vueCourante = v;
+    afficherVue(v);
+  }
+  function retour() {
+    if (!histo.length) return;
+    vueCourante = histo.pop();
+    afficherVue(vueCourante);
+  }
+  btnRetour.addEventListener("click", retour);
+
+  function fermerFiche() {
+    ficheCentre = null;
+    ficheMode = "vue";
+    vueCourante = null;
+    histo = [];
+    ficheEl.hidden = true;
+    majRetour();
+  }
+  document.getElementById("fiche-fermer").addEventListener("click", fermerFiche);
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (placement) { annulerPlacement(); return; }
+    fermerFiche();
+  });
+
+  // ——— Éditeur ———
+  function champ(label, nom, valeur, astuce) {
+    return "<label>" + label + '</label><input name="' + nom + '" value="' + esc(valeur || "") + '">' + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
+  }
+  function zone(label, nom, valeur, grand, astuce) {
+    return "<label>" + label + '</label><textarea name="' + nom + '"' + (grand ? ' class="grand"' : "") + ">" + esc(valeur || "") + "</textarea>" + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
+  }
+  function ssecItem(s) {
+    s = s || { titre: "", texte: "" };
+    return '<div class="ssec-item">' +
+      '<div class="ssec-haut">' +
+      '<input class="ssec-titre" placeholder="Titre de la case (ex. Salaire (net))" value="' + esc(s.titre || "") + '">' +
+      '<button type="button" class="btn-mini ssec-up" title="Monter">&uarr;</button>' +
+      '<button type="button" class="btn-mini ssec-down" title="Descendre">&darr;</button>' +
+      '<button type="button" class="btn-mini rouge ssec-del" title="Supprimer la case">&times;</button>' +
+      "</div>" +
+      '<textarea class="ssec-texte" placeholder="Contenu">' + esc(s.texte || "") + "</textarea>" +
+      "</div>";
+  }
+  function mchipHtml(nom) {
+    return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="mchip-del" title="Retirer">&times;</button></span>';
+  }
+  function optionsMachSel(deja) {
+    var h = '<option value="">Ajouter une machine de la liste…</option>';
+    MACHINES.forEach(function (m) {
+      if (deja.indexOf(m.nom) === -1) h += '<option value="' + esc(m.nom) + '">' + esc(m.nom) + "</option>";
+    });
+    return h;
+  }
+  function corpsThemeForm(inf, cle) {
+    var h = "";
+    if (cle === "conditions") {
+      h += '<div class="duo"><div>' + champ("Statut", "statut", inf.statut) + "</div><div>" + champ("Salaire (net)", "salaire", inf.salaire) + "</div></div>";
+      h += '<div class="duo"><div>' + champ("Cotisation retraite", "retraite", inf.retraite) + "</div><div>" + champ("Cotisation chômage", "chomage", inf.chomage) + "</div></div>";
+      h += '<div class="duo"><div>' + champ("Congés", "conges", inf.conges) + "</div><div>" + champ("Révisions sur place", "revisions", inf.revisions) + "</div></div>";
+    } else if (cle === "service") {
+      var eq = inf.equipe || {};
+      h += '<div class="eq"><div>' + champ("Physiciens", "eq-physiciens", eq.physiciens) + "</div><div>" + champ("Dosimétristes", "eq-dosimetristes", eq.dosimetristes) + "</div><div>" + champ("Techniciens", "eq-techniciens", eq.techniciens) + "</div><div>" + champ("Ingénieurs", "eq-ingenieurs", eq.ingenieurs) + "</div></div>";
+      h += champ("Autres (service de physique)", "eq-autres", eq.autres);
+    } else if (cle === "machines") {
+      var liste = Array.isArray(inf.machinesListe) ? inf.machinesListe.slice() : machinesDuCentre(MACHINES, inf).map(function (m) { return m.nom; });
+      h += '<div class="mach-edit">';
+      h += '<label>Machines du centre</label>';
+      h += '<div class="mach-chips mach-liste">' + liste.map(mchipHtml).join("") + "</div>";
+      h += '<select class="mach-sel">' + optionsMachSel(liste) + "</select>";
+      h += '<div class="mach-creer"><input class="mach-new" placeholder="Nouvelle machine (ajoutée à la liste générale)"><button type="button" class="mach-add">Créer</button></div>';
+      h += "</div>";
+      h += zone("Disponibilités et précisions (texte libre)", "machines", inf.machines, true);
+    } else if (cle === "avisRecents") {
+      h += zone("Avis des promos récentes", "avis", inf.avis, true);
+    } else if (cle === "avisPrecedents") {
+      h += zone("Avis des promos précédentes", "avisAnciens", inf.avisAnciens, true);
+    } else if (cle === "contacts") {
+      h += zone("Contacts étudiants", "contacts", inf.contacts);
+    }
+    return h;
+  }
+  function blocThemeHtml(inf, th) {
+    var perso = !estThemeStandard(th.cle);
+    var h = '<div class="th-bloc" data-cle="' + esc(th.cle) + '" data-perso="' + (perso ? "1" : "0") + '">';
+    h += '<div class="th-barre">';
+    h += '<input class="th-titre" value="' + esc(th.titre) + '" placeholder="Titre du bloc">';
+    h += '<button type="button" class="btn-mini th-up" title="Monter le bloc">&uarr;</button>';
+    h += '<button type="button" class="btn-mini th-down" title="Descendre le bloc">&darr;</button>';
+    if (perso) h += '<button type="button" class="btn-mini rouge th-del" title="Supprimer le bloc">&times;</button>';
+    h += "</div>";
+    h += corpsThemeForm(inf, th.cle);
+    var sections = (inf.sections || []).filter(function (s) { return s.theme === th.cle; });
+    h += '<div class="ssecs">' + sections.map(ssecItem).join("") + "</div>";
+    h += '<button type="button" class="ssec-add">+ Ajouter une case (titre + contenu)</button>';
+    h += "</div>";
+    return h;
+  }
+
+  function formHtml(c, creation) {
+    var inf = infosDe(c);
+    var resp = inf.responsables || {}, part = inf.partenariats || {};
+    var aill = (inf.ailleurs || []).map(function (a) {
+      return a.texte + (a.id ? " | " + a.id : a.url ? " | " + a.url : "");
+    }).join("\n");
+    var h = '<p class="sur-titre">' + (creation ? "Création" : esc(c.ville)) + "</p><h2>" + (creation ? "Nouveau centre" : esc(c.nom)) + "</h2>";
+    h += '<div class="form">';
+    h += champ("Nom du centre", "c-nom", c.nom, creation ? "Ex. « Lille (COL) » — sert aussi à générer l\u2019identifiant du centre." : "");
+    h += champ("Établissement", "c-etab", c.etablissement);
+    h += champ("Ville", "c-ville", c.ville, "Remplie automatiquement au placement du point (modifiable).");
+    h += "<label>Position (latitude, longitude)</label>";
+    h += '<div class="pos-ligne">';
+    h += '<input type="number" step="any" name="c-lat" value="' + Number(c.lat).toFixed(5) + '">';
+    h += '<input type="number" step="any" name="c-lng" value="' + Number(c.lng).toFixed(5) + '">';
+    h += '<button type="button" class="btn-pos">Déplacer sur la carte</button>';
+    h += "</div>";
+    h += '<label class="case"><input type="checkbox" name="c-actif"' + (c.actif ? " checked" : "") + "> Centre affiché sur la carte (actif)</label>";
+    h += "<label>Places proposées (par semestre)</label>";
+    h += '<div class="pl-grille"><span></span><span class="pl-tete">S1</span><span class="pl-tete">S2</span><span class="pl-tete">S3</span>';
+    h += '<span class="pl-lig">RX / MN</span>';
+    ["S1", "S2", "S3"].forEach(function (s) {
+      h += '<input type="number" min="0" step="1" name="pl-' + s + '-im" value="' + placesFor(c, s).im + '">';
+    });
+    h += '<span class="pl-lig">RTH</span>';
+    ["S1", "S2", "S3"].forEach(function (s) {
+      h += '<input type="number" min="0" step="1" name="pl-' + s + '-rth" value="' + placesFor(c, s).rth + '">';
+    });
+    h += "</div>";
+    h += '<p class="astuce">Les filtres et pastilles de la carte s\u2019adaptent aussitôt. Publier ensuite via « Exporter data.js ».</p>';
+    h += champ("Site du centre", "site", inf.site);
+    h += zone("Photos (une par ligne)", "photos", (inf.photos || []).join("\n"), false, "Chemin relatif (ex. photos/nom.jpg, à déposer dans le dépôt) ou adresse https://…");
+    h += '<div class="duo"><div>' + champ("Resp. imagerie", "resp-im", resp.im) + "</div><div>" + champ("Resp. radiothérapie", "resp-rth", resp.rth) + "</div></div>";
+    h += '<div class="duo"><div>' + champ("Partenariat imagerie", "part-im", part.im) + "</div><div>" + champ("Partenariat radiothérapie", "part-rth", part.rth) + "</div></div>";
+    h += zone("Formation en partie ailleurs (une par ligne)", "ailleurs", aill, false, "Format : texte | id-d-un-centre-de-la-carte ou texte | https://… (ou texte seul)");
+    h += "<label>Blocs de la fiche (déplaçables)</label>";
+    h += '<div id="themes-edit">' + themesDe(inf).map(function (th) { return blocThemeHtml(inf, th); }).join("") + "</div>";
+    h += '<button type="button" id="th-add">+ Ajouter un bloc (thème)</button>';
+    h += '<p class="astuce">Chaque bloc regroupe ses cases « titre + contenu ». Les flèches réorganisent blocs et cases.</p>';
+    h += '<div class="form-btns"><button type="button" class="btn-val">' + (creation ? "Créer le centre" : "Valider") + '</button><button type="button" class="btn-ann">Annuler</button></div>';
+    h += "</div>";
+    return h;
+  }
+
+  function ouvrirEdition(c, creation) {
+    ficheCentre = c;
+    ficheMode = "edition";
+    btnRetour.hidden = true;
+    ficheContenu.innerHTML = formHtml(c, creation);
+    ficheEl.hidden = false;
+    ficheContenu.scrollTop = 0;
+  }
+  function ouvrirCreation(latlng) {
+    var c = {
+      id: null, nom: "", etablissement: "", ville: "",
+      lat: latlng.lat, lng: latlng.lng, actif: true,
+      places: { S1: { im: 0, rth: 0 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } }
+    };
+    ouvrirEdition(c, true);
+    villeDepuis(latlng, function (ville) {
+      var vi = ficheContenu.querySelector('[name="c-ville"]');
+      if (vi && !vi.value.trim() && ville) vi.value = ville;
+    });
+  }
+
+  function lireForm(c) {
+    function v(nom) {
+      var el = ficheContenu.querySelector('[name="' + nom + '"]');
+      return el ? el.value.trim() : "";
+    }
+    function n(nom) {
+      var x = parseInt(v(nom), 10);
+      return isNaN(x) || x < 0 ? 0 : x;
+    }
+    function f(nom, defaut) {
+      var x = parseFloat(v(nom));
+      return isNaN(x) ? defaut : x;
+    }
+    var actifEl = ficheContenu.querySelector('[name="c-actif"]');
+    var themes = [];
+    var sections = [];
+    var machinesListe = [];
+    var cles = THEMES.map(function (t) { return t[0]; });
+    ficheContenu.querySelectorAll("#themes-edit > .th-bloc").forEach(function (bloc) {
+      var perso = bloc.dataset.perso === "1";
+      var titre = bloc.querySelector(".th-titre").value.trim();
+      var cle;
+      if (perso) {
+        cle = slugTheme(titre, cles);
+        cles.push(cle);
+      } else {
+        cle = bloc.dataset.cle;
+        if (!titre) titre = titreStandard(cle);
+      }
+      themes.push({ cle: cle, titre: titre || cle });
+      bloc.querySelectorAll(".ssec-item").forEach(function (el) {
+        var s = {
+          theme: cle,
+          titre: el.querySelector(".ssec-titre").value.trim(),
+          texte: el.querySelector(".ssec-texte").value.trim()
+        };
+        if (s.titre || s.texte) sections.push(s);
+      });
+      if (cle === "machines") {
+        bloc.querySelectorAll(".mach-liste .mchip").forEach(function (chip) {
+          machinesListe.push(chip.dataset.nom);
+        });
+      }
+    });
+    return {
+      data: {
+        nom: v("c-nom") || c.nom || "Centre",
+        etablissement: v("c-etab"),
+        ville: v("c-ville"),
+        lat: f("c-lat", c.lat),
+        lng: f("c-lng", c.lng),
+        actif: actifEl ? actifEl.checked : true,
+        places: {
+          S1: { im: n("pl-S1-im"), rth: n("pl-S1-rth") },
+          S2: { im: n("pl-S2-im"), rth: n("pl-S2-rth") },
+          S3: { im: n("pl-S3-im"), rth: n("pl-S3-rth") }
+        }
+      },
+      infos: {
+        responsables: { im: v("resp-im"), rth: v("resp-rth") },
+        partenariats: { im: v("part-im"), rth: v("part-rth") },
+        site: v("site"),
+        photos: v("photos").split("\n").map(function (s) { return s.trim(); }).filter(Boolean),
+        statut: v("statut"),
+        salaire: v("salaire"),
+        retraite: v("retraite"),
+        chomage: v("chomage"),
+        conges: v("conges"),
+        revisions: v("revisions"),
+        equipe: { physiciens: v("eq-physiciens"), dosimetristes: v("eq-dosimetristes"), techniciens: v("eq-techniciens"), ingenieurs: v("eq-ingenieurs"), autres: v("eq-autres") },
+        ailleurs: v("ailleurs").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).map(function (l) {
+          var morceaux = l.split("|");
+          var e = { texte: morceaux[0].trim() };
+          var cible = (morceaux[1] || "").trim();
+          if (/^https?:\/\//i.test(cible)) e.url = cible;
+          else if (cible) e.id = cible;
+          return e;
+        }),
+        themes: themesEgaleStandard(themes) ? [] : themes,
+        sections: sections,
+        machinesListe: machinesListe,
+        machines: v("machines"),
+        avis: v("avis"),
+        avisAnciens: v("avisAnciens"),
+        contacts: v("contacts")
+      }
+    };
+  }
+
+  // ——— Placement d'un point sur la carte ———
+  var placement = null;
+  var barrePl = document.getElementById("placement");
+  var txtPl = document.getElementById("placement-txt");
+  var valPl = document.getElementById("placement-val");
+  var annPl = document.getElementById("placement-ann");
+
+  function demarrerDeplacement() {
+    var latEl = ficheContenu.querySelector('[name="c-lat"]');
+    var lngEl = ficheContenu.querySelector('[name="c-lng"]');
+    var lat = parseFloat(latEl && latEl.value);
+    var lng = parseFloat(lngEl && lngEl.value);
+    if (isNaN(lat) || isNaN(lng)) { lat = carte.getCenter().lat; lng = carte.getCenter().lng; }
+    placement = { mode: "deplacer", marqueur: L.marker([lat, lng], { draggable: true, icon: pastille("pos", "✛") }).addTo(carte) };
+    carte.panTo([lat, lng]);
+    ficheEl.hidden = true;
+    txtPl.textContent = "Déplacez le point à la bonne position, puis validez.";
+    valPl.disabled = false;
+    barrePl.hidden = false;
+  }
+  function demarrerNouveau() {
+    placement = { mode: "nouveau", marqueur: null };
+    ficheEl.hidden = true;
+    txtPl.textContent = "Cliquez sur la carte pour placer le nouveau centre.";
+    valPl.disabled = true;
+    barrePl.hidden = false;
+  }
+  carte.on("click", function (e) {
+    if (!placement || placement.mode !== "nouveau") return;
+    if (!placement.marqueur) {
+      placement.marqueur = L.marker(e.latlng, { draggable: true, icon: pastille("pos", "✛") }).addTo(carte);
+      txtPl.textContent = "Ajustez le point si besoin, puis validez.";
+      valPl.disabled = false;
+    } else {
+      placement.marqueur.setLatLng(e.latlng);
+    }
+  });
+  function annulerPlacement() {
+    if (!placement) return;
+    var mode = placement.mode;
+    if (placement.marqueur) carte.removeLayer(placement.marqueur);
+    placement = null;
+    barrePl.hidden = true;
+    if (mode === "deplacer" || vueCourante) ficheEl.hidden = false;
+  }
+  valPl.addEventListener("click", function () {
+    if (!placement || !placement.marqueur) return;
+    var ll = placement.marqueur.getLatLng();
+    var mode = placement.mode;
+    carte.removeLayer(placement.marqueur);
+    placement = null;
+    barrePl.hidden = true;
+    if (mode === "deplacer") {
+      var latEl = ficheContenu.querySelector('[name="c-lat"]');
+      var lngEl = ficheContenu.querySelector('[name="c-lng"]');
+      if (latEl) latEl.value = ll.lat.toFixed(5);
+      if (lngEl) lngEl.value = ll.lng.toFixed(5);
+      ficheEl.hidden = false;
+      villeDepuis(ll, function (ville) {
+        var vi = ficheContenu.querySelector('[name="c-ville"]');
+        if (vi && !vi.value.trim() && ville) vi.value = ville;
+      });
+    } else {
+      ouvrirCreation(ll);
+    }
+  });
+  annPl.addEventListener("click", annulerPlacement);
+
+  ficheContenu.addEventListener("click", function (ev) {
+    var b;
+    if ((b = ev.target.closest(".mach-chip"))) {
+      basculerFiltreMachine(b.dataset.mach);
+      return;
+    }
+    if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom"))) {
+      naviguer({ type: "centre", id: b.dataset.id });
+      return;
+    }
+    if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
+    if (ev.target.closest(".btn-pos")) { demarrerDeplacement(); return; }
+    if ((b = ev.target.closest(".th-up"))) { deplacer(b.closest(".th-bloc"), -1); return; }
+    if ((b = ev.target.closest(".th-down"))) { deplacer(b.closest(".th-bloc"), 1); return; }
+    if ((b = ev.target.closest(".th-del"))) {
+      var blocSup = b.closest(".th-bloc");
+      if (!blocSup.querySelector(".ssec-item") || confirm("Supprimer ce bloc et ses cases ?")) blocSup.remove();
+      return;
+    }
+    if ((b = ev.target.closest(".ssec-up"))) { deplacer(b.closest(".ssec-item"), -1); return; }
+    if ((b = ev.target.closest(".ssec-down"))) { deplacer(b.closest(".ssec-item"), 1); return; }
+    if ((b = ev.target.closest(".ssec-del"))) { b.closest(".ssec-item").remove(); return; }
+    if ((b = ev.target.closest(".ssec-add"))) {
+      b.closest(".th-bloc").querySelector(".ssecs").insertAdjacentHTML("beforeend", ssecItem());
+      return;
+    }
+    if (ev.target.closest("#th-add")) {
+      document.getElementById("themes-edit").insertAdjacentHTML("beforeend",
+        blocThemeHtml({}, { cle: "nouveau-bloc-" + Date.now(), titre: "" }));
+      return;
+    }
+    if ((b = ev.target.closest(".mach-add"))) {
+      var blocM = b.closest(".th-bloc");
+      var inp = blocM.querySelector(".mach-new");
+      var nom = inp.value.trim();
+      if (!nom) return;
+      var existe = null;
+      MACHINES.forEach(function (m) { if (m.nom.toLowerCase() === nom.toLowerCase()) existe = m.nom; });
+      if (!existe) {
+        MACHINES.push({ nom: nom, alias: [nom] });
+        sauverMachines();
+        remplirSelectMachines();
+      }
+      ajouterChip(blocM, existe || nom);
+      inp.value = "";
+      return;
+    }
+    if ((b = ev.target.closest(".mchip-del"))) {
+      var blocC = b.closest(".th-bloc");
+      b.closest(".mchip").remove();
+      majMachSel(blocC);
+      return;
+    }
+    if (ev.target.closest(".btn-modif") && ficheCentre) { ouvrirEdition(ficheCentre, false); return; }
+    if (ev.target.closest(".btn-ann")) {
+      if (vueCourante) afficherVue(vueCourante);
+      else fermerFiche();
+      return;
+    }
+    if (ev.target.closest(".btn-val") && ficheCentre) {
+      var lu = lireForm(ficheCentre);
+      var c = ficheCentre;
+      if (c.id === null) {
+        var ids = CENTRES.map(function (x) { return x.id; });
+        var id = slugId(lu.data.ville || lu.data.nom, ids);
+        c = { id: id };
+        CENTRES.push(c);
+      }
+      appliquerData(c, lu.data);
+      INFOS[c.id] = lu.infos;
+      sauverCentre(c);
+      vueCourante = { type: "centre", id: c.id };
+      histo = [];
+      render();
+      afficherVue(vueCourante);
+    }
+  });
+  ficheContenu.addEventListener("change", function (ev) {
+    var sel = ev.target.closest(".mach-sel");
+    if (sel && sel.value) {
+      ajouterChip(sel.closest(".th-bloc"), sel.value);
+      return;
+    }
+    var ck = ev.target.closest(".gc-actif");
+    if (ck) {
+      var c = centreParId(ck.dataset.id);
+      if (!c) return;
+      c.actif = ck.checked;
+      sauverCentre(c);
+      render();
+    }
+  });
+  ficheContenu.addEventListener("click", function (ev) {
+    if (ev.target.closest("#exp-data")) telecharger("data.js", serialiserFichierData(CENTRES));
+    else if (ev.target.closest("#exp-infos")) telecharger("infos.js", serialiserFichierInfos(MACHINES, INFOS, CENTRES.map(function (c) { return c.id; })));
+  });
+
+  function majMachSel(bloc) {
+    var deja = [];
+    bloc.querySelectorAll(".mach-liste .mchip").forEach(function (chip) { deja.push(chip.dataset.nom); });
+    bloc.querySelector(".mach-sel").innerHTML = optionsMachSel(deja);
+  }
+  function ajouterChip(bloc, nom) {
+    var deja = [];
+    bloc.querySelectorAll(".mach-liste .mchip").forEach(function (chip) { deja.push(chip.dataset.nom); });
+    if (deja.indexOf(nom) === -1) bloc.querySelector(".mach-liste").insertAdjacentHTML("beforeend", mchipHtml(nom));
+    majMachSel(bloc);
+  }
+  function deplacer(el, sens) {
+    if (sens < 0 && el.previousElementSibling) el.parentNode.insertBefore(el, el.previousElementSibling);
+    else if (sens > 0 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
+  }
+
+  function telecharger(nomFichier, contenu) {
+    var blob = new Blob([contenu], { type: "text/javascript;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = nomFichier;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+  }
+
+  // ——— Filtre machines (ET logique) ———
+  var selMach = document.getElementById("sel-mach");
+  var filtChips = document.getElementById("filt-chips");
+  function remplirSelectMachines() {
+    var h = '<option value="">Filtrer par machine…</option>';
+    MACHINES.forEach(function (m) {
+      if (state.machs.indexOf(m.nom) === -1) h += '<option value="' + esc(m.nom) + '">' + esc(m.nom) + "</option>";
+    });
+    selMach.innerHTML = h;
+  }
+  function majFiltChips() {
+    filtChips.innerHTML = state.machs.map(function (nom) {
+      return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="filt-del" title="Retirer ce filtre">&times;</button></span>';
+    }).join("");
+  }
+  function basculerFiltreMachine(nom) {
+    var i = state.machs.indexOf(nom);
+    if (i === -1) state.machs.push(nom);
+    else state.machs.splice(i, 1);
+    remplirSelectMachines();
+    majFiltChips();
+    render();
+  }
+  selMach.addEventListener("change", function () {
+    if (!selMach.value) return;
+    basculerFiltreMachine(selMach.value);
+    selMach.value = "";
+  });
+  filtChips.addEventListener("click", function (ev) {
+    var b = ev.target.closest(".filt-del");
+    if (!b) return;
+    basculerFiltreMachine(b.closest(".mchip").dataset.nom);
+  });
+  remplirSelectMachines();
+
+  document.getElementById("btn-centres").addEventListener("click", function () {
+    naviguer({ type: "gestion" }, ficheEl.hidden);
+  });
+
+  var miniNom = document.getElementById("mini-nom");
+  var miniBadge = document.getElementById("mini-badge");
+  var miniBtn = document.getElementById("mini-btn");
+  var totaux = { mq: 0, hex: 0, mqCls: "im" };
+
+  function auxAntilles() { return carte.getCenter().lng < -30; }
+  function majEncart() {
+    var om = auxAntilles();
+    miniNom.textContent = om ? "Hexagone" : "Martinique";
+    miniBtn.setAttribute("aria-label", om ? "Revenir à l'Hexagone" : "Aller à la Martinique");
+    var n = om ? totaux.hex : totaux.mq;
+    miniBadge.textContent = n > 0 ? n + " pl." : "";
+    miniCouche.clearLayers();
+    var cMQ = centreParId("martinique-chu");
+    if (!om && cMQ && totaux.mq > 0) {
+      miniCouche.addLayer(L.marker([cMQ.lat, cMQ.lng], { icon: pastille(totaux.mqCls, totaux.mq), interactive: false }));
+    }
+    miniCarte.setView(om ? VUE_METRO.centre : VUE_MQ.centre, om ? 4 : 8, { animate: false });
+  }
+  miniBtn.addEventListener("click", function () {
+    if (auxAntilles()) carte.setView(VUE_METRO.centre, VUE_METRO.zoom, { animate: false });
+    else carte.setView(VUE_MQ.centre, VUE_MQ.zoom, { animate: false });
+  });
+  carte.on("moveend", majEncart);
+
+  function render() {
+    grappe.clearLayers();
+    var mqTotal = 0, mqCls = "im";
+    for (var i = 0; i < CENTRES.length; i++) {
+      var c = CENTRES[i];
+      if (!c.actif) continue;
+      if (!passeFiltreMachines(c, state.machs)) continue;
+      var total = totalDisplayed(c, state.sem, state.mod);
+      if (total <= 0) continue;
+      var cls = classify(c, state.sem, state.mod);
+      var m = L.marker([c.lat, c.lng], { icon: pastille(cls, total), title: c.nom });
+      m.on("click", (function (cc) { return function () { naviguer({ type: "centre", id: cc.id }, true); }; })(c));
+      grappe.addLayer(m);
+      if (c.id === "martinique-chu") { mqTotal = total; mqCls = cls; }
+    }
+    var s = computeStats(CENTRES, state.sem, state.mod, state.machs);
+    totaux = { mq: mqTotal, hex: s.places - mqTotal, mqCls: mqCls };
+    document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + state.sem + ")";
+    majEncart();
+    if (!ficheEl.hidden && ficheMode !== "edition" && vueCourante) afficherVue(vueCourante);
+  }
+
+  function brancher(idSeg, cle) {
+    var seg = document.getElementById(idSeg);
+    seg.addEventListener("click", function (ev) {
+      var b = ev.target.closest("button");
+      if (!b) return;
+      var bs = seg.querySelectorAll("button");
+      for (var i = 0; i < bs.length; i++) bs[i].classList.toggle("actif", bs[i] === b);
+      state[cle] = b.dataset.val;
+      render();
+    });
+  }
+  brancher("seg-sem", "sem");
+  brancher("seg-mod", "mod");
+
+  render();
+  chargerDepuisBase();
+})();
+</script>
+</body>
+</html>
