@@ -1,7 +1,7 @@
 // FICHES DÉTAILLÉES DES CENTRES (source : tableau « Infos centres » des promos)
 // La clé de chaque bloc = l'id du centre dans data.js. Champ vide "" = non affiché, à compléter.
 //   site : adresse du site web du centre
-//   photos : liste d'images, ex. ["photos/lille-col.jpg", "https://..."]
+//   photos : liste d'images, adresses https://...
 //   equipe : effectifs du service de physique médicale
 //   ailleurs : parties de formation dans d'autres centres,
 //     { texte: "...", id: "id-dun-centre-de-la-carte" } ou { texte: "...", url: "https://..." }
@@ -12,9 +12,13 @@
 //   machinesListe : machines du centre (noms de la liste MACHINES) — null = détection
 //     automatique par mots-clés dans les textes
 //   machines, avis, avisAnciens, contacts : textes libres entre accents graves `...`
-// MACHINES : liste des machines connues (filtre « Machine… » et fiches).
+// CATEGORIES : classement des machines (parent = id d'une autre catégorie, ou null).
+// MACHINES : liste des machines connues (filtre « Machine… » et fiches) ;
+//   cat = id de la catégorie de rangement (absent = sans catégorie).
 // Tout se modifie aussi depuis la carte : « Modifier les infos » sur une fiche,
 // puis « Exporter infos.js » pour publier le fichier mis à jour.
+
+const CATEGORIES = [];
 
 const MACHINES = [
   { nom: "TrueBeam", alias: ["truebeam", "true beam", "truebeams"] },
