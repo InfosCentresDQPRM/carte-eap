@@ -25,8 +25,8 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #sel-mach { width: 100%; margin: 9px 0 0; padding: 7px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
 #filt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
 #filt-chips:empty { margin: 0; }
-#btn-centres { width: 100%; margin: 9px 0 0; padding: 8px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; text-align: left; }
-#btn-centres:hover { border-color: #b9b4a6; color: #1b2a4a; }
+#btn-centres, #btn-machines { width: 100%; margin: 9px 0 0; padding: 8px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; text-align: left; }
+#btn-centres:hover, #btn-machines:hover { border-color: #b9b4a6; color: #1b2a4a; }
 .legende { list-style: none; margin: 11px 0 0; padding: 0; display: grid; gap: 5px; font-size: 12px; }
 .legende li { display: flex; align-items: center; gap: 7px; }
 .puce { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.08); }
@@ -128,10 +128,6 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .mchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px 4px 11px; border-radius: 999px; background: #eef4fd; border: 1px solid #cfe0f7; color: #1f6fd6; font: 600 12px "Inter"; }
 .mchip button { border: 0; background: none; color: #1f6fd6; cursor: pointer; font: 700 13px "Inter"; padding: 0 2px; line-height: 1; }
 .mchip button:hover { color: #b3382f; }
-.mach-creer { display: flex; gap: 6px; margin: 6px 0 0; }
-.mach-creer input { flex: 1; }
-.mach-creer button { flex: none; border: 1px solid #cfe0f7; border-radius: 8px; background: #eef4fd; color: #1f6fd6; font: 600 12px "Inter"; padding: 0 13px; cursor: pointer; }
-.mach-creer button:hover { background: #dcebfb; }
 .form-btns { display: flex; gap: 8px; margin-top: 18px; }
 .btn-val { flex: 1; border: 0; border-radius: 10px; padding: 10px 0; background: #1b2a4a; color: #fff; font: 700 13px "Inter"; cursor: pointer; }
 .btn-ann { flex: 1; border: 0; border-radius: 10px; padding: 10px 0; background: #f1efe9; color: #5a6272; font: 700 13px "Inter"; cursor: pointer; }
@@ -199,6 +195,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
     <option value="">Filtrer par machine…</option>
   </select>
   <div id="filt-chips"></div>
+  <button id="btn-machines" type="button">Gérer les machines (catégories…)</button>
   <button id="btn-centres" type="button">Gérer les centres (activer, créer…)</button>
   <ul class="legende">
     <li><span class="puce im"></span>Imagerie (RX / MN)</li>
@@ -835,7 +832,6 @@ function serialiserFichierData(centres) {
     var h = '<p class="sur-titre">Gestion</p><h2>Centres</h2>';
     h += '<p class="etab">Cochez pour afficher un centre sur la carte, décochez pour le masquer. Cliquez sur un nom pour ouvrir sa fiche.</p>';
     h += '<button type="button" id="gc-nouveau" class="gc-nouveau">+ Nouveau centre (placer un point sur la carte)</button>';
-    h += '<button type="button" id="gc-machines" class="gc-nouveau">Gérer les machines et catégories \u2192</button>';
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
       return '<div class="gc-item">' +
@@ -862,7 +858,12 @@ function serialiserFichierData(centres) {
   }
   function gestionMachinesHtml() {
     var h = '<p class="sur-titre">Gestion</p><h2>Machines</h2>';
-    h += '<p class="etab">Rangez les machines dans des catégories, elles-mêmes rangables dans d\u2019autres catégories. Les menus « Machine\u2026 » suivent ce classement.</p>';
+    if (editionEnAttente) {
+      h += '<p class="etab">Créez la machine souhaitée : elle sera ajoutée au centre et vous reviendrez à la fiche en cours de modification, sans rien perdre.</p>';
+      h += '<button type="button" id="gcm-retour-edition" class="gc-nouveau">\u2190 Revenir à la fiche sans créer de machine</button>';
+    } else {
+      h += '<p class="etab">Rangez les machines dans des catégories, elles-mêmes rangables dans d\u2019autres catégories. Les menus « Machine\u2026 » suivent ce classement.</p>';
+    }
     h += '<button type="button" id="gcm-cat" class="gc-nouveau">+ Nouvelle catégorie</button>';
     h += '<button type="button" class="gc-nouveau gcm-machplus" data-cat="">+ Nouvelle machine (sans catégorie)</button>';
     function ligneMach(m, prof) {
@@ -952,6 +953,7 @@ function serialiserFichierData(centres) {
     ficheMode = "vue";
     vueCourante = null;
     histo = [];
+    editionEnAttente = null;
     ficheEl.hidden = true;
     majRetour();
   }
@@ -959,6 +961,7 @@ function serialiserFichierData(centres) {
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if (placement) { annulerPlacement(); return; }
+    if (editionEnAttente) { reprendreEdition(); return; }
     fermerFiche();
   });
 
@@ -1019,7 +1022,7 @@ function serialiserFichierData(centres) {
       h += '<label>Machines du centre</label>';
       h += '<div class="mach-chips mach-liste">' + liste.map(mchipHtml).join("") + "</div>";
       h += '<select class="mach-sel">' + optionsMachSel(liste) + "</select>";
-      h += '<div class="mach-creer"><input class="mach-new" placeholder="Nouvelle machine (ajoutée à la liste générale)"><button type="button" class="mach-add">Créer</button></div>';
+      h += '<button type="button" class="ssec-add mach-va-creer">+ Créer une nouvelle machine\u2026</button>';
       h += "</div>";
       h += zone("Disponibilités et précisions (texte libre)", "machines", inf.machines, true);
     } else if (cle === "avisRecents") {
@@ -1048,8 +1051,8 @@ function serialiserFichierData(centres) {
     return h;
   }
 
-  function formHtml(c, creation) {
-    var inf = infosDe(c);
+  function formHtml(c, creation, infBrouillon) {
+    var inf = infBrouillon || infosDe(c);
     var resp = inf.responsables || {}, part = inf.partenariats || {};
     var aill = (inf.ailleurs || []).map(function (a) {
       return a.texte + (a.id ? " | " + a.id : a.url ? " | " + a.url : "");
@@ -1098,6 +1101,33 @@ function serialiserFichierData(centres) {
     ficheContenu.innerHTML = formHtml(c, creation);
     ficheEl.hidden = false;
     ficheContenu.scrollTop = 0;
+  }
+  // Édition mise de côté le temps de créer une machine, restaurée ensuite avec son brouillon.
+  var editionEnAttente = null;
+  function ouvrirCreationMachine() {
+    if (!ficheCentre) return;
+    editionEnAttente = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
+    ficheCentre = null;
+    ficheMode = "gestion-machines";
+    btnRetour.hidden = true;
+    ficheContenu.innerHTML = gestionMachinesHtml();
+    ficheContenu.scrollTop = 0;
+  }
+  function reprendreEdition() {
+    if (!editionEnAttente) return;
+    var e = editionEnAttente;
+    editionEnAttente = null;
+    ficheCentre = e.centre;
+    ficheMode = "edition";
+    btnRetour.hidden = true;
+    var cB = Object.assign({}, e.centre, e.brouillon.data);
+    ficheContenu.innerHTML = formHtml(cB, e.creation, e.brouillon.infos);
+    ficheEl.hidden = false;
+    ficheContenu.scrollTop = 0;
+  }
+  function rafraichirVueMachines() {
+    if (editionEnAttente) ficheContenu.innerHTML = gestionMachinesHtml();
+    else afficherVue(vueCourante);
   }
   function ouvrirCreation(latlng) {
     var c = {
@@ -1280,14 +1310,15 @@ function serialiserFichierData(centres) {
       return;
     }
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
-    if (ev.target.closest("#gc-machines")) { naviguer({ type: "gestion-machines" }); return; }
+    if (ev.target.closest(".mach-va-creer")) { ouvrirCreationMachine(); return; }
+    if (ev.target.closest("#gcm-retour-edition")) { reprendreEdition(); return; }
     if (ev.target.closest("#gcm-cat")) {
       var nomCat = (prompt("Nom de la nouvelle catégorie :") || "").trim();
       if (nomCat) {
         CATS.push({ id: slugCat(nomCat), nom: nomCat, parent: null });
         sauverMachines();
         remplirSelectMachines();
-        afficherVue(vueCourante);
+        rafraichirVueMachines();
       }
       return;
     }
@@ -1297,7 +1328,7 @@ function serialiserFichierData(centres) {
         CATS.push({ id: slugCat(nomSous), nom: nomSous, parent: b.dataset.id });
         sauverMachines();
         remplirSelectMachines();
-        afficherVue(vueCourante);
+        rafraichirVueMachines();
       }
       return;
     }
@@ -1309,7 +1340,12 @@ function serialiserFichierData(centres) {
         MACHINES.push({ nom: nomMach, alias: [nomMach], cat: b.dataset.cat || null });
         sauverMachines();
         remplirSelectMachines();
-        afficherVue(vueCourante);
+        if (editionEnAttente) {
+          if (editionEnAttente.brouillon.infos.machinesListe.indexOf(nomMach) === -1) editionEnAttente.brouillon.infos.machinesListe.push(nomMach);
+          reprendreEdition();
+        } else {
+          rafraichirVueMachines();
+        }
       }
       return;
     }
@@ -1331,22 +1367,6 @@ function serialiserFichierData(centres) {
     if (ev.target.closest("#th-add")) {
       document.getElementById("themes-edit").insertAdjacentHTML("beforeend",
         blocThemeHtml({}, { cle: "nouveau-bloc-" + Date.now(), titre: "" }));
-      return;
-    }
-    if ((b = ev.target.closest(".mach-add"))) {
-      var blocM = b.closest(".th-bloc");
-      var inp = blocM.querySelector(".mach-new");
-      var nom = inp.value.trim();
-      if (!nom) return;
-      var existe = null;
-      MACHINES.forEach(function (m) { if (m.nom.toLowerCase() === nom.toLowerCase()) existe = m.nom; });
-      if (!existe) {
-        MACHINES.push({ nom: nom, alias: [nom] });
-        sauverMachines();
-        remplirSelectMachines();
-      }
-      ajouterChip(blocM, existe || nom);
-      inp.value = "";
       return;
     }
     if ((b = ev.target.closest(".mchip-del"))) {
@@ -1395,7 +1415,7 @@ function serialiserFichierData(centres) {
       }
       sauverMachines();
       remplirSelectMachines();
-      afficherVue(vueCourante);
+      rafraichirVueMachines();
       return;
     }
     var ck = ev.target.closest(".gc-actif");
@@ -1473,6 +1493,9 @@ function serialiserFichierData(centres) {
   document.getElementById("btn-centres").addEventListener("click", function () {
     naviguer({ type: "gestion" }, ficheEl.hidden);
   });
+  document.getElementById("btn-machines").addEventListener("click", function () {
+    naviguer({ type: "gestion-machines" }, ficheEl.hidden);
+  });
 
   var miniNom = document.getElementById("mini-nom");
   var miniBadge = document.getElementById("mini-badge");
@@ -1548,7 +1571,7 @@ function serialiserFichierData(centres) {
     totaux = { mq: mqTotal, hex: s.places - mqTotal, mqCls: mqCls };
     document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + state.sem + ")";
     majEncart();
-    if (!ficheEl.hidden && ficheMode !== "edition" && vueCourante) afficherVue(vueCourante);
+    if (!ficheEl.hidden && ficheMode !== "edition" && !editionEnAttente && vueCourante) afficherVue(vueCourante);
   }
 
   function brancher(idSeg, cle) {
