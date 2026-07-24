@@ -51,7 +51,6 @@ const MACHINES = [
 const INFOS = {
   "angers-ico": {
     responsables: { im: "Camille Guillerminet", rth: "Maxime Bremaud" },
-    partenariats: { im: "CHU d'Angers, ICO René Gauducheau", rth: "" },
     site: "https://www.institut-cancerologie-ouest.com",
     photos: [],
     statut: "Stagiaire",
@@ -95,7 +94,6 @@ Anciens : mathilde-levardon@hotmail.fr (2021-2023), val.giordano@orange.fr (2022
   },
   "avignon": {
     responsables: { im: "", rth: "Véronique Bodez" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.icap84.org",
     photos: [],
     statut: "Stagiaire",
@@ -120,7 +118,6 @@ Anciens : mathilde-levardon@hotmail.fr (2021-2023), val.giordano@orange.fr (2022
   },
   "bordeaux-bergonie": {
     responsables: { im: "", rth: "Jean-Pierre Taupiac" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.bergonie.fr",
     photos: [],
     statut: "Stagiaire",
@@ -150,7 +147,6 @@ Radio : pas de physicien a plein temps`,
   },
   "bordeaux-chu": {
     responsables: { im: "Marie Eresue", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-bordeaux.fr",
     photos: [],
     statut: "Stagiaire",
@@ -175,7 +171,6 @@ Radio : pas de physicien a plein temps`,
   },
   "brest-chru": {
     responsables: { im: "Mathieu Pavoine", rth: "Gaelle Goasduff, Emmanuelle Martin" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-brest.fr",
     photos: [],
     statut: "Stagiaire",
@@ -209,7 +204,6 @@ Anciens : erwancossker@gmail.com (22-24), clemence.robert98@gmail.com (22-24) �
   },
   "caen-baclesse": {
     responsables: { im: "Cyril Jaudet, Alain Batalla", rth: "Philippe Berejny" },
-    partenariats: { im: "Rouen", rth: "" },
     site: "https://www.baclesse.fr",
     photos: [],
     statut: "Stagiaire",
@@ -239,7 +233,6 @@ DQ1 : m.rayer@baclesse.unicancer.fr — DQ2 : thelie.alexis@gmail.com`
   },
   "chambery": {
     responsables: { im: "", rth: "Magali Romanet" },
-    partenariats: { im: "", rth: "CHU Grenoble Alpes" },
     site: "https://www.ch-metropole-savoie.fr",
     photos: [],
     statut: "",
@@ -264,7 +257,6 @@ DQ1 : m.rayer@baclesse.unicancer.fr — DQ2 : thelie.alexis@gmail.com`
   },
   "clermont-jean-perrin": {
     responsables: { im: "Véronique Dedieu", rth: "Véronique Dedieu" },
-    partenariats: { im: "CHU de Clermont-Ferrand", rth: "" },
     site: "https://www.cjp.fr",
     photos: [],
     statut: "Stagiaire",
@@ -294,7 +286,6 @@ Bonne ambiance et bon encadrement`,
   },
   "dijon-cgfl": {
     responsables: { im: "Jean-Marc Vrigneaud", rth: "Leone Aubignac" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.cgfl.fr",
     photos: [],
     statut: "Stagiaire",
@@ -360,7 +351,6 @@ DQ1 (21-24) : jedidisarahbcr@gmail.com, sayahfarzam@gmail.com`
   },
   "grenoble-chu": {
     responsables: { im: "Ghislaine Reboulet", rth: "Manon Jaumot" },
-    partenariats: { im: "", rth: "CH Métropole Savoie" },
     site: "https://www.chu-grenoble.fr",
     photos: [],
     statut: "Stagiaire",
@@ -390,7 +380,6 @@ A savoir : renouvelement complet du service prévu pour 2024 avec construction d
   },
   "grenoble-icdh": {
     responsables: { im: "", rth: "Christophe Mazzara" },
-    partenariats: { im: "", rth: "Centre Léon Bérard (S2–S3)" },
     site: "https://www.ghm-grenoble.fr",
     photos: [],
     statut: "",
@@ -415,7 +404,6 @@ A savoir : renouvelement complet du service prévu pour 2024 avec construction d
   },
   "lille-chu": {
     responsables: { im: "Jean-Baptiste Maurice", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-lille.fr",
     photos: [],
     statut: "Stagiaire",
@@ -443,7 +431,6 @@ Anciens : marine.deleu@outlook.com (2019-2021), severine.lannoy@outlook.fr, thel
   },
   "lille-col": {
     responsables: { im: "", rth: "Erwann Rault" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.centreoscarlambret.fr",
     photos: [],
     statut: "Stagiaire",
@@ -469,7 +456,6 @@ Anciens : simon.martin.phy@outlook.fr, vincent.beaudoux2@gmail.com (2021-2023)`
   },
   "lyon-clb": {
     responsables: { im: "Jean-Noël Badel", rth: "Pauline Dupuis" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.centreleonberard.fr",
     photos: [],
     statut: "Stagiaire",
@@ -497,7 +483,6 @@ Anciens : geffroy.maiwenn@gmail.com, hug.rousseau8@gmail.com`
   },
   "lyon-chu": {
     responsables: { im: "", rth: "Amandine Beneux" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-lyon.fr",
     photos: [],
     statut: "Stagiaire",
@@ -522,7 +507,6 @@ Anciens : geffroy.maiwenn@gmail.com, hug.rousseau8@gmail.com`
   },
   "marseille-timone": {
     responsables: { im: "Bardia Farman", rth: "Stéphanie Raucoules" },
-    partenariats: { im: "", rth: "Institut Paoli-Calmettes" },
     site: "https://www.ap-hm.fr",
     photos: [],
     statut: "Stagiaire",
@@ -548,7 +532,6 @@ Anciens : lacroix-fanny@hotmail.fr, pfletschinger.estelle@outlook.com, brahim.me
   },
   "marseille-ipc": {
     responsables: { im: "Pierre Fau", rth: "Pierre Fau" },
-    partenariats: { im: "AP-HM", rth: "" },
     site: "https://www.institutpaolicalmettes.fr",
     photos: [],
     statut: "Stagiaire",
@@ -574,7 +557,6 @@ Ancien : adam.renard@yahoo.com`
   },
   "martinique-chu": {
     responsables: { im: "Axel Govindoorazoo", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-martinique.fr",
     photos: [],
     statut: "",
@@ -599,7 +581,6 @@ Ancien : adam.renard@yahoo.com`
   },
   "metz-chr": {
     responsables: { im: "Paul Retif", rth: "Paul Retif" },
-    partenariats: { im: "CHU de Nancy", rth: "" },
     site: "https://www.chr-metz-thionville.fr",
     photos: [],
     statut: "Stagiaire",
@@ -624,7 +605,6 @@ Ancien : adam.renard@yahoo.com`
   },
   "montbeliard": {
     responsables: { im: "", rth: "Jean-Michel Rouvier" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.hnfc.fr",
     photos: [],
     statut: "Stagiaire",
@@ -651,7 +631,6 @@ Ancien : adam.renard@yahoo.com`
   },
   "montpellier-icm": {
     responsables: { im: "Lore Santoro", rth: "Norbert Ailleres" },
-    partenariats: { im: "CHU de Montpellier", rth: "" },
     site: "https://www.icm.unicancer.fr",
     photos: [],
     statut: "Stagiaire",
@@ -698,7 +677,6 @@ Anciens : trauchessecdorian@gmail.com, galliano.geoffrey@gmail.com`
   },
   "mulhouse": {
     responsables: { im: "Rui Guerra", rth: "" },
-    partenariats: { im: "Strasbourg (Institut Strauss)", rth: "" },
     site: "https://www.ghrmsa.fr",
     photos: [],
     statut: "Stagiaire",
@@ -730,7 +708,6 @@ Possibilité d’obtenir un logement avec le centre hospitalier sur site (loyer 
   },
   "nancy-chru": {
     responsables: { im: "Fleur Saunier", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chru-nancy.fr",
     photos: [],
     statut: "Stagiaire",
@@ -780,7 +757,6 @@ Organisation générale:
   },
   "nancy-icl": {
     responsables: { im: "", rth: "Karine Gerard" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.icl-lorraine.fr",
     photos: [],
     statut: "",
@@ -805,7 +781,6 @@ Organisation générale:
   },
   "nantes-ico": {
     responsables: { im: "", rth: "Alexandre Moignier" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.institut-cancerologie-ouest.com",
     photos: [],
     statut: "Stagiaire",
@@ -836,7 +811,6 @@ RT : DQ1 : dosimétrie 3D (1 semaine/DQ), très impliqué dans les CQ périodiqu
   },
   "nice-cal": {
     responsables: { im: "Malick Koulibaly", rth: "Mathieu Gautier" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.centreantoinelacassagne.org",
     photos: [],
     statut: "",
@@ -904,7 +878,6 @@ Anciens : sylviedeoliveiraduarte@gmail.com ; Imagerie 2021-2024 : jonathan-page@
   },
   "nice-chu": {
     responsables: { im: "", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-nice.fr",
     photos: [],
     statut: "",
@@ -929,7 +902,6 @@ Anciens : sylviedeoliveiraduarte@gmail.com ; Imagerie 2021-2024 : jonathan-page@
   },
   "nimes-chu": {
     responsables: { im: "Corinne Barrau, Joël Greffier", rth: "Karine Taillade, Maxime Michaud" },
-    partenariats: { im: "", rth: "ICM Val d'Aurelle" },
     site: "https://www.chu-nimes.fr",
     photos: [],
     statut: "Stagiaire",
@@ -971,7 +943,6 @@ Ancienne promo : mathildebigot4@gmail.com`
   },
   "orleans": {
     responsables: { im: "Gilles Le Rouzic", rth: "Nicolas Tang" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-orleans.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1005,7 +976,6 @@ Anciens : karim.ada@outlook.fr, estelle.guyard0@gmail.com, paris.arthur29@gmail.
   },
   "paris-hegp": {
     responsables: { im: "Claire Van Ngoc Ty", rth: "Stephane Dupont" },
-    partenariats: { im: "", rth: "" },
     site: "https://hopital-georgespompidou.aphp.fr",
     photos: [],
     statut: "CDD",
@@ -1036,7 +1006,6 @@ Horaire flexible (vous pouvez venir quand vous voulez tant que vous faites votre
   },
   "paris-curie": {
     responsables: { im: "Romaric Dal", rth: "Imène Birba-Iarkani" },
-    partenariats: { im: "Hôpital Bicêtre (AP-HP), HEGP", rth: "" },
     site: "https://curie.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1087,7 +1056,6 @@ Anciens : michel_atieh963@hotmail.com (2021, imagerie), dirandannesophie@gmail.c
   },
   "paris-salpetriere": {
     responsables: { im: "", rth: "Michel Chea" },
-    partenariats: { im: "", rth: "Hôpital Saint-Louis / GHU Saint-Louis" },
     site: "https://pitiesalpetriere.aphp.fr",
     photos: [],
     statut: "CDD",
@@ -1136,7 +1104,6 @@ Anciens : parsampaio.gui@gmail.com (2020-2022) ; lanouars104@gmail.com, tkayosra
   },
   "paris-kremlin-bicetre": {
     responsables: { im: "Michel Atieh", rth: "" },
-    partenariats: { im: "Institut Curie – site Saint-Cloud", rth: "" },
     site: "https://hopital-bicetre.aphp.fr",
     photos: [],
     statut: "",
@@ -1161,7 +1128,6 @@ Anciens : parsampaio.gui@gmail.com (2020-2022) ; lanouars104@gmail.com, tkayosra
   },
   "paris-saint-louis": {
     responsables: { im: "Antoine Martineau", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://hopital-saintlouis.aphp.fr",
     photos: [],
     statut: "",
@@ -1186,7 +1152,6 @@ Anciens : parsampaio.gui@gmail.com (2020-2022) ; lanouars104@gmail.com, tkayosra
   },
   "poitiers-chu": {
     responsables: { im: "", rth: "Alexandre Garcia" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-poitiers.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1211,7 +1176,6 @@ Anciens : parsampaio.gui@gmail.com (2020-2022) ; lanouars104@gmail.com, tkayosra
   },
   "reims-godinot": {
     responsables: { im: "Christopher Hoog", rth: "Sofiane Guendouzen" },
-    partenariats: { im: "CHU de Reims", rth: "" },
     site: "https://www.institutgodinot.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1246,7 +1210,6 @@ Anciens : estebanjimenezec@gmail.com, severine.lannoy@outlook.fr`
   },
   "rennes-cem": {
     responsables: { im: "Sophie Laffont", rth: "Nolwenn Delaby" },
-    partenariats: { im: "Brest", rth: "" },
     site: "https://www.centre-eugene-marquis.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1297,7 +1260,6 @@ Ancien : lemaire.lucien@outlook.fr (DQ1 2022-2025)`
   },
   "rouen-chb": {
     responsables: { im: "Sebastien Hapdey", rth: "Sylvie Derreumaux, David Gensanne" },
-    partenariats: { im: "Caen", rth: "" },
     site: "https://www.becquerel.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1336,7 +1298,6 @@ Les machines finissent les traitements vers 19 h 00. En cas de besoin des machin
   },
   "saint-cloud-curie": {
     responsables: { im: "Bénédicte Lonkuta", rth: "Clement Chevillard" },
-    partenariats: { im: "HEGP (AP-HP), Hôpital Bicêtre (AP-HP)", rth: "" },
     site: "https://curie.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1364,7 +1325,6 @@ journées. A prévoir : le remplacement d'un des mammographes, l'agrandissement 
   },
   "strasbourg-icans": {
     responsables: { im: "Julien Salvadori", rth: "Nicolas Dehaynin" },
-    partenariats: { im: "Hôpitaux Civils de Colmar", rth: "" },
     site: "https://www.icans.eu",
     photos: [],
     statut: "Stagiaire",
@@ -1419,7 +1379,6 @@ Soit mesures à réaliser à Colmar pendant 1 mois (frais de déplacement pris e
   },
   "toulouse-oncopole": {
     responsables: { im: "Laure Vieillevigne", rth: "Laure Vieillevigne" },
-    partenariats: { im: "CHU de Toulouse, CH de Carcassonne", rth: "" },
     site: "https://www.iuct-oncopole.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1475,7 +1434,6 @@ RT et imagerie (23-26) : gwenaelle.sidorski@gmail.com`
   },
   "tours-chru": {
     responsables: { im: "", rth: "Simon Jan" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.chu-tours.fr",
     photos: [],
     statut: "Stagiaire",
@@ -1502,7 +1460,6 @@ RT et imagerie (23-26) : gwenaelle.sidorski@gmail.com`
   },
   "valenciennes": {
     responsables: { im: "Francine Laurent-Daniel", rth: "" },
-    partenariats: { im: "", rth: "" },
     site: "https://www.ch-valenciennes.fr",
     photos: [],
     statut: "",
@@ -1527,7 +1484,6 @@ RT et imagerie (23-26) : gwenaelle.sidorski@gmail.com`
   },
   "villejuif-gr": {
     responsables: { im: "Aurélie Moussier-Lherm", rth: "Anne Beaudre" },
-    partenariats: { im: "Hôpital Bicêtre (AP-HP), Hôpital Européen Georges-Pompidou", rth: "" },
     site: "https://www.gustaveroussy.fr",
     photos: [],
     statut: "Stagiaire",
