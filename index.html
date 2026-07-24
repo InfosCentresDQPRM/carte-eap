@@ -122,7 +122,6 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .th-barre input.th-titre { flex: 1; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #5a6272; background: #fff; }
 .vis { display: flex; flex: none; align-items: center; cursor: pointer; }
 .vis input { width: 16px; height: 16px; accent-color: #1b2a4a; cursor: pointer; }
-.ssec-pos { flex: none; width: auto; font: 600 11px "Inter"; color: #5a6272; padding: 6px 4px; cursor: pointer; }
 .th-retablir { margin: 0 0 4px; font: 600 11.5px "Inter"; color: #8a8f9c; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .th-retablir:empty { display: none; }
 .th-re { border: 1px dashed #cfc9ba; border-radius: 999px; background: none; padding: 4px 11px; font: 600 11px "Inter"; color: #5a6272; cursor: pointer; }
@@ -134,6 +133,8 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .ssec-add:hover, #th-add:hover { border-color: #a96a32; color: #a96a32; }
 #th-add { display: block; width: 100%; margin: 0 0 4px; border: 1px dashed #cfc9ba; border-radius: 12px; background: none; padding: 10px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
 .mach-edit .mach-chips { margin: 0 0 8px; }
+.mach-edit .mach-chips:empty { display: none; }
+.ssec-item[data-type="machines"] .mach-edit { display: grid; gap: 6px; }
 .mchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px 4px 11px; border-radius: 999px; background: #eef4fd; border: 1px solid #cfe0f7; color: #1f6fd6; font: 600 12px "Inter"; }
 .mchip button { border: 0; background: none; color: #1f6fd6; cursor: pointer; font: 700 13px "Inter"; padding: 0 2px; line-height: 1; }
 .mchip button:hover { color: #b3382f; }
@@ -363,6 +364,74 @@ function themesEgaleStandard(ths) {
   }
   return true;
 }
+// Cases héritées des anciennes fiches : décrites comme des sections ordinaires,
+// pour que titre, position, visibilité, ordre et suppression se règlent partout pareil.
+// toujours = proposée même vide ; mod = proposée si le centre a cette modalité.
+var CHAMPS_HERITES = {
+  conditions: [
+    { cle: "statut", titre: "Statut", pos: "gauche", toujours: true },
+    { cle: "salaire", titre: "Salaire (net)", pos: "gauche", toujours: true },
+    { cle: "retraite", titre: "Cotisation retraite", pos: "gauche", toujours: true },
+    { cle: "chomage", titre: "Cotisation chômage", pos: "gauche", toujours: true },
+    { cle: "conges", titre: "Congés", pos: "gauche", toujours: true },
+    { cle: "revisions", titre: "Révisions sur place", pos: "gauche", toujours: true }
+  ],
+  service: [
+    { cle: "equipe.physiciens", titre: "Physiciens", pos: "gauche", toujours: true },
+    { cle: "equipe.dosimetristes", titre: "Dosimétristes", pos: "gauche", toujours: true },
+    { cle: "equipe.techniciens", titre: "Techniciens", pos: "gauche", toujours: true },
+    { cle: "equipe.ingenieurs", titre: "Ingénieurs", pos: "gauche", toujours: true },
+    { cle: "equipe.autres", titre: "Autres", pos: "gauche", toujours: true }
+  ],
+  machines: [
+    { cle: "machinesListe", titre: "", pos: "haut", type: "machines" },
+    { cle: "machines", titre: "", pos: "haut", toujours: true }
+  ],
+  avisRecents: [
+    { cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", mod: "im" },
+    { cle: "avisRth", titre: "Radiothérapie", pos: "haut", mod: "rth" },
+    { cle: "avis", titre: "Non triés", pos: "haut" }
+  ],
+  avisPrecedents: [
+    { cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", mod: "im" },
+    { cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", mod: "rth" },
+    { cle: "avisAnciens", titre: "Non triés", pos: "haut" }
+  ],
+  contacts: [
+    { cle: "contacts", titre: "", pos: "haut", toujours: true }
+  ]
+};
+function lireHerite(inf, cle) {
+  if (!inf) return "";
+  var m = cle.split(".");
+  var v = m.length > 1 ? ((inf[m[0]] || {})[m[1]]) : inf[cle];
+  return v || "";
+}
+function defautHerite(cle) {
+  var trouve = null;
+  Object.keys(CHAMPS_HERITES).forEach(function (b) {
+    CHAMPS_HERITES[b].forEach(function (d) { if (d.cle === cle) trouve = d; });
+  });
+  return trouve;
+}
+// Cases d'un bloc, dans l'ordre : sections enregistrées + champs hérités pas encore repris.
+function elementsDuBloc(inf, cleBloc, pourEdition, mods) {
+  inf = inf || {};
+  var libres = (inf.sections || []).filter(function (s) { return s.theme === cleBloc; });
+  var migre = false, faits = {};
+  libres.forEach(function (s) { if (s.cle) { migre = true; faits[s.cle] = true; } });
+  var herites = [];
+  (CHAMPS_HERITES[cleBloc] || []).forEach(function (d) {
+    if (faits[d.cle]) return;
+    var estMach = d.type === "machines";
+    var val = estMach ? "" : lireHerite(inf, d.cle);
+    var propose = estMach || (pourEdition && (d.toujours || (d.mod && mods && mods[d.mod])));
+    if (!val && !propose) return;
+    herites.push({ theme: cleBloc, cle: d.cle, titre: d.titre, texte: val, pos: d.pos, type: d.type || "texte", masque: false });
+  });
+  return migre ? libres.concat(herites) : herites.concat(libres);
+}
+
 function slugTheme(titre, prises) {
   var s = String(titre || "").toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -467,7 +536,13 @@ function sThemes(arr) {
 function sSections(arr) {
   if (!arr || !arr.length) return "[]";
   var lignes = arr.map(function (s) {
-    return "{ theme: " + JSON.stringify(s.theme || "conditions") + ", titre: " + JSON.stringify(s.titre || "") + (s.pos === "haut" ? ', pos: "haut"' : "") + (s.masque ? ", masque: true" : "") + ", texte: " + sLong(s.texte) + " }";
+    return "{ theme: " + JSON.stringify(s.theme || "conditions") +
+      (s.cle ? ", cle: " + JSON.stringify(s.cle) : "") +
+      (s.type === "machines" ? ', type: "machines"' : "") +
+      ", titre: " + JSON.stringify(s.titre || "") +
+      (s.pos === "haut" ? ', pos: "haut"' : "") +
+      (s.masque ? ", masque: true" : "") +
+      ", texte: " + sLong(s.texte) + " }";
   });
   return "[\n      " + lignes.join(",\n      ") + "\n    ]";
 }
@@ -480,7 +555,6 @@ function serialiserEntree(id, f) {
   f = f || {};
   return '  "' + id + '": {\n' +
     "    responsables: " + sDuo(f.responsables) + ",\n" +
-    "    partenariats: " + sDuo(f.partenariats) + ",\n" +
     "    site: " + sCourt(f.site) + ",\n" +
     "    photos: " + sPhotos(f.photos) + ",\n" +
     "    statut: " + sCourt(f.statut) + ",\n" +
@@ -757,19 +831,6 @@ function serialiserFichierData(centres) {
     if (avecMails) x = lierMails(x);
     return '<dd class="texte">' + x + "</dd>";
   }
-  function supsHtml(inf, cle, avecMails) {
-    var out = "", tampon = "";
-    (inf.sections || []).filter(function (s) { return s.theme === cle && !s.masque; }).forEach(function (s) {
-      if (s.pos === "haut") {
-        if (tampon) { out += '<dl class="conds">' + tampon + "</dl>"; tampon = ""; }
-        out += '<h4 class="sous-mod">' + esc(s.titre || "") + "</h4>" + texteHtml(s.texte || "", avecMails);
-      } else {
-        tampon += "<dt>" + esc(s.titre || "") + "</dt>" + ddTexte(s.texte || "", avecMails);
-      }
-    });
-    if (tampon) out += '<dl class="conds">' + tampon + "</dl>";
-    return out;
-  }
   function secTheme(titre, corps) {
     if (!corps) return "";
     return '<section class="sec"><h3>' + esc(titre) + "</h3>" + corps + "</section>";
@@ -780,46 +841,36 @@ function serialiserFichierData(centres) {
     if (avecMails) x = lierMails(x);
     return '<p class="texte">' + x + "</p>";
   }
-  function avisModalHtml(herite, txtIm, txtRth) {
-    var h = "";
-    if (herite) h += texteHtml(herite);
-    if (txtIm) h += '<h4 class="sous-mod">Imagerie (RX / MN)</h4>' + texteHtml(txtIm);
-    if (txtRth) h += '<h4 class="sous-mod">Radiothérapie</h4>' + texteHtml(txtRth);
-    return h;
-  }
   function corpsTheme(c, inf, cle) {
-    var i, dl = "";
-    if (cle === "conditions") {
-      var conds = [["statut", "Statut"], ["salaire", "Salaire (net)"], ["retraite", "Cotisation retraite"], ["chomage", "Cotisation chômage"], ["conges", "Congés"], ["revisions", "Révisions sur place"]];
-      for (i = 0; i < conds.length; i++) {
-        var v = inf[conds[i][0]];
-        if (v) dl += "<dt>" + conds[i][1] + "</dt><dd>" + esc(v) + "</dd>";
-      }
-      return (dl ? '<dl class="conds">' + dl + "</dl>" : "") + supsHtml(inf, cle);
+    var els = elementsDuBloc(inf, cle, false, null);
+    var avecMails = cle === "contacts";
+    var out = "", tampon = "";
+    function viderTampon() {
+      if (tampon) { out += '<dl class="conds">' + tampon + "</dl>"; tampon = ""; }
     }
-    if (cle === "service") {
-      var eq = inf.equipe || {};
-      var roles = [["physiciens", "Physiciens"], ["dosimetristes", "Dosimétristes"], ["techniciens", "Techniciens"], ["ingenieurs", "Ingénieurs"], ["autres", "Autres"]];
-      for (i = 0; i < roles.length; i++) {
-        if (eq[roles[i][0]]) dl += "<dt>" + roles[i][1] + "</dt><dd>" + esc(eq[roles[i][0]]) + "</dd>";
-      }
-      return (dl ? '<dl class="conds">' + dl + "</dl>" : "") + supsHtml(inf, cle);
-    }
-    if (cle === "machines") {
-      var machs = machinesDuCentre(MACHINES, inf);
-      var corps = "";
-      if (machs.length) {
-        corps += '<div class="mach-chips">' + machs.map(function (m) {
+    els.forEach(function (s) {
+      if (s.masque) return;
+      if (s.type === "machines") {
+        var machs = machinesDuCentre(MACHINES, inf);
+        if (!machs.length) return;
+        viderTampon();
+        if (s.titre) out += '<h4 class="sous-mod">' + esc(s.titre) + "</h4>";
+        out += '<div class="mach-chips">' + machs.map(function (m) {
           return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '" title="Voir les centres possédant cette machine">' + esc(m.nom) + "</button>";
         }).join("") + "</div>";
+        return;
       }
-      corps += texteHtml(inf.machines);
-      return corps + supsHtml(inf, cle);
-    }
-    if (cle === "avisRecents") return avisModalHtml(inf.avis, inf.avisIm, inf.avisRth) + supsHtml(inf, cle);
-    if (cle === "avisPrecedents") return avisModalHtml(inf.avisAnciens, inf.avisAncIm, inf.avisAncRth) + supsHtml(inf, cle);
-    if (cle === "contacts") return texteHtml(inf.contacts, true) + supsHtml(inf, cle, true);
-    return supsHtml(inf, cle);
+      if (!s.texte) return;
+      if (s.pos === "haut" || !s.titre) {
+        viderTampon();
+        if (s.titre) out += '<h4 class="sous-mod">' + esc(s.titre) + "</h4>";
+        out += texteHtml(s.texte, avecMails);
+      } else {
+        tampon += "<dt>" + esc(s.titre) + "</dt>" + ddTexte(s.texte, avecMails);
+      }
+    });
+    viderTampon();
+    return out;
   }
 
   function ficheHtml(c) {
@@ -835,12 +886,10 @@ function serialiserFichierData(centres) {
       }).join("") + "</div>";
     }
     h += tableauPlaces(c);
-    var resp = inf.responsables || {}, part = inf.partenariats || {};
+    var resp = inf.responsables || {};
     var refs = "";
     if (resp.im) refs += "<p><strong>Resp. imagerie :</strong> " + esc(resp.im) + "</p>";
     if (resp.rth) refs += "<p><strong>Resp. radiothérapie :</strong> " + esc(resp.rth) + "</p>";
-    if (part.im) refs += "<p><strong>Partenariat imagerie :</strong> " + esc(part.im) + "</p>";
-    if (part.rth) refs += "<p><strong>Partenariat radiothérapie :</strong> " + esc(part.rth) + "</p>";
     if (refs) h += '<div class="refs">' + refs + "</div>";
     if (inf.ailleurs && inf.ailleurs.length) {
       h += '<section class="sec"><h3>Formation en partie ailleurs</h3><div class="aills">' + inf.ailleurs.map(function (a) {
@@ -1000,22 +1049,39 @@ function serialiserFichierData(centres) {
   function zone(label, nom, valeur, grand, astuce) {
     return "<label>" + label + '</label><textarea name="' + nom + '"' + (grand ? ' class="grand"' : "") + ">" + esc(valeur || "") + "</textarea>" + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
   }
-  function ssecItem(s) {
+  function glyphePos(pos) { return pos === "haut" ? "\u2191" : "\u2190"; }
+  function titrePos(pos) {
+    return pos === "haut"
+      ? "Titre au-dessus du texte — cliquer pour le mettre à gauche"
+      : "Titre à gauche du texte — cliquer pour le mettre au-dessus";
+  }
+  function ssecItem(s, inf) {
     s = s || { titre: "", texte: "", pos: "gauche", masque: false };
-    return '<div class="ssec-item">' +
-      '<div class="ssec-haut">' +
-      '<label class="vis" title="Afficher sur la fiche"><input type="checkbox" class="ssec-vis"' + (s.masque ? "" : " checked") + "></label>" +
-      '<input class="ssec-titre" placeholder="Titre de la case" value="' + esc(s.titre || "") + '">' +
-      '<select class="ssec-pos" title="Position du titre">' +
-      '<option value="gauche"' + (s.pos === "haut" ? "" : " selected") + ">Titre à gauche</option>" +
-      '<option value="haut"' + (s.pos === "haut" ? " selected" : "") + ">Titre au-dessus</option>" +
-      "</select>" +
-      '<button type="button" class="btn-mini ssec-up" title="Monter">&uarr;</button>' +
-      '<button type="button" class="btn-mini ssec-down" title="Descendre">&darr;</button>' +
-      '<button type="button" class="btn-mini rouge ssec-del" title="Supprimer la case">&times;</button>' +
-      "</div>" +
-      '<textarea class="ssec-texte" placeholder="Contenu">' + esc(s.texte || "") + "</textarea>" +
-      "</div>";
+    var pos = s.pos === "haut" ? "haut" : "gauche";
+    var mach = s.type === "machines";
+    var h = '<div class="ssec-item" data-pos="' + pos + '"' +
+      (s.cle ? ' data-cle="' + esc(s.cle) + '"' : "") +
+      (mach ? ' data-type="machines"' : "") + ">";
+    h += '<div class="ssec-haut">';
+    h += '<label class="vis" title="Afficher cette case sur la fiche"><input type="checkbox" class="ssec-vis"' + (s.masque ? "" : " checked") + "></label>";
+    h += '<input class="ssec-titre" placeholder="Titre de la case" value="' + esc(s.titre || "") + '">';
+    if (!mach) h += '<button type="button" class="btn-mini ssec-pos" title="' + titrePos(pos) + '">' + glyphePos(pos) + "</button>";
+    h += '<button type="button" class="btn-mini ssec-up" title="Monter">&uarr;</button>';
+    h += '<button type="button" class="btn-mini ssec-down" title="Descendre">&darr;</button>';
+    h += '<button type="button" class="btn-mini rouge ssec-del" title="Supprimer la case">&times;</button>';
+    h += "</div>";
+    if (mach) {
+      var liste = Array.isArray(inf && inf.machinesListe) ? inf.machinesListe.slice() : machinesDuCentre(MACHINES, inf || {}).map(function (m) { return m.nom; });
+      h += '<div class="mach-edit">';
+      h += '<div class="mach-chips mach-liste">' + liste.map(mchipHtml).join("") + "</div>";
+      h += '<select class="mach-sel">' + optionsMachSel(liste) + "</select>";
+      h += '<button type="button" class="ssec-add mach-va-creer">+ Créer une nouvelle machine\u2026</button>';
+      h += "</div>";
+    } else {
+      h += '<textarea class="ssec-texte" placeholder="Contenu">' + esc(s.texte || "") + "</textarea>";
+    }
+    h += "</div>";
+    return h;
   }
   function mchipHtml(nom) {
     return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="mchip-del" title="Retirer">&times;</button></span>';
@@ -1039,43 +1105,6 @@ function serialiserFichierData(centres) {
   function optionsMachSel(deja) {
     return '<option value="">Ajouter une machine de la liste…</option>' + optionsMachinesArbre(deja);
   }
-  function blocAvisForm(c, nomIm, valIm, nomRth, valRth, nomG, valG) {
-    var m = modalitesDe(c);
-    var deux = !m.im && !m.rth;
-    var h = "";
-    if (m.im || deux || valIm) h += zone("Imagerie (RX / MN)", nomIm, valIm, true);
-    if (m.rth || deux || valRth) h += zone("Radiothérapie", nomRth, valRth, true);
-    if (valG) h += zone("Non triés", nomG, valG, true, "À répartir dans les champs par modalité ci-dessus, puis à vider.");
-    return h;
-  }
-  function corpsThemeForm(c, inf, cle) {
-    var h = "";
-    if (cle === "conditions") {
-      h += '<div class="duo"><div>' + champ("Statut", "statut", inf.statut) + "</div><div>" + champ("Salaire (net)", "salaire", inf.salaire) + "</div></div>";
-      h += '<div class="duo"><div>' + champ("Cotisation retraite", "retraite", inf.retraite) + "</div><div>" + champ("Cotisation chômage", "chomage", inf.chomage) + "</div></div>";
-      h += '<div class="duo"><div>' + champ("Congés", "conges", inf.conges) + "</div><div>" + champ("Révisions sur place", "revisions", inf.revisions) + "</div></div>";
-    } else if (cle === "service") {
-      var eq = inf.equipe || {};
-      h += '<div class="eq"><div>' + champ("Physiciens", "eq-physiciens", eq.physiciens) + "</div><div>" + champ("Dosimétristes", "eq-dosimetristes", eq.dosimetristes) + "</div><div>" + champ("Techniciens", "eq-techniciens", eq.techniciens) + "</div><div>" + champ("Ingénieurs", "eq-ingenieurs", eq.ingenieurs) + "</div></div>";
-      h += champ("Autres (service de physique)", "eq-autres", eq.autres);
-    } else if (cle === "machines") {
-      var liste = Array.isArray(inf.machinesListe) ? inf.machinesListe.slice() : machinesDuCentre(MACHINES, inf).map(function (m) { return m.nom; });
-      h += '<div class="mach-edit">';
-      h += '<label>Machines du centre</label>';
-      h += '<div class="mach-chips mach-liste">' + liste.map(mchipHtml).join("") + "</div>";
-      h += '<select class="mach-sel">' + optionsMachSel(liste) + "</select>";
-      h += '<button type="button" class="ssec-add mach-va-creer">+ Créer une nouvelle machine\u2026</button>';
-      h += "</div>";
-      h += zone("Disponibilités et précisions (texte libre)", "machines", inf.machines, true);
-    } else if (cle === "avisRecents") {
-      h += blocAvisForm(c, "avis-im", inf.avisIm, "avis-rth", inf.avisRth, "avis", inf.avis);
-    } else if (cle === "avisPrecedents") {
-      h += blocAvisForm(c, "avisanc-im", inf.avisAncIm, "avisanc-rth", inf.avisAncRth, "avisAnciens", inf.avisAnciens);
-    } else if (cle === "contacts") {
-      h += zone("Contacts étudiants", "contacts", inf.contacts, false, "Une seule liste pour tout le centre ; précisez si utile entre parenthèses le type de stage (imagerie ou radiothérapie) et les années de la promotion.");
-    }
-    return h;
-  }
   function blocThemeHtml(c, inf, th) {
     var perso = !estThemeStandard(th.cle);
     var h = '<div class="th-bloc" data-cle="' + esc(th.cle) + '" data-perso="' + (perso ? "1" : "0") + '">';
@@ -1086,9 +1115,8 @@ function serialiserFichierData(centres) {
     h += '<button type="button" class="btn-mini th-down" title="Descendre le bloc">&darr;</button>';
     h += '<button type="button" class="btn-mini rouge th-del" title="Supprimer le bloc">&times;</button>';
     h += "</div>";
-    h += corpsThemeForm(c, inf, th.cle);
-    var sections = (inf.sections || []).filter(function (s) { return s.theme === th.cle; });
-    h += '<div class="ssecs">' + sections.map(ssecItem).join("") + "</div>";
+    var els = elementsDuBloc(inf, th.cle, true, modalitesDe(c));
+    h += '<div class="ssecs">' + els.map(function (s) { return ssecItem(s, inf); }).join("") + "</div>";
     h += '<button type="button" class="ssec-add" data-pos="' + (/^(avis|contacts)/.test(th.cle) ? "haut" : "gauche") + '">+ Ajouter une case (titre + contenu)</button>';
     h += "</div>";
     return h;
@@ -1111,7 +1139,7 @@ function serialiserFichierData(centres) {
 
   function formHtml(c, creation, infBrouillon) {
     var inf = infBrouillon || infosDe(c);
-    var resp = inf.responsables || {}, part = inf.partenariats || {};
+    var resp = inf.responsables || {};
     var aill = (inf.ailleurs || []).map(function (a) {
       return a.texte + (a.id ? " | " + a.id : a.url ? " | " + a.url : "");
     }).join("\n");
@@ -1142,7 +1170,6 @@ function serialiserFichierData(centres) {
     h += champ("Site du centre", "site", inf.site);
     h += zone("Photos (une par ligne)", "photos", (inf.photos || []).join("\n"), false, "Une image par ligne, sous forme d\u2019adresse https://\u2026");
     h += '<div class="duo"><div>' + champ("Resp. imagerie", "resp-im", resp.im) + "</div><div>" + champ("Resp. radiothérapie", "resp-rth", resp.rth) + "</div></div>";
-    h += '<div class="duo"><div>' + champ("Partenariat imagerie", "part-im", part.im) + "</div><div>" + champ("Partenariat radiothérapie", "part-rth", part.rth) + "</div></div>";
     h += zone("Formation en partie ailleurs (une par ligne)", "ailleurs", aill, false, "Format : texte | id-d-un-centre-de-la-carte ou texte | https://… (ou texte seul)");
     h += "<label>Blocs de la fiche (déplaçables)</label>";
     h += '<div id="themes-edit">' + themesDe(inf).map(function (th) { return blocThemeHtml(c, inf, th); }).join("") + "</div>";
@@ -1223,7 +1250,8 @@ function serialiserFichierData(centres) {
     var themes = [];
     var sections = [];
     var machinesListe = [];
-    var machinesBloc = false;
+    var machinesItem = false;
+    var heritesVus = {};
     var cles = THEMES.map(function (t) { return t[0]; });
     ficheContenu.querySelectorAll("#themes-edit > .th-bloc").forEach(function (bloc) {
       var perso = bloc.dataset.perso === "1";
@@ -1241,19 +1269,32 @@ function serialiserFichierData(centres) {
         var s = {
           theme: cle,
           titre: el.querySelector(".ssec-titre").value.trim(),
-          texte: el.querySelector(".ssec-texte").value.trim(),
-          pos: el.querySelector(".ssec-pos").value === "haut" ? "haut" : "gauche",
+          pos: el.dataset.pos === "haut" ? "haut" : "gauche",
           masque: !el.querySelector(".ssec-vis").checked
         };
-        if (s.titre || s.texte) sections.push(s);
+        if (el.dataset.cle) { s.cle = el.dataset.cle; heritesVus[el.dataset.cle] = true; }
+        if (el.dataset.type === "machines") {
+          s.type = "machines";
+          s.texte = "";
+          machinesItem = true;
+          el.querySelectorAll(".mach-liste .mchip").forEach(function (chip) { machinesListe.push(chip.dataset.nom); });
+          sections.push(s);
+          return;
+        }
+        var ta = el.querySelector(".ssec-texte");
+        s.texte = ta ? ta.value.trim() : "";
+        var perso2 = false;
+        if (s.cle) {
+          var d = defautHerite(s.cle);
+          perso2 = !d || s.titre !== (d.titre || "") || s.pos !== (d.pos || "gauche") || s.masque;
+        }
+        if (s.texte || (s.titre && !s.cle) || perso2) sections.push(s);
       });
-      if (cle === "machines") {
-        machinesBloc = true;
-        bloc.querySelectorAll(".mach-liste .mchip").forEach(function (chip) {
-          machinesListe.push(chip.dataset.nom);
-        });
-      }
     });
+    // Un champ hérité repris dans une case n'est plus stocké à part (évite les doublons) ;
+    // si son bloc a été retiré de la fiche, sa valeur reste enregistrée telle quelle.
+    function herite(cle, val0) { return heritesVus[cle] ? "" : (val0 || ""); }
+    var eq0 = inf0.equipe || {};
     return {
       data: {
         nom: v("c-nom") || c.nom || "Centre",
@@ -1270,25 +1311,21 @@ function serialiserFichierData(centres) {
       },
       infos: {
         responsables: { im: v("resp-im"), rth: v("resp-rth") },
-        partenariats: { im: v("part-im"), rth: v("part-rth") },
         site: v("site"),
         photos: v("photos").split("\n").map(function (s) { return s.trim(); }).filter(Boolean),
-        statut: vSi("statut", inf0.statut),
-        salaire: vSi("salaire", inf0.salaire),
-        retraite: vSi("retraite", inf0.retraite),
-        chomage: vSi("chomage", inf0.chomage),
-        conges: vSi("conges", inf0.conges),
-        revisions: vSi("revisions", inf0.revisions),
-        equipe: (function () {
-          var e0 = inf0.equipe || {};
-          return {
-            physiciens: vSi("eq-physiciens", e0.physiciens),
-            dosimetristes: vSi("eq-dosimetristes", e0.dosimetristes),
-            techniciens: vSi("eq-techniciens", e0.techniciens),
-            ingenieurs: vSi("eq-ingenieurs", e0.ingenieurs),
-            autres: vSi("eq-autres", e0.autres)
-          };
-        })(),
+        statut: herite("statut", inf0.statut),
+        salaire: herite("salaire", inf0.salaire),
+        retraite: herite("retraite", inf0.retraite),
+        chomage: herite("chomage", inf0.chomage),
+        conges: herite("conges", inf0.conges),
+        revisions: herite("revisions", inf0.revisions),
+        equipe: {
+          physiciens: herite("equipe.physiciens", eq0.physiciens),
+          dosimetristes: herite("equipe.dosimetristes", eq0.dosimetristes),
+          techniciens: herite("equipe.techniciens", eq0.techniciens),
+          ingenieurs: herite("equipe.ingenieurs", eq0.ingenieurs),
+          autres: herite("equipe.autres", eq0.autres)
+        },
         ailleurs: v("ailleurs").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).map(function (l) {
           var morceaux = l.split("|");
           var e = { texte: morceaux[0].trim() };
@@ -1299,15 +1336,15 @@ function serialiserFichierData(centres) {
         }),
         themes: themesEgaleStandard(themes) ? [] : themes,
         sections: sections,
-        machinesListe: machinesBloc ? machinesListe : (Array.isArray(inf0.machinesListe) ? inf0.machinesListe : null),
-        machines: vSi("machines", inf0.machines),
-        avisIm: vSi("avis-im", inf0.avisIm),
-        avisRth: vSi("avis-rth", inf0.avisRth),
-        avis: vSi("avis", inf0.avis),
-        avisAncIm: vSi("avisanc-im", inf0.avisAncIm),
-        avisAncRth: vSi("avisanc-rth", inf0.avisAncRth),
-        avisAnciens: vSi("avisAnciens", inf0.avisAnciens),
-        contacts: vSi("contacts", inf0.contacts)
+        machinesListe: machinesItem ? machinesListe : (Array.isArray(inf0.machinesListe) ? inf0.machinesListe : null),
+        machines: herite("machines", inf0.machines),
+        avisIm: herite("avisIm", inf0.avisIm),
+        avisRth: herite("avisRth", inf0.avisRth),
+        avis: herite("avis", inf0.avis),
+        avisAncIm: herite("avisAncIm", inf0.avisAncIm),
+        avisAncRth: herite("avisAncRth", inf0.avisAncRth),
+        avisAnciens: herite("avisAnciens", inf0.avisAnciens),
+        contacts: herite("contacts", inf0.contacts)
       }
     };
   }
@@ -1422,7 +1459,9 @@ function serialiserFichierData(centres) {
         sauverMachines();
         remplirSelectMachines();
         if (editionEnAttente) {
-          if (editionEnAttente.brouillon.infos.machinesListe.indexOf(nomMach) === -1) editionEnAttente.brouillon.infos.machinesListe.push(nomMach);
+          var lst = editionEnAttente.brouillon.infos.machinesListe;
+          if (!Array.isArray(lst)) lst = editionEnAttente.brouillon.infos.machinesListe = [];
+          if (lst.indexOf(nomMach) === -1) lst.push(nomMach);
           reprendreEdition();
         } else {
           rafraichirVueMachines();
@@ -1448,6 +1487,14 @@ function serialiserFichierData(centres) {
       document.getElementById("themes-edit").insertAdjacentHTML("beforeend",
         blocThemeHtml(ficheCentre || {}, infosDe(ficheCentre || {}), { cle: cleRe, titre: titreStandard(cleRe), masque: false }));
       majRetablir();
+      return;
+    }
+    if ((b = ev.target.closest(".ssec-pos"))) {
+      var item = b.closest(".ssec-item");
+      var nouv = item.dataset.pos === "haut" ? "gauche" : "haut";
+      item.dataset.pos = nouv;
+      b.textContent = glyphePos(nouv);
+      b.title = titrePos(nouv);
       return;
     }
     if ((b = ev.target.closest(".ssec-up"))) { deplacer(b.closest(".ssec-item"), -1); return; }
