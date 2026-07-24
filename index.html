@@ -113,9 +113,13 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .btn-mini.large { width: auto; padding: 0 8px; font: 600 11px "Inter"; }
 .btn-mini:hover { background: #f7f6f1; color: #1b2a4a; }
 .btn-mini.rouge:hover { color: #b3382f; border-color: #e6c4c1; }
+.btn-mini.ssec-pos { background: #eef4fd; border-color: #cfe0f7; color: #1f6fd6; font: 700 11px "Inter"; letter-spacing: -.5px; }
+.btn-mini.ssec-pos:hover { background: #dcebfb; color: #1f6fd6; border-color: #a9cdf3; }
 .gcm-ligne { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
 .gcm-cat-nom { flex: 1; font: 700 13px "Inter"; color: #1b2a4a; }
 .gcm-mach-nom { flex: 1; font: 400 13px "Inter"; color: #2c3345; }
+.gcm-nb { font: 600 11px "Inter"; color: #8a8f9c; }
+.btn-mini.gcm-pli { width: 24px; height: 24px; font-size: 10px; }
 .gcm-dest { max-width: 150px; font: 600 11px "Inter"; color: #5a6272; border: 1px solid #eceae3; border-radius: 8px; padding: 6px 6px; background: #fff; cursor: pointer; }
 .th-bloc { border: 1px solid #e3e0d8; border-radius: 12px; padding: 12px; margin: 0 0 12px; background: #fbfaf7; }
 .th-barre { display: flex; gap: 6px; align-items: center; margin: 0 0 4px; }
@@ -933,13 +937,17 @@ function serialiserFichierData(centres) {
     niveau(null, 0);
     return h;
   }
+  var catsRepliees = (function () {
+    try { return JSON.parse(localStorage.getItem("eap-cats-repliees") || "{}"); } catch (e) { return {}; }
+  })();
+  function sauverReplis() {
+    try { localStorage.setItem("eap-cats-repliees", JSON.stringify(catsRepliees)); } catch (e) {}
+  }
   function gestionMachinesHtml() {
     var h = '<p class="sur-titre">Gestion</p><h2>Machines</h2>';
     if (editionEnAttente) {
       h += '<p class="etab">Créez la machine souhaitée : elle sera ajoutée au centre et vous reviendrez à la fiche en cours de modification, sans rien perdre.</p>';
       h += '<button type="button" id="gcm-retour-edition" class="gc-nouveau">\u2190 Revenir à la fiche sans créer de machine</button>';
-    } else {
-      h += '<p class="etab">Rangez les machines dans des catégories, elles-mêmes rangables dans d\u2019autres catégories. Les menus « Machine\u2026 » suivent ce classement.</p>';
     }
     h += '<button type="button" id="gcm-cat" class="gc-nouveau">+ Nouvelle catégorie</button>';
     h += '<button type="button" class="gc-nouveau gcm-machplus" data-cat="">+ Nouvelle machine (sans catégorie)</button>';
@@ -947,40 +955,32 @@ function serialiserFichierData(centres) {
       return '<div class="gcm-ligne" style="margin-left:' + (prof * 16) + 'px">' +
         '<span class="gcm-mach-nom">' + esc(m.nom) + "</span>" +
         '<select class="gcm-dest" data-type="mach" data-nom="' + esc(m.nom) + '" title="Ranger dans\u2026">' + optionsDestCat([], m.cat || null) + "</select>" +
+        '<button type="button" class="btn-mini rouge gcm-mach-del" data-nom="' + esc(m.nom) + '" title="Supprimer cette machine">&times;</button>' +
         "</div>";
     }
     function ligneCat(c, prof) {
       var interdites = [c.id].concat(descendantesCat(c.id));
+      var enfants = enfantsCat(c.id), machs = machinesDeCat(c.id);
+      var replie = !!catsRepliees[c.id];
+      var n = enfants.length + machs.length;
       var s = '<div class="gcm-ligne" style="margin-left:' + (prof * 16) + 'px">' +
-        '<span class="gcm-cat-nom">\u25b8 ' + esc(c.nom) + "</span>" +
+        '<button type="button" class="btn-mini gcm-pli" data-id="' + esc(c.id) + '" title="' + (replie ? "Déplier" : "Replier") + '">' + (replie ? "\u25b8" : "\u25be") + "</button>" +
+        '<span class="gcm-cat-nom">' + esc(c.nom) + (replie && n ? ' <span class="gcm-nb">(' + n + ")</span>" : "") + "</span>" +
         '<button type="button" class="btn-mini large gcm-souscat" data-id="' + esc(c.id) + '" title="Créer une sous-catégorie">+ cat.</button>' +
         '<button type="button" class="btn-mini large gcm-machplus" data-cat="' + esc(c.id) + '" title="Créer une machine dans cette catégorie">+ mach.</button>' +
         '<select class="gcm-dest" data-type="cat" data-id="' + esc(c.id) + '" title="Ranger dans\u2026">' + optionsDestCat(interdites, c.parent || null) + "</select>" +
+        '<button type="button" class="btn-mini rouge gcm-cat-del" data-id="' + esc(c.id) + '" title="Supprimer cette catégorie">&times;</button>' +
         "</div>";
-      enfantsCat(c.id).forEach(function (sc) { s += ligneCat(sc, prof + 1); });
-      machinesDeCat(c.id).forEach(function (m) { s += ligneMach(m, prof + 1); });
+      if (!replie) {
+        enfants.forEach(function (sc) { s += ligneCat(sc, prof + 1); });
+        machs.forEach(function (m) { s += ligneMach(m, prof + 1); });
+      }
       return s;
     }
     var corps = "";
     enfantsCat(null).forEach(function (c) { corps += ligneCat(c, 0); });
     machinesDeCat(null).forEach(function (m) { corps += ligneMach(m, 0); });
     h += '<div class="gcm-arbre">' + corps + "</div>";
-    return h;
-  }
-
-  function centresAvecMachineNom(nom) {
-    var out = CENTRES.filter(function (c) { return c.actif && centreALaMachine(c, nom); });
-    out.sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
-    return out;
-  }
-  function machineHtml(nom) {
-    var liste = centresAvecMachineNom(nom);
-    var h = '<p class="sur-titre">Machine</p><h2>' + esc(nom) + "</h2>";
-    h += '<p class="etab">' + liste.length + " centre" + (liste.length > 1 ? "s" : "") + " la possède" + (liste.length > 1 ? "nt" : "") + ".</p>";
-    if (!liste.length) h += '<p class="texte">Aucun centre actif ne possède cette machine.</p>';
-    else h += '<div class="mach-liste-centres">' + liste.map(function (c) {
-      return '<button type="button" class="res mach-res" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>";
-    }).join("") + "</div>";
     return h;
   }
 
@@ -1049,7 +1049,7 @@ function serialiserFichierData(centres) {
   function zone(label, nom, valeur, grand, astuce) {
     return "<label>" + label + '</label><textarea name="' + nom + '"' + (grand ? ' class="grand"' : "") + ">" + esc(valeur || "") + "</textarea>" + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
   }
-  function glyphePos(pos) { return pos === "haut" ? "\u2191" : "\u2190"; }
+  function glyphePos(pos) { return pos === "haut" ? "T\u2191" : "T\u2190"; }
   function titrePos(pos) {
     return pos === "haut"
       ? "Titre au-dessus du texte — cliquer pour le mettre à gauche"
@@ -1166,7 +1166,6 @@ function serialiserFichierData(centres) {
       h += '<input type="number" min="0" step="1" name="pl-' + s + '-rth" value="' + placesFor(c, s).rth + '">';
     });
     h += "</div>";
-    h += '<p class="astuce">Les filtres et pastilles de la carte s\u2019adaptent aussitôt. Publier ensuite via « Exporter data.js ».</p>';
     h += champ("Site du centre", "site", inf.site);
     h += zone("Photos (une par ligne)", "photos", (inf.photos || []).join("\n"), false, "Une image par ligne, sous forme d\u2019adresse https://\u2026");
     h += '<div class="duo"><div>' + champ("Resp. imagerie", "resp-im", resp.im) + "</div><div>" + champ("Resp. radiothérapie", "resp-rth", resp.rth) + "</div></div>";
@@ -1430,6 +1429,54 @@ function serialiserFichierData(centres) {
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
     if (ev.target.closest(".mach-va-creer")) { ouvrirCreationMachine(); return; }
     if (ev.target.closest("#gcm-retour-edition")) { reprendreEdition(); return; }
+    if ((b = ev.target.closest(".gcm-pli"))) {
+      var idPli = b.dataset.id;
+      if (catsRepliees[idPli]) delete catsRepliees[idPli];
+      else catsRepliees[idPli] = true;
+      sauverReplis();
+      rafraichirVueMachines();
+      return;
+    }
+    if ((b = ev.target.closest(".gcm-cat-del"))) {
+      var idCat = b.dataset.id, cat = null;
+      CATS.forEach(function (x) { if (x.id === idCat) cat = x; });
+      if (!cat) return;
+      var contenu = enfantsCat(idCat).length + machinesDeCat(idCat).length;
+      if (!confirm("Supprimer la catégorie « " + cat.nom + " » ?" + (contenu ? "\nSon contenu (" + contenu + ") remontera d'un niveau." : ""))) return;
+      var parentCat = cat.parent || null;
+      CATS.forEach(function (x) { if ((x.parent || null) === idCat) x.parent = parentCat; });
+      MACHINES.forEach(function (m) { if ((m.cat || null) === idCat) m.cat = parentCat; });
+      for (var iC = CATS.length - 1; iC >= 0; iC--) if (CATS[iC].id === idCat) CATS.splice(iC, 1);
+      delete catsRepliees[idCat];
+      sauverReplis();
+      sauverMachines();
+      remplirSelectMachines();
+      rafraichirVueMachines();
+      return;
+    }
+    if ((b = ev.target.closest(".gcm-mach-del"))) {
+      var nomDel = b.dataset.nom;
+      var fiches = CENTRES.filter(function (x) {
+        var i = INFOS[x.id];
+        return i && Array.isArray(i.machinesListe) && i.machinesListe.indexOf(nomDel) !== -1;
+      });
+      if (!confirm("Supprimer la machine « " + nomDel + " » de la liste ?" + (fiches.length ? "\nElle sera aussi retirée de " + fiches.length + " fiche" + (fiches.length > 1 ? "s" : "") + " de centre." : ""))) return;
+      for (var iM = MACHINES.length - 1; iM >= 0; iM--) if (MACHINES[iM].nom === nomDel) MACHINES.splice(iM, 1);
+      fiches.forEach(function (x) {
+        INFOS[x.id].machinesListe = INFOS[x.id].machinesListe.filter(function (n) { return n !== nomDel; });
+        sauverCentre(x);
+      });
+      var iF = state.machs.indexOf(nomDel);
+      if (iF !== -1) { state.machs.splice(iF, 1); majFiltChips(); }
+      if (editionEnAttente && Array.isArray(editionEnAttente.brouillon.infos.machinesListe)) {
+        editionEnAttente.brouillon.infos.machinesListe = editionEnAttente.brouillon.infos.machinesListe.filter(function (n) { return n !== nomDel; });
+      }
+      sauverMachines();
+      remplirSelectMachines();
+      rafraichirVueMachines();
+      render();
+      return;
+    }
     if (ev.target.closest("#gcm-cat")) {
       var nomCat = (prompt("Nom de la nouvelle catégorie :") || "").trim();
       if (nomCat) {
