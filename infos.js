@@ -8,7 +8,9 @@
 //   themes : ordre et titres des grands blocs de la fiche, [{ cle, titre }] — [] = ordre standard.
 //     Clés standard : conditions, service, machines, avisRecents, avisPrecedents, contacts.
 //     Une clé personnalisée crée un nouveau bloc (rempli par ses sections).
-//   sections : cases supplémentaires { theme: cle-du-bloc, titre, texte }
+//   sections : cases de la fiche { theme: cle-du-bloc, titre, texte, pos, just, masque }
+//     pos: "haut" = titre au-dessus du texte (sinon titre à gauche) ; just = texte justifié.
+//     Mise en forme dans les textes : **gras**, *italique*, __souligné__.
 //   machinesListe : machines du centre (noms de la liste MACHINES) — null = détection
 //     automatique par mots-clés dans les textes
 //   avisIm / avisRth : avis des promos récentes, par modalité ; avis : non triés
