@@ -70,6 +70,13 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .refs p { margin: 2px 0; font-size: 13px; }
 .sec h3 { margin: 18px 0 6px; font: 700 11px "Inter"; letter-spacing: .9px; text-transform: uppercase; color: #8a8f9c; padding-bottom: 4px; border-bottom: 1px solid #eceae3; }
 .sous-mod { margin: 10px 0 3px; font: 700 12px "Inter"; color: #1b2a4a; }
+.texte.just { text-align: justify; }
+.texte u { text-decoration: underline; }
+.ssec-outils { display: flex; gap: 4px; }
+.btn-fmt, .btn-just { flex: none; width: 28px; height: 26px; border: 1px solid #eceae3; border-radius: 7px; background: #fff; color: #5a6272; font: 600 12px "Inter"; cursor: pointer; padding: 0; }
+.btn-fmt:hover, .btn-just:hover { background: #f7f6f1; color: #1b2a4a; }
+.btn-just { margin-left: auto; }
+.btn-just.actif { background: #eef4fd; border-color: #cfe0f7; color: #1f6fd6; }
 .sec h4.sous-mod:first-child { margin-top: 0; }
 .texte { margin: 0; white-space: pre-line; font-size: 13px; line-height: 1.55; }
 .texte a { color: #1f6fd6; }
@@ -545,6 +552,7 @@ function sSections(arr) {
       (s.type === "machines" ? ', type: "machines"' : "") +
       ", titre: " + JSON.stringify(s.titre || "") +
       (s.pos === "haut" ? ', pos: "haut"' : "") +
+      (s.just ? ", just: true" : "") +
       (s.masque ? ", masque: true" : "") +
       ", texte: " + sLong(s.texte) + " }";
   });
@@ -593,7 +601,9 @@ var ENTETE_INFOS = [
   "//   themes : ordre et titres des grands blocs de la fiche, [{ cle, titre }] — [] = ordre standard.",
   "//     Clés standard : conditions, service, machines, avisRecents, avisPrecedents, contacts.",
   "//     Une clé personnalisée crée un nouveau bloc (rempli par ses sections).",
-  "//   sections : cases supplémentaires { theme: cle-du-bloc, titre, texte }",
+  "//   sections : cases de la fiche { theme: cle-du-bloc, titre, texte, pos, just, masque }",
+  "//     pos: \"haut\" = titre au-dessus du texte (sinon titre à gauche) ; just = texte justifié.",
+  "//     Mise en forme dans les textes : **gras**, *italique*, __souligné__.",
   "//   machinesListe : machines du centre (noms de la liste MACHINES) — null = détection",
   "//     automatique par mots-clés dans les textes",
   "//   avisIm / avisRth : avis des promos récentes, par modalité ; avis : non triés",
@@ -830,20 +840,28 @@ function serialiserFichierData(centres) {
     return h;
   }
 
-  function ddTexte(t, avecMails) {
-    var x = esc(t);
+  // Mise en forme légère : **gras**, *italique*, __souligné__ (vérifié sans effet
+  // sur les textes repris mot pour mot du tableau des promos).
+  function formaterTexte(t) {
+    return esc(t)
+      .replace(/\*\*([^\n]+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*\w])\*(\S[^*\n]*?)\*(?![*\w])/g, "$1<em>$2</em>")
+      .replace(/__([^\n]+?)__/g, "<u>$1</u>");
+  }
+  function ddTexte(t, avecMails, just) {
+    var x = formaterTexte(t);
     if (avecMails) x = lierMails(x);
-    return '<dd class="texte">' + x + "</dd>";
+    return '<dd class="texte' + (just ? " just" : "") + '">' + x + "</dd>";
   }
   function secTheme(titre, corps) {
     if (!corps) return "";
     return '<section class="sec"><h3>' + esc(titre) + "</h3>" + corps + "</section>";
   }
-  function texteHtml(t, avecMails) {
+  function texteHtml(t, avecMails, just) {
     if (!t) return "";
-    var x = esc(t);
+    var x = formaterTexte(t);
     if (avecMails) x = lierMails(x);
-    return '<p class="texte">' + x + "</p>";
+    return '<p class="texte' + (just ? " just" : "") + '">' + x + "</p>";
   }
   function corpsTheme(c, inf, cle) {
     var els = elementsDuBloc(inf, cle, false, null);
@@ -868,9 +886,9 @@ function serialiserFichierData(centres) {
       if (s.pos === "haut" || !s.titre) {
         viderTampon();
         if (s.titre) out += '<h4 class="sous-mod">' + esc(s.titre) + "</h4>";
-        out += texteHtml(s.texte, avecMails);
+        out += texteHtml(s.texte, avecMails, s.just);
       } else {
-        tampon += "<dt>" + esc(s.titre) + "</dt>" + ddTexte(s.texte, avecMails);
+        tampon += "<dt>" + esc(s.titre) + "</dt>" + ddTexte(s.texte, avecMails, s.just);
       }
     });
     viderTampon();
@@ -1060,6 +1078,7 @@ function serialiserFichierData(centres) {
     var pos = s.pos === "haut" ? "haut" : "gauche";
     var mach = s.type === "machines";
     var h = '<div class="ssec-item" data-pos="' + pos + '"' +
+      (s.just ? ' data-just="1"' : "") +
       (s.cle ? ' data-cle="' + esc(s.cle) + '"' : "") +
       (mach ? ' data-type="machines"' : "") + ">";
     h += '<div class="ssec-haut">';
@@ -1078,6 +1097,12 @@ function serialiserFichierData(centres) {
       h += '<button type="button" class="ssec-add mach-va-creer">+ Créer une nouvelle machine\u2026</button>';
       h += "</div>";
     } else {
+      h += '<div class="ssec-outils">';
+      h += '<button type="button" class="btn-fmt" data-fmt="**" title="Gras"><b>G</b></button>';
+      h += '<button type="button" class="btn-fmt" data-fmt="*" title="Italique"><i>I</i></button>';
+      h += '<button type="button" class="btn-fmt" data-fmt="__" title="Souligné"><u>S</u></button>';
+      h += '<button type="button" class="btn-just' + (s.just ? " actif" : "") + '" title="Justifier le texte">\u2261</button>';
+      h += "</div>";
       h += '<textarea class="ssec-texte" placeholder="Contenu">' + esc(s.texte || "") + "</textarea>";
     }
     h += "</div>";
@@ -1269,6 +1294,7 @@ function serialiserFichierData(centres) {
           theme: cle,
           titre: el.querySelector(".ssec-titre").value.trim(),
           pos: el.dataset.pos === "haut" ? "haut" : "gauche",
+          just: el.dataset.just === "1",
           masque: !el.querySelector(".ssec-vis").checked
         };
         if (el.dataset.cle) { s.cle = el.dataset.cle; heritesVus[el.dataset.cle] = true; }
@@ -1285,7 +1311,7 @@ function serialiserFichierData(centres) {
         var perso2 = false;
         if (s.cle) {
           var d = defautHerite(s.cle);
-          perso2 = !d || s.titre !== (d.titre || "") || s.pos !== (d.pos || "gauche") || s.masque;
+          perso2 = !d || s.titre !== (d.titre || "") || s.pos !== (d.pos || "gauche") || s.masque || s.just;
         }
         if (s.texte || (s.titre && !s.cle) || perso2) sections.push(s);
       });
@@ -1534,6 +1560,38 @@ function serialiserFichierData(centres) {
       document.getElementById("themes-edit").insertAdjacentHTML("beforeend",
         blocThemeHtml(ficheCentre || {}, infosDe(ficheCentre || {}), { cle: cleRe, titre: titreStandard(cleRe), masque: false }));
       majRetablir();
+      return;
+    }
+    if ((b = ev.target.closest(".btn-fmt"))) {
+      var itF = b.closest(".ssec-item");
+      var ta = itF.querySelector(".ssec-texte");
+      if (!ta) return;
+      var mq = b.dataset.fmt, n = mq.length;
+      var d = ta.selectionStart, f = ta.selectionEnd, val = ta.value;
+      var sel = val.slice(d, f);
+      if (sel.length >= 2 * n && sel.slice(0, n) === mq && sel.slice(-n) === mq) {
+        // déjà mis en forme : on retire les marqueurs
+        var nu = sel.slice(n, sel.length - n);
+        ta.value = val.slice(0, d) + nu + val.slice(f);
+        ta.focus();
+        ta.setSelectionRange(d, d + nu.length);
+        return;
+      }
+      if (val.slice(d - n, d) === mq && val.slice(f, f + n) === mq) {
+        ta.value = val.slice(0, d - n) + sel + val.slice(f + n);
+        ta.focus();
+        ta.setSelectionRange(d - n, d - n + sel.length);
+        return;
+      }
+      ta.value = val.slice(0, d) + mq + sel + mq + val.slice(f);
+      ta.focus();
+      ta.setSelectionRange(d + n, d + n + sel.length);
+      return;
+    }
+    if ((b = ev.target.closest(".btn-just"))) {
+      var itJ = b.closest(".ssec-item");
+      if (itJ.dataset.just === "1") { delete itJ.dataset.just; b.classList.remove("actif"); }
+      else { itJ.dataset.just = "1"; b.classList.add("actif"); }
       return;
     }
     if ((b = ev.target.closest(".ssec-pos"))) {
