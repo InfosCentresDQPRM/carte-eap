@@ -119,18 +119,9 @@ const CENTRES = [
     nom: "Lille (COL)",
     etablissement: "Centre Oscar Lambret",
     ville: "Lille",
-    lat: 50.61252, lng: 3.03282,
+    lat: 50.61276, lng: 3.03108,
     actif: true,
-    places: { S1: { im: 0, rth: 2 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } }
-  },
-  {
-    id: "lyon-clb",
-    nom: "Lyon (CLB)",
-    etablissement: "Centre Léon Bérard",
-    ville: "Lyon",
-    lat: 45.74188, lng: 4.87756,
-    actif: true,
-    places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
+    places: { S1: { im: 0, rth: 2 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
   {
     id: "lyon-chu",
@@ -142,13 +133,13 @@ const CENTRES = [
     places: { S1: { im: 0, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
   {
-    id: "marseille-timone",
-    nom: "Marseille (Timone)",
-    etablissement: "AP-HM – Hôpital de la Timone",
-    ville: "Marseille",
-    lat: 43.29044, lng: 5.40205,
+    id: "lyon-clb",
+    nom: "Lyon (CLB)",
+    etablissement: "Centre Léon Bérard",
+    ville: "Lyon",
+    lat: 45.74188, lng: 4.87756,
     actif: true,
-    places: { S1: { im: 2, rth: 2 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
+    places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
   {
     id: "marseille-ipc",
@@ -158,6 +149,15 @@ const CENTRES = [
     lat: 43.26304, lng: 5.41085,
     actif: true,
     places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
+  },
+  {
+    id: "marseille-timone",
+    nom: "Marseille (Timone)",
+    etablissement: "AP-HM – Hôpital de la Timone",
+    ville: "Marseille",
+    lat: 43.29044, lng: 5.40205,
+    actif: true,
+    places: { S1: { im: 2, rth: 2 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
   {
     id: "martinique-chu",
@@ -268,15 +268,6 @@ const CENTRES = [
     places: { S1: { im: 2, rth: 0 }, S2: { im: 2, rth: 1 }, S3: { im: 0, rth: 1 } }
   },
   {
-    id: "paris-hegp",
-    nom: "Paris (HEGP)",
-    etablissement: "Hôpital Européen Georges-Pompidou (AP-HP)",
-    ville: "Paris",
-    lat: 48.83930, lng: 2.27537,
-    actif: true,
-    places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 1 }, S3: { im: 0, rth: 1 } }
-  },
-  {
     id: "paris-curie",
     nom: "Paris (Curie)",
     etablissement: "Institut Curie – site Paris (rue d'Ulm)",
@@ -286,13 +277,13 @@ const CENTRES = [
     places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
   {
-    id: "paris-salpetriere",
-    nom: "Paris (Salpêtrière)",
-    etablissement: "Hôpital Pitié-Salpêtrière (AP-HP)",
+    id: "paris-hegp",
+    nom: "Paris (HEGP)",
+    etablissement: "Hôpital Européen Georges-Pompidou (AP-HP)",
     ville: "Paris",
-    lat: 48.83708, lng: 2.36504,
+    lat: 48.83930, lng: 2.27537,
     actif: true,
-    places: { S1: { im: 0, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
+    places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 1 }, S3: { im: 0, rth: 1 } }
   },
   {
     id: "paris-kremlin-bicetre",
@@ -311,6 +302,15 @@ const CENTRES = [
     lat: 48.87341, lng: 2.36977,
     actif: true,
     places: { S1: { im: 1, rth: 0 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } }
+  },
+  {
+    id: "paris-salpetriere",
+    nom: "Paris (Salpêtrière)",
+    etablissement: "Hôpital Pitié-Salpêtrière (AP-HP)",
+    ville: "Paris",
+    lat: 48.83708, lng: 2.36504,
+    actif: true,
+    places: { S1: { im: 0, rth: 0 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
   {
     id: "poitiers-chu",
