@@ -59,6 +59,8 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .lien-site:hover { text-decoration: underline; }
 .btn-modif { border: 1px solid #e3e0d8; background: none; border-radius: 999px; padding: 4px 11px; font: 600 11px "Inter"; color: #5a6272; cursor: pointer; }
 .btn-modif:hover { border-color: #b9b4a6; color: #1b2a4a; }
+.btn-cmp.actif { background: #1b2a4a; border-color: #1b2a4a; color: #fff; }
+.btn-modif:disabled { opacity: .45; cursor: default; }
 .photos { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 12px; }
 .photos img { height: 86px; border-radius: 8px; display: block; }
 .tab { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0 0 12px; }
@@ -68,8 +70,9 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .tab .cur { background: #eef4fd; color: #1b2a4a; font-weight: 700; }
 .tab thead th.cur { background: #dcebfb; }
 .refs p { margin: 2px 0; font-size: 13px; }
-.sec h3 { margin: 18px 0 6px; font: 700 11px "Inter"; letter-spacing: .9px; text-transform: uppercase; color: #8a8f9c; padding-bottom: 4px; border-bottom: 1px solid #eceae3; }
-.sous-mod { margin: 10px 0 3px; font: 700 12px "Inter"; color: #1b2a4a; }
+.sec h3 { margin: 26px 0 8px; font: 700 11px "Inter"; letter-spacing: .9px; text-transform: uppercase; color: #8a8f9c; padding-bottom: 4px; border-bottom: 1px solid #eceae3; }
+.sous-mod { margin: 16px 0 5px; font: 700 12px "Inter"; color: #1b2a4a; }
+.sous-mod::before { content: "\25AA"; color: #a96a32; margin-right: 7px; font-size: 10px; }
 .texte.just { text-align: justify; }
 .texte u { text-decoration: underline; }
 .ssec-outils { display: flex; gap: 4px; }
@@ -80,8 +83,9 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .sec h4.sous-mod:first-child { margin-top: 0; }
 .texte { margin: 0; white-space: pre-line; font-size: 13px; line-height: 1.55; }
 .texte a { color: #1f6fd6; }
-.conds { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
-.conds dt { color: #5a6272; font-weight: 600; }
+.conds { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; margin: 0; font-size: 13px; }
+.conds dt { color: #3a4356; font-weight: 700; }
+.conds dt::before { content: "\25AA"; color: #a96a32; margin-right: 6px; font-size: 10px; }
 .conds dd { margin: 0; }
 .conds dd.texte { white-space: pre-line; }
 .sec .texte + .conds, .sec .conds + .texte, .mach-chips + .texte { margin-top: 8px; }
@@ -128,7 +132,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .gcm-nb { font: 600 11px "Inter"; color: #8a8f9c; }
 .btn-mini.gcm-pli { width: 24px; height: 24px; font-size: 10px; }
 .gcm-dest { max-width: 150px; font: 600 11px "Inter"; color: #5a6272; border: 1px solid #eceae3; border-radius: 8px; padding: 6px 6px; background: #fff; cursor: pointer; }
-.th-bloc { border: 1px solid #e3e0d8; border-radius: 12px; padding: 12px; margin: 0 0 12px; background: #fbfaf7; }
+.th-bloc { border: 1px solid #e3e0d8; border-radius: 12px; padding: 12px; margin: 0 0 18px; background: #fbfaf7; }
 .th-barre { display: flex; gap: 6px; align-items: center; margin: 0 0 4px; }
 .th-barre input.th-titre { flex: 1; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #5a6272; background: #fff; }
 .vis { display: flex; flex: none; align-items: center; cursor: pointer; }
@@ -137,7 +141,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .th-retablir:empty { display: none; }
 .th-re { border: 1px dashed #cfc9ba; border-radius: 999px; background: none; padding: 4px 11px; font: 600 11px "Inter"; color: #5a6272; cursor: pointer; }
 .th-re:hover { border-color: #a96a32; color: #a96a32; }
-.ssec-item { border: 1px solid #eceae3; border-radius: 10px; padding: 10px; margin: 8px 0 0; display: grid; gap: 6px; background: #fff; }
+.ssec-item { border: 1px solid #eceae3; border-radius: 10px; padding: 10px; margin: 11px 0 0; display: grid; gap: 6px; background: #fff; }
 .ssec-haut { display: flex; gap: 6px; }
 .ssec-haut input.ssec-titre { flex: 1; }
 .ssec-add { display: block; width: 100%; margin: 8px 0 0; border: 1px dashed #cfc9ba; border-radius: 10px; background: none; padding: 8px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
@@ -170,13 +174,40 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #mini-badge { font: 600 11px "Inter"; color: #e07c00; }
 #mini-carte { height: 106px; pointer-events: none; background: #f4f3ef; }
 
-#etat { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1300; max-width: calc(100vw - 28px); background: #a96a32; color: #fff; border-radius: 999px; padding: 9px 18px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); text-align: center; }
+#etat { position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 1300; max-width: calc(100vw - 28px); background: #a96a32; color: #fff; border-radius: 999px; padding: 9px 18px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); text-align: center; }
 #etat[hidden] { display: none; }
 .gc-sauv { margin: 18px 0 0; font-size: 11.5px; color: #b9b4a6; }
 .lien-sauv { border: 0; background: none; padding: 0; font: 600 11.5px "Inter"; color: #8a8f9c; cursor: pointer; text-decoration: underline; }
 .lien-sauv:hover { color: #1b2a4a; }
 
 .leaflet-control-attribution { font-size: 10px; }
+
+#cmp-barre { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1350; display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 28px); background: #1b2a4a; color: #fff; border-radius: 999px; padding: 8px 9px 8px 16px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); }
+#cmp-barre[hidden] { display: none; }
+#cmp-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#cmp-lancer { border: 0; border-radius: 999px; padding: 6px 12px; font: 700 12px "Inter"; cursor: pointer; background: #fff; color: #1b2a4a; }
+#cmp-lancer:disabled { opacity: .35; cursor: default; }
+#cmp-vider { border: 0; border-radius: 999px; width: 26px; height: 26px; font: 700 13px "Inter"; cursor: pointer; background: rgba(255,255,255,.14); color: #fff; }
+#comparaison { position: fixed; inset: 0; z-index: 1600; background: #fff; overflow-y: auto; }
+#comparaison[hidden] { display: none; }
+#cmp-fermer { position: fixed; top: 12px; right: 14px; z-index: 1610; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1efe9; color: #1b2a4a; font: 700 16px "Inter"; cursor: pointer; box-shadow: 0 4px 14px rgba(27,42,74,.18); }
+#cmp-fermer:hover { background: #e4e1d8; }
+#cmp-contenu { max-width: 1060px; margin: 0 auto; padding: 18px 22px 40px; }
+.cmp-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; align-items: start; }
+.cmp-tete { position: sticky; top: 0; background: #fff; padding: 6px 0 10px; border-bottom: 1px solid #eceae3; z-index: 5; }
+.cmp-tete .sur-titre { margin: 0; }
+.cmp-tete h2 { margin: 2px 0 2px; font: 700 19px "Sora", sans-serif; color: #1b2a4a; }
+.cmp-tete .etab { margin: 0; font-size: 12px; }
+.cmp-h3 { margin: 24px 0 8px; font: 700 11px "Inter"; letter-spacing: .9px; text-transform: uppercase; color: #8a8f9c; padding-bottom: 4px; border-bottom: 1px solid #eceae3; }
+.cmp-vide { color: #b9b4a6; font: 400 12px "Inter"; }
+.cmp-cel { min-width: 0; }
+#comparaison .mach-chip { cursor: default; }
+#comparaison .photos img { height: 72px; }
+@media (max-width: 640px) {
+  #cmp-contenu { padding: 14px 10px 30px; }
+  .cmp-grille { gap: 0 12px; }
+  .cmp-tete h2 { font-size: 15px; }
+}
 
 .coin-fermer { position: absolute; top: 7px; right: 7px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: #f1efe9; color: #5a6272; font: 700 12px "Inter"; line-height: 1; cursor: pointer; z-index: 8; padding: 0; }
 .coin-fermer:hover { background: #e4e1d8; color: #1b2a4a; }
@@ -250,6 +281,17 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 <button id="mini-ouvrir" class="flottant" type="button" hidden aria-label="Afficher l'encart Martinique">MQ</button>
 
 <div id="etat" hidden><span id="etat-txt"></span></div>
+
+<div id="cmp-barre" hidden>
+  <span id="cmp-txt"></span>
+  <button id="cmp-lancer" type="button">Comparer</button>
+  <button id="cmp-vider" type="button" aria-label="Vider la comparaison">&times;</button>
+</div>
+
+<section id="comparaison" hidden aria-label="Comparaison de deux centres">
+  <button id="cmp-fermer" type="button" aria-label="Fermer la comparaison">&times;</button>
+  <div id="cmp-contenu"></div>
+</section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
@@ -359,6 +401,7 @@ function titreStandard(cle) {
   return cle;
 }
 function themesDe(inf) {
+  if (inf && inf.themesAucun) return [];
   var std = THEMES.map(function (t) { return { cle: t[0], titre: t[1], masque: false }; });
   var base = [];
   if (inf && Array.isArray(inf.themes)) {
@@ -418,29 +461,22 @@ function lireHerite(inf, cle) {
   var v = m.length > 1 ? ((inf[m[0]] || {})[m[1]]) : inf[cle];
   return v || "";
 }
-function defautHerite(cle) {
-  var trouve = null;
-  Object.keys(CHAMPS_HERITES).forEach(function (b) {
-    CHAMPS_HERITES[b].forEach(function (d) { if (d.cle === cle) trouve = d; });
-  });
-  return trouve;
-}
 // Cases d'un bloc, dans l'ordre : sections enregistrées + champs hérités pas encore repris.
 function elementsDuBloc(inf, cleBloc, pourEdition, mods) {
   inf = inf || {};
   var libres = (inf.sections || []).filter(function (s) { return s.theme === cleBloc; });
-  var migre = false, faits = {};
-  libres.forEach(function (s) { if (s.cle) { migre = true; faits[s.cle] = true; } });
+  var migre = false;
+  libres.forEach(function (s) { if (s.cle) migre = true; });
+  if (migre) return libres;
   var herites = [];
   (CHAMPS_HERITES[cleBloc] || []).forEach(function (d) {
-    if (faits[d.cle]) return;
     var estMach = d.type === "machines";
     var val = estMach ? "" : lireHerite(inf, d.cle);
     var propose = estMach || (pourEdition && (d.toujours || (d.mod && mods && mods[d.mod])));
     if (!val && !propose) return;
     herites.push({ theme: cleBloc, cle: d.cle, titre: d.titre, texte: val, pos: d.pos, type: d.type || "texte", masque: false });
   });
-  return migre ? libres.concat(herites) : herites.concat(libres);
+  return herites.concat(libres);
 }
 
 function slugTheme(titre, prises) {
@@ -577,7 +613,7 @@ function serialiserEntree(id, f) {
     "    revisions: " + sCourt(f.revisions) + ",\n" +
     "    equipe: " + sEquipe(f.equipe) + ",\n" +
     "    ailleurs: " + sAilleurs(f.ailleurs) + ",\n" +
-    "    themes: " + sThemes(f.themes) + ",\n" +
+    "    themes: " + sThemes(f.themes) + (f.themesAucun ? ",\n    themesAucun: true" : "") + ",\n" +
     "    sections: " + sSections(f.sections) + ",\n" +
     "    machinesListe: " + sMachListe(f.machinesListe) + ",\n" +
     "    machines: " + sLong(f.machines) + ",\n" +
@@ -863,6 +899,26 @@ function serialiserFichierData(centres) {
     if (avecMails) x = lierMails(x);
     return '<p class="texte' + (just ? " just" : "") + '">' + x + "</p>";
   }
+  function rendreCaseMachines(s, inf, statique) {
+    var machs = machinesDuCentre(MACHINES, inf);
+    if (!machs.length) return "";
+    var h = "";
+    if (s.titre) h += '<h4 class="sous-mod">' + esc(s.titre) + "</h4>";
+    h += '<div class="mach-chips">' + machs.map(function (m) {
+      if (statique) return '<span class="mach-chip">' + esc(m.nom) + "</span>";
+      return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '" title="Voir les centres possédant cette machine">' + esc(m.nom) + "</button>";
+    }).join("") + "</div>";
+    return h;
+  }
+  function rendreCaseSolo(s, inf, avecMails, statique) {
+    if (s.masque) return "";
+    if (s.type === "machines") return rendreCaseMachines(s, inf, statique);
+    if (!s.texte) return "";
+    if (s.pos === "haut" || !s.titre) {
+      return (s.titre ? '<h4 class="sous-mod">' + esc(s.titre) + "</h4>" : "") + texteHtml(s.texte, avecMails, s.just);
+    }
+    return '<dl class="conds">' + "<dt>" + esc(s.titre) + "</dt>" + ddTexte(s.texte, avecMails, s.just) + "</dl>";
+  }
   function corpsTheme(c, inf, cle) {
     var els = elementsDuBloc(inf, cle, false, null);
     var avecMails = cle === "contacts";
@@ -873,13 +929,8 @@ function serialiserFichierData(centres) {
     els.forEach(function (s) {
       if (s.masque) return;
       if (s.type === "machines") {
-        var machs = machinesDuCentre(MACHINES, inf);
-        if (!machs.length) return;
         viderTampon();
-        if (s.titre) out += '<h4 class="sous-mod">' + esc(s.titre) + "</h4>";
-        out += '<div class="mach-chips">' + machs.map(function (m) {
-          return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '" title="Voir les centres possédant cette machine">' + esc(m.nom) + "</button>";
-        }).join("") + "</div>";
+        out += rendreCaseMachines(s, inf, false);
         return;
       }
       if (!s.texte) return;
@@ -901,7 +952,11 @@ function serialiserFichierData(centres) {
     h += '<p class="etab">' + esc(c.etablissement) + "</p>";
     h += '<p class="ligne-actions">';
     if (inf.site) h += '<a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a>';
-    h += '<button type="button" class="btn-modif">Modifier les infos</button></p>';
+    h += '<button type="button" class="btn-modif">Modifier les infos</button>';
+    var dansCmp = cmp.indexOf(c.id) !== -1;
+    var cmpPleine = !dansCmp && cmp.length >= 2;
+    h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? ' disabled title="Liste de comparaison pleine (2 centres) — retirez-en un d\u2019abord"' : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
+    h += '<button type="button" class="btn-modif btn-pdf">PDF</button></p>';
     if (inf.photos && inf.photos.length) {
       h += '<div class="photos">' + inf.photos.map(function (p) {
         return '<a href="' + esc(p) + '" target="_blank" rel="noopener"><img src="' + esc(p) + '" alt="' + esc(c.nom) + '" loading="lazy"></a>';
@@ -955,6 +1010,22 @@ function serialiserFichierData(centres) {
     niveau(null, 0);
     return h;
   }
+  function centresAvecMachineNom(nom) {
+    var out = CENTRES.filter(function (c) { return c.actif && centreALaMachine(c, nom); });
+    out.sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
+    return out;
+  }
+  function machineHtml(nom) {
+    var liste = centresAvecMachineNom(nom);
+    var h = '<p class="sur-titre">Machine</p><h2>' + esc(nom) + "</h2>";
+    h += '<p class="etab">' + liste.length + " centre" + (liste.length > 1 ? "s" : "") + " la possède" + (liste.length > 1 ? "nt" : "") + ".</p>";
+    if (!liste.length) h += '<p class="texte">Aucun centre actif ne possède cette machine.</p>';
+    else h += '<div class="mach-liste-centres">' + liste.map(function (c) {
+      return '<button type="button" class="res mach-res" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>";
+    }).join("") + "</div>";
+    return h;
+  }
+
   var catsRepliees = (function () {
     try { return JSON.parse(localStorage.getItem("eap-cats-repliees") || "{}"); } catch (e) { return {}; }
   })();
@@ -1055,6 +1126,7 @@ function serialiserFichierData(centres) {
   document.getElementById("fiche-fermer").addEventListener("click", fermerFiche);
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
+    if (!cmpOverlay.hidden) { fermerComparaison(); return; }
     if (placement) { annulerPlacement(); return; }
     if (editionEnAttente) { reprendreEdition(); return; }
     fermerFiche();
@@ -1150,7 +1222,7 @@ function serialiserFichierData(centres) {
   function retablirHtml(clesPresentes) {
     var manquants = THEMES.filter(function (t) { return clesPresentes.indexOf(t[0]) === -1; });
     if (!manquants.length) return "";
-    return "Rétablir\u00a0: " + manquants.map(function (t) {
+    return "Recréer\u00a0: " + manquants.map(function (t) {
       return '<button type="button" class="th-re" data-cle="' + t[0] + '">' + esc(t[1]) + "</button>";
     }).join("");
   }
@@ -1253,7 +1325,6 @@ function serialiserFichierData(centres) {
   }
 
   function lireForm(c) {
-    var inf0 = infosDe(c);
     function v(nom) {
       var el = ficheContenu.querySelector('[name="' + nom + '"]');
       return el ? el.value.trim() : "";
@@ -1275,7 +1346,6 @@ function serialiserFichierData(centres) {
     var sections = [];
     var machinesListe = [];
     var machinesItem = false;
-    var heritesVus = {};
     var cles = THEMES.map(function (t) { return t[0]; });
     ficheContenu.querySelectorAll("#themes-edit > .th-bloc").forEach(function (bloc) {
       var perso = bloc.dataset.perso === "1";
@@ -1297,7 +1367,7 @@ function serialiserFichierData(centres) {
           just: el.dataset.just === "1",
           masque: !el.querySelector(".ssec-vis").checked
         };
-        if (el.dataset.cle) { s.cle = el.dataset.cle; heritesVus[el.dataset.cle] = true; }
+        if (el.dataset.cle) s.cle = el.dataset.cle;
         if (el.dataset.type === "machines") {
           s.type = "machines";
           s.texte = "";
@@ -1308,18 +1378,11 @@ function serialiserFichierData(centres) {
         }
         var ta = el.querySelector(".ssec-texte");
         s.texte = ta ? ta.value.trim() : "";
-        var perso2 = false;
-        if (s.cle) {
-          var d = defautHerite(s.cle);
-          perso2 = !d || s.titre !== (d.titre || "") || s.pos !== (d.pos || "gauche") || s.masque || s.just;
-        }
-        if (s.texte || (s.titre && !s.cle) || perso2) sections.push(s);
+        sections.push(s);
       });
     });
-    // Un champ hérité repris dans une case n'est plus stocké à part (évite les doublons) ;
-    // si son bloc a été retiré de la fiche, sa valeur reste enregistrée telle quelle.
-    function herite(cle, val0) { return heritesVus[cle] ? "" : (val0 || ""); }
-    var eq0 = inf0.equipe || {};
+    // Ce qui n'est plus au formulaire a été supprimé manuellement (case ou bloc entier) :
+    // les champs hérités correspondants sont vidés — le journal de la base garde chaque état.
     return {
       data: {
         nom: v("c-nom") || c.nom || "Centre",
@@ -1338,18 +1401,18 @@ function serialiserFichierData(centres) {
         responsables: { im: v("resp-im"), rth: v("resp-rth") },
         site: v("site"),
         photos: v("photos").split("\n").map(function (s) { return s.trim(); }).filter(Boolean),
-        statut: herite("statut", inf0.statut),
-        salaire: herite("salaire", inf0.salaire),
-        retraite: herite("retraite", inf0.retraite),
-        chomage: herite("chomage", inf0.chomage),
-        conges: herite("conges", inf0.conges),
-        revisions: herite("revisions", inf0.revisions),
+        statut: "",
+        salaire: "",
+        retraite: "",
+        chomage: "",
+        conges: "",
+        revisions: "",
         equipe: {
-          physiciens: herite("equipe.physiciens", eq0.physiciens),
-          dosimetristes: herite("equipe.dosimetristes", eq0.dosimetristes),
-          techniciens: herite("equipe.techniciens", eq0.techniciens),
-          ingenieurs: herite("equipe.ingenieurs", eq0.ingenieurs),
-          autres: herite("equipe.autres", eq0.autres)
+          physiciens: "",
+          dosimetristes: "",
+          techniciens: "",
+          ingenieurs: "",
+          autres: ""
         },
         ailleurs: v("ailleurs").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).map(function (l) {
           var morceaux = l.split("|");
@@ -1360,18 +1423,199 @@ function serialiserFichierData(centres) {
           return e;
         }),
         themes: themesEgaleStandard(themes) ? [] : themes,
+        themesAucun: themes.length === 0,
         sections: sections,
-        machinesListe: machinesItem ? machinesListe : (Array.isArray(inf0.machinesListe) ? inf0.machinesListe : null),
-        machines: herite("machines", inf0.machines),
-        avisIm: herite("avisIm", inf0.avisIm),
-        avisRth: herite("avisRth", inf0.avisRth),
-        avis: herite("avis", inf0.avis),
-        avisAncIm: herite("avisAncIm", inf0.avisAncIm),
-        avisAncRth: herite("avisAncRth", inf0.avisAncRth),
-        avisAnciens: herite("avisAnciens", inf0.avisAnciens),
-        contacts: herite("contacts", inf0.contacts)
+        machinesListe: machinesItem ? machinesListe : [],
+        machines: "",
+        avisIm: "",
+        avisRth: "",
+        avis: "",
+        avisAncIm: "",
+        avisAncRth: "",
+        avisAnciens: "",
+        contacts: ""
       }
     };
+  }
+
+  // ——— Comparaison de deux centres ———
+  var cmp = [];
+  var cmpBarre = document.getElementById("cmp-barre");
+  var cmpTxt = document.getElementById("cmp-txt");
+  var cmpLancer = document.getElementById("cmp-lancer");
+  var cmpOverlay = document.getElementById("comparaison");
+  var cmpContenu = document.getElementById("cmp-contenu");
+  function majCmp() {
+    cmpBarre.hidden = cmp.length === 0;
+    cmpLancer.disabled = cmp.length < 2;
+    cmpTxt.textContent = "Comparaison\u00a0: " + cmp.map(function (id) {
+      var c = centreParId(id);
+      return c ? c.nom : id;
+    }).join(" · ");
+    if (!ficheEl.hidden && ficheMode === "vue" && vueCourante) afficherVue(vueCourante);
+  }
+  function basculerCmp(id) {
+    var i = cmp.indexOf(id);
+    if (i !== -1) cmp.splice(i, 1);
+    else if (cmp.length < 2) cmp.push(id);
+    majCmp();
+  }
+  function normNom(s) {
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+  }
+  function alignerParNom(lA, lB, nomDe) {
+    var lignes = [], prisB = {};
+    lA.forEach(function (a) {
+      var n = normNom(nomDe(a)), b = null;
+      for (var i = 0; i < lB.length; i++) {
+        if (!prisB[i] && normNom(nomDe(lB[i])) === n) { b = lB[i]; prisB[i] = true; break; }
+      }
+      lignes.push([a, b]);
+    });
+    lB.forEach(function (b, i) { if (!prisB[i]) lignes.push([null, b]); });
+    return lignes;
+  }
+  function cmpTeteHtml(c) {
+    var h = '<div class="cmp-tete"><p class="sur-titre">' + esc(c.ville) + "</p><h2>" + esc(c.nom) + "</h2>";
+    h += '<p class="etab">' + esc(c.etablissement) + "</p></div>";
+    return h;
+  }
+  function cmpProfilHtml(c) {
+    var inf = infosDe(c);
+    var h = tableauPlaces(c);
+    var resp = inf.responsables || {};
+    var refs = "";
+    if (resp.im) refs += "<p><strong>Resp. imagerie :</strong> " + esc(resp.im) + "</p>";
+    if (resp.rth) refs += "<p><strong>Resp. radiothérapie :</strong> " + esc(resp.rth) + "</p>";
+    if (refs) h += '<div class="refs">' + refs + "</div>";
+    if (inf.photos && inf.photos.length) {
+      h += '<div class="photos">' + inf.photos.map(function (p) {
+        return '<img src="' + esc(p) + '" alt="" loading="lazy">';
+      }).join("") + "</div>";
+    }
+    return h || '<span class="cmp-vide">—</span>';
+  }
+  function comparaisonHtml(cA, cB) {
+    var infA = infosDe(cA), infB = infosDe(cB);
+    var h = '<div class="cmp-grille">';
+    h += '<div class="cmp-cel">' + cmpTeteHtml(cA) + '</div><div class="cmp-cel">' + cmpTeteHtml(cB) + "</div>";
+    h += '<div class="cmp-cel">' + cmpProfilHtml(cA) + '</div><div class="cmp-cel">' + cmpProfilHtml(cB) + "</div>";
+    var thA = themesDe(infA).filter(function (t) { return !t.masque; });
+    var thB = themesDe(infB).filter(function (t) { return !t.masque; });
+    alignerParNom(thA, thB, function (t) { return estThemeStandard(t.cle) ? t.cle : t.titre; }).forEach(function (paire) {
+      var tA = paire[0], tB = paire[1];
+      var elsA = tA ? elementsDuBloc(infA, tA.cle, false, null).filter(function (s) { return !s.masque; }) : [];
+      var elsB = tB ? elementsDuBloc(infB, tB.cle, false, null).filter(function (s) { return !s.masque; }) : [];
+      var lignes = [];
+      alignerParNom(elsA, elsB, function (s) { return s.type === "machines" ? "\u0000machines" : s.titre; }).forEach(function (pc) {
+        var a = pc[0] ? rendreCaseSolo(pc[0], infA, tA && tA.cle === "contacts", true) : "";
+        var b = pc[1] ? rendreCaseSolo(pc[1], infB, tB && tB.cle === "contacts", true) : "";
+        if (a || b) lignes.push([a, b]);
+      });
+      if (!lignes.length) return;
+      h += '<div class="cmp-h3">' + esc(tA ? tA.titre : "") + '</div><div class="cmp-h3">' + esc(tB ? tB.titre : "") + "</div>";
+      lignes.forEach(function (l) {
+        h += '<div class="cmp-cel">' + (l[0] || '<span class="cmp-vide">—</span>') + '</div><div class="cmp-cel">' + (l[1] || '<span class="cmp-vide">—</span>') + "</div>";
+      });
+    });
+    h += "</div>";
+    return h;
+  }
+  function ouvrirComparaison() {
+    if (cmp.length < 2) return;
+    var cA = centreParId(cmp[0]), cB = centreParId(cmp[1]);
+    if (!cA || !cB) return;
+    cmpContenu.innerHTML = comparaisonHtml(cA, cB);
+    cmpOverlay.hidden = false;
+    cmpOverlay.scrollTop = 0;
+  }
+  function fermerComparaison() {
+    cmpOverlay.hidden = true;
+  }
+  cmpLancer.addEventListener("click", ouvrirComparaison);
+  document.getElementById("cmp-vider").addEventListener("click", function () { cmp = []; majCmp(); });
+  document.getElementById("cmp-fermer").addEventListener("click", fermerComparaison);
+
+  // ——— Export PDF d'une fiche (impression navigateur : « Enregistrer en PDF ») ———
+  var cadreImpression = null;
+  function ficheImprimableHtml(c) {
+    var inf = infosDe(c);
+    var h = '<p class="sur-titre">' + esc(c.ville) + "</p><h1>" + esc(c.nom) + "</h1>";
+    h += '<p class="etab">' + esc(c.etablissement) + "</p>";
+    if (inf.site) h += '<p class="site">' + esc(inf.site) + "</p>";
+    h += tableauPlaces(c);
+    var resp = inf.responsables || {};
+    if (resp.im) h += "<p><strong>Resp. imagerie :</strong> " + esc(resp.im) + "</p>";
+    if (resp.rth) h += "<p><strong>Resp. radiothérapie :</strong> " + esc(resp.rth) + "</p>";
+    if (inf.photos && inf.photos.length) {
+      h += '<div class="photos">' + inf.photos.map(function (p) {
+        return '<img src="' + esc(p) + '" alt="">';
+      }).join("") + "</div>";
+    }
+    if (inf.ailleurs && inf.ailleurs.length) {
+      h += '<section><h3>Formation en partie ailleurs</h3>' + inf.ailleurs.map(function (a) {
+        var cible = a.id ? centreParId(a.id) : null;
+        return '<p class="texte">\u2022 ' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : a.url ? " (" + esc(a.url) + ")" : "") + "</p>";
+      }).join("") + "</section>";
+    }
+    themesDe(inf).forEach(function (th) {
+      if (th.masque) return;
+      var els = elementsDuBloc(inf, th.cle, false, null).filter(function (s) { return !s.masque; });
+      var corps = els.map(function (s) { return rendreCaseSolo(s, inf, th.cle === "contacts", true); }).join("");
+      if (corps) h += "<section><h3>" + esc(th.titre) + "</h3>" + corps + "</section>";
+    });
+    return h;
+  }
+  function exporterPdf(c) {
+    var style = "body{font-family:system-ui,-apple-system,sans-serif;color:#2c3345;margin:26px 30px;font-size:12.5px;line-height:1.5}" +
+      "h1{margin:2px 0 4px;font-size:21px;color:#1b2a4a}" +
+      ".sur-titre{margin:0;font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#a96a32;font-weight:600}" +
+      ".etab{margin:0 0 2px;color:#5a6272}.site{margin:0 0 10px;color:#1f6fd6;font-size:11.5px}" +
+      "table{width:100%;border-collapse:collapse;font-size:11.5px;margin:10px 0}" +
+      "th,td{border:1px solid #d8d5cc;padding:4px 7px;text-align:center}" +
+      "thead th,tbody th{background:#f3f1ea;color:#5a6272}tbody th{text-align:left}.cur{background:#e8effc}" +
+      "h3{margin:20px 0 7px;font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:#8a8f9c;border-bottom:1px solid #d8d5cc;padding-bottom:3px}" +
+      ".sous-mod{margin:12px 0 3px;font-size:12px;font-weight:700;color:#1b2a4a}" +
+      ".sous-mod::before{content:'\\25AA';color:#a96a32;margin-right:6px;font-size:9px}" +
+      ".conds{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:4px 0}" +
+      ".conds dt{font-weight:700;color:#3a4356}.conds dt::before{content:'\\25AA';color:#a96a32;margin-right:5px;font-size:9px}.conds dd{margin:0}" +
+      ".texte{margin:2px 0;white-space:pre-line}.texte.just{text-align:justify}" +
+      ".mach-chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0}" +
+      ".mach-chip{border:1px solid #cfe0f7;background:#eef4fd;border-radius:999px;padding:3px 9px;font-size:11px;color:#1f6fd6}" +
+      ".photos{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.photos img{max-height:130px;max-width:47%;border-radius:6px}" +
+      "section{break-inside:avoid-page}";
+    var doc = "<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><title>" +
+      esc(c.nom + " — fiche EAP") + "</title><style>" + style + "</style></head><body>" +
+      ficheImprimableHtml(c) + "</body></html>";
+    if (cadreImpression) { try { document.body.removeChild(cadreImpression); } catch (e) {} }
+    var fr = document.createElement("iframe");
+    fr.style.position = "fixed";
+    fr.style.right = "0";
+    fr.style.bottom = "0";
+    fr.style.width = "0";
+    fr.style.height = "0";
+    fr.style.border = "0";
+    document.body.appendChild(fr);
+    cadreImpression = fr;
+    var d = fr.contentDocument;
+    d.open();
+    d.write(doc);
+    d.close();
+    var images = Array.prototype.slice.call(d.images);
+    var attentes = images.map(function (img) {
+      return new Promise(function (res) {
+        if (img.complete) return res();
+        img.addEventListener("load", res);
+        img.addEventListener("error", res);
+      });
+    });
+    var delai = new Promise(function (res) { setTimeout(res, 4000); });
+    Promise.race([Promise.all(attentes), delai]).then(function () {
+      try {
+        fr.contentWindow.focus();
+        fr.contentWindow.print();
+      } catch (e) {}
+    });
   }
 
   // ——— Placement d'un point sur la carte ———
@@ -1558,7 +1802,7 @@ function serialiserFichierData(centres) {
     if ((b = ev.target.closest(".th-re"))) {
       var cleRe = b.dataset.cle;
       document.getElementById("themes-edit").insertAdjacentHTML("beforeend",
-        blocThemeHtml(ficheCentre || {}, infosDe(ficheCentre || {}), { cle: cleRe, titre: titreStandard(cleRe), masque: false }));
+        blocThemeHtml(ficheCentre || {}, {}, { cle: cleRe, titre: titreStandard(cleRe), masque: false }));
       majRetablir();
       return;
     }
@@ -1620,6 +1864,8 @@ function serialiserFichierData(centres) {
       majMachSel(blocC);
       return;
     }
+    if (ev.target.closest(".btn-cmp") && ficheCentre) { basculerCmp(ficheCentre.id); return; }
+    if (ev.target.closest(".btn-pdf") && ficheCentre) { exporterPdf(ficheCentre); return; }
     if (ev.target.closest(".btn-modif") && ficheCentre) { ouvrirEdition(ficheCentre, false); return; }
     if (ev.target.closest(".btn-ann")) {
       if (vueCourante) afficherVue(vueCourante);
