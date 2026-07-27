@@ -1674,7 +1674,7 @@ function serialiserFichierData(centres) {
   });
   ficheContenu.addEventListener("click", function (ev) {
     if (ev.target.closest("#exp-data")) telecharger("data.js", serialiserFichierData(CENTRES));
-    else if (ev.target.closest("#exp-infos")) telecharger("infos.js", serialiserFichierInfos(MACHINES, INFOS, CENTRES.map(function (c) { return c.id; })));
+    else if (ev.target.closest("#exp-infos")) telecharger("infos.js", serialiserFichierInfos(MACHINES, CATS, INFOS, CENTRES.map(function (c) { return c.id; })));
   });
 
   function majMachSel(bloc) {
