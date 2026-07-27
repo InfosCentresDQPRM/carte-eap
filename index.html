@@ -25,8 +25,11 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #sel-mach { width: 100%; margin: 9px 0 0; padding: 7px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
 #filt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
 #filt-chips:empty { margin: 0; }
-#btn-centres, #btn-machines { width: 100%; margin: 9px 0 0; padding: 8px 9px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; text-align: left; }
-#btn-centres:hover, #btn-machines:hover { border-color: #b9b4a6; color: #1b2a4a; }
+#gestion-menu { position: fixed; right: 14px; bottom: 62px; z-index: 1150; width: 236px; background: rgba(255,255,255,.97); border: 1px solid #e3e0d8; border-radius: 12px; box-shadow: 0 10px 28px rgba(27,42,74,.18); padding: 8px; }
+#gestion-menu[hidden] { display: none; }
+#gm-centres, #gm-machines { display: block; width: 100%; margin: 0; padding: 9px 10px; border: 0; border-radius: 8px; background: none; font: 600 12px "Inter"; color: #2c3345; cursor: pointer; text-align: left; }
+#gm-centres:hover, #gm-machines:hover { background: #f1efe9; color: #1b2a4a; }
+#gestion-btn { bottom: 14px; right: 14px; font-size: 15px; }
 .legende { list-style: none; margin: 11px 0 0; padding: 0; display: grid; gap: 5px; font-size: 12px; }
 .legende li { display: flex; align-items: center; gap: 7px; }
 .puce { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.08); }
@@ -36,6 +39,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #stats { margin: 11px 0 0; font: 600 12px "Inter"; color: #1b2a4a; }
 
 .pin { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.28); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.pin.point { width: 20px; height: 20px; }
 .pin span { color: #fff; font: 700 12px "Inter"; }
 .pin.im { background: #1f6fd6; }
 .pin.rth { background: #e07c00; }
@@ -193,7 +197,8 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #cmp-fermer { position: fixed; top: 12px; right: 14px; z-index: 1610; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1efe9; color: #1b2a4a; font: 700 16px "Inter"; cursor: pointer; box-shadow: 0 4px 14px rgba(27,42,74,.18); }
 #cmp-fermer:hover { background: #e4e1d8; }
 #cmp-contenu { max-width: 1060px; margin: 0 auto; padding: 18px 22px 40px; }
-.cmp-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; align-items: start; }
+.cmp-grille { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; align-items: start; }
+.cmp-grille::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #ddd9cf; }
 .cmp-tete { position: sticky; top: 0; background: #fff; padding: 6px 0 10px; border-bottom: 1px solid #eceae3; z-index: 5; }
 .cmp-tete .sur-titre { margin: 0; }
 .cmp-tete h2 { margin: 2px 0 2px; font: 700 19px "Sora", sans-serif; color: #1b2a4a; }
@@ -234,6 +239,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
   <p class="sur-titre">DQPRM</p>
   <h1>Centres EAP</h1>
   <div class="seg" id="seg-sem">
+    <button type="button" data-val="tous">Tous</button>
     <button type="button" data-val="S1" class="actif">S1</button>
     <button type="button" data-val="S2">S2</button>
     <button type="button" data-val="S3">S3</button>
@@ -243,12 +249,15 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
     <button type="button" data-val="im">RX·MN</button>
     <button type="button" data-val="rth">RTH</button>
   </div>
+  <div class="seg" id="seg-taille">
+    <button type="button" data-val="tous" class="actif">Tous</button>
+    <button type="button" data-val="seul">Seul</button>
+    <button type="button" data-val="binome">Binôme</button>
+  </div>
   <select id="sel-mach" aria-label="Filtrer les centres par machine">
     <option value="">Filtrer par machine…</option>
   </select>
   <div id="filt-chips"></div>
-  <button id="btn-machines" type="button">Gérer les machines (catégories…)</button>
-  <button id="btn-centres" type="button">Gérer les centres (activer, créer…)</button>
   <ul class="legende">
     <li><span class="puce im"></span>Imagerie (RX / MN)</li>
     <li><span class="puce rth"></span>Radiothérapie</li>
@@ -277,6 +286,11 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
   <p class="mini-titre"><span id="mini-nom">Martinique</span><span id="mini-badge"></span></p>
   <div id="mini-carte"></div>
 </aside>
+<div id="gestion-menu" hidden>
+  <button id="gm-centres" type="button">Gérer les centres (activer, créer…)</button>
+  <button id="gm-machines" type="button">Gérer les machines (catégories…)</button>
+</div>
+<button id="gestion-btn" class="flottant" type="button" aria-label="Ouvrir la gestion">&#9881;</button>
 <button id="panneau-ouvrir" class="flottant" type="button" hidden aria-label="Afficher le panneau">&#9776;</button>
 <button id="mini-ouvrir" class="flottant" type="button" hidden aria-label="Afficher l'encart Martinique">MQ</button>
 
@@ -305,9 +319,32 @@ function placesFor(c, sem) {
   var src = (c.places && c.places[sem]) || {};
   return { im: src.im || 0, rth: src.rth || 0 };
 }
+function semestresDe(sem) {
+  return sem === "tous" ? ["S1", "S2", "S3"] : [sem];
+}
 function displayedPlaces(c, sem, mod) {
-  var p = placesFor(c, sem);
-  return { im: mod === "rth" ? 0 : p.im, rth: mod === "im" ? 0 : p.rth };
+  var im = 0, rth = 0;
+  semestresDe(sem).forEach(function (s) {
+    var p = placesFor(c, s);
+    im += p.im;
+    rth += p.rth;
+  });
+  return { im: mod === "rth" ? 0 : im, rth: mod === "im" ? 0 : rth };
+}
+function passeTaille(c, sem, mod, taille) {
+  if (!taille || taille === "tous") return true;
+  var sems = semestresDe(sem);
+  for (var i = 0; i < sems.length; i++) {
+    var p = placesFor(c, sems[i]);
+    var vals = [];
+    if (mod !== "rth") vals.push(p.im);
+    if (mod !== "im") vals.push(p.rth);
+    for (var j = 0; j < vals.length; j++) {
+      if (taille === "seul" && vals[j] === 1) return true;
+      if (taille === "binome" && vals[j] >= 2) return true;
+    }
+  }
+  return false;
 }
 function totalDisplayed(c, sem, mod) {
   var p = displayedPlaces(c, sem, mod);
@@ -372,12 +409,13 @@ function passeFiltreMachines(c, machs) {
   for (var i = 0; i < machs.length; i++) if (!centreALaMachine(c, machs[i])) return false;
   return true;
 }
-function computeStats(centres, sem, mod, machs) {
+function computeStats(centres, sem, mod, machs, taille) {
   var nc = 0, np = 0;
   for (var i = 0; i < centres.length; i++) {
     var c = centres[i];
     if (!c.actif) continue;
     if (!passeFiltreMachines(c, machs)) continue;
+    if (!passeTaille(c, sem, mod, taille)) continue;
     var t = totalDisplayed(c, sem, mod);
     if (t > 0) { nc += 1; np += t; }
   }
@@ -704,7 +742,7 @@ function serialiserFichierData(centres) {
   "use strict";
   if (typeof window === "undefined" || typeof L === "undefined") { return; }
 
-  var state = { sem: "S1", mod: "tous", machs: [] };
+  var state = { sem: "S1", mod: "tous", taille: "tous", machs: [] };
   var VUE_METRO = { centre: [46.6, 2.6], zoom: 6 };
   var VUE_MQ = { centre: [14.64, -61.02], zoom: 10 };
   // Fond sobre ET en français : Plan IGN « atténué » (tuiles vectorielles Géoplateforme, sans clé).
@@ -848,8 +886,11 @@ function serialiserFichierData(centres) {
   poserFond(miniCarte, false);
   var miniCouche = L.layerGroup().addTo(miniCarte);
 
-  function pastille(cls, n) {
-    return L.divIcon({ html: '<div class="pin ' + cls + '"><span>' + n + "</span></div>", className: "", iconSize: [30, 30], iconAnchor: [15, 15] });
+  function pastille(cls, texte) {
+    if (texte == null) {
+      return L.divIcon({ html: '<div class="pin point ' + cls + '"></div>', className: "", iconSize: [20, 20], iconAnchor: [10, 10] });
+    }
+    return L.divIcon({ html: '<div class="pin ' + cls + '"><span>' + texte + "</span></div>", className: "", iconSize: [30, 30], iconAnchor: [15, 15] });
   }
 
   var ficheEl = document.getElementById("fiche");
@@ -1611,10 +1652,13 @@ function serialiserFichierData(centres) {
     });
     var delai = new Promise(function (res) { setTimeout(res, 4000); });
     Promise.race([Promise.all(attentes), delai]).then(function () {
+      var ancienTitre = document.title;
+      document.title = c.nom + " — fiche EAP";
       try {
         fr.contentWindow.focus();
         fr.contentWindow.print();
       } catch (e) {}
+      setTimeout(function () { document.title = ancienTitre; }, 1500);
     });
   }
 
@@ -1981,10 +2025,16 @@ function serialiserFichierData(centres) {
   });
   remplirSelectMachines();
 
-  document.getElementById("btn-centres").addEventListener("click", function () {
+  var gestionMenu = document.getElementById("gestion-menu");
+  document.getElementById("gestion-btn").addEventListener("click", function () {
+    gestionMenu.hidden = !gestionMenu.hidden;
+  });
+  document.getElementById("gm-centres").addEventListener("click", function () {
+    gestionMenu.hidden = true;
     naviguer({ type: "gestion" }, ficheEl.hidden);
   });
-  document.getElementById("btn-machines").addEventListener("click", function () {
+  document.getElementById("gm-machines").addEventListener("click", function () {
+    gestionMenu.hidden = true;
     naviguer({ type: "gestion-machines" }, ficheEl.hidden);
   });
 
@@ -2003,7 +2053,7 @@ function serialiserFichierData(centres) {
     miniCouche.clearLayers();
     var cMQ = centreParId("martinique-chu");
     if (!om && cMQ && totaux.mq > 0) {
-      miniCouche.addLayer(L.marker([cMQ.lat, cMQ.lng], { icon: pastille(totaux.mqCls, totaux.mq), interactive: false }));
+      miniCouche.addLayer(L.marker([cMQ.lat, cMQ.lng], { icon: pastille(totaux.mqCls), interactive: false }));
     }
     miniCarte.setView(om ? VUE_METRO.centre : VUE_MQ.centre, om ? 4 : 8, { animate: false });
   }
@@ -2050,17 +2100,18 @@ function serialiserFichierData(centres) {
       var c = CENTRES[i];
       if (!c.actif) continue;
       if (!passeFiltreMachines(c, state.machs)) continue;
+      if (!passeTaille(c, state.sem, state.mod, state.taille)) continue;
       var total = totalDisplayed(c, state.sem, state.mod);
       if (total <= 0) continue;
       var cls = classify(c, state.sem, state.mod);
-      var m = L.marker([c.lat, c.lng], { icon: pastille(cls, total), title: c.nom });
+      var m = L.marker([c.lat, c.lng], { icon: pastille(cls), title: c.nom });
       m.on("click", (function (cc) { return function () { naviguer({ type: "centre", id: cc.id }, true); }; })(c));
       grappe.addLayer(m);
       if (c.id === "martinique-chu") { mqTotal = total; mqCls = cls; }
     }
-    var s = computeStats(CENTRES, state.sem, state.mod, state.machs);
+    var s = computeStats(CENTRES, state.sem, state.mod, state.machs, state.taille);
     totaux = { mq: mqTotal, hex: s.places - mqTotal, mqCls: mqCls };
-    document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + state.sem + ")";
+    document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + (state.sem === "tous" ? "S1\u2013S3" : state.sem) + ")";
     majEncart();
     if (!ficheEl.hidden && ficheMode !== "edition" && !editionEnAttente && vueCourante) afficherVue(vueCourante);
   }
@@ -2078,6 +2129,7 @@ function serialiserFichierData(centres) {
   }
   brancher("seg-sem", "sem");
   brancher("seg-mod", "mod");
+  brancher("seg-taille", "taille");
 
   render();
   chargerDepuisBase();
