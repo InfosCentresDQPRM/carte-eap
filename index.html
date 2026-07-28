@@ -34,7 +34,7 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #vue-bascule:hover { border-color: #b9b4a6; }
 #tableau { position: fixed; inset: 0; z-index: 900; background: #f4f1ea; overflow: auto; padding: 14px 14px 64px 288px; }
 #tableau[hidden] { display: none; }
-.tb { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e3e0d8; border-radius: 12px; overflow: hidden; font: 400 12.5px "Inter"; color: #2c3345; }
+.tb { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e3e0d8; border-radius: 12px; overflow: hidden; font: 400 12.5px "Inter"; color: #2c3345; }
 .tb th { position: sticky; top: 0; background: #f3f1ea; color: #5a6272; font: 700 11px "Inter"; letter-spacing: .5px; text-transform: uppercase; text-align: left; padding: 9px 11px; border-bottom: 1px solid #e3e0d8; z-index: 2; }
 .tb th.tb-c, .tb td.tb-c { text-align: center; }
 .tb th.tb-tri { cursor: pointer; user-select: none; }
@@ -48,8 +48,6 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .tb-im { background: #e3edfb; color: #1f5fae; }
 .tb-rth { background: #fdeeda; color: #c06a00; }
 .tb-vide { color: #cfc9ba; }
-.tb-machs { max-width: 320px; }
-.tb-machs .mach-chip { margin: 1px 2px 1px 0; }
 @media (max-width: 900px) {
   #tableau { padding-left: 14px; padding-top: 62px; }
 }
@@ -276,8 +274,18 @@ del.df-sup, ins.df-add { display: inline; }
 #mini-ouvrir { bottom: 14px; left: 14px; font-size: 11px; }
 
 @media (max-width: 640px) {
-  #panneau { width: 208px; padding: 12px 14px 12px; }
-  #panneau h1 { font-size: 18px; }
+  #panneau { width: 184px; padding: 9px 11px 9px; }
+  #panneau h1 { font-size: 16px; margin-top: 2px; }
+  .sur-titre { font-size: 9.5px; letter-spacing: 1.1px; }
+  #rech-zone { margin: 7px 0 0; }
+  #recherche { padding: 6px 8px; font-size: 11.5px; }
+  .seg { margin: 7px 0 0; padding: 2px; }
+  .seg button { padding: 5px 0; font-size: 11px; }
+  #sel-mach { margin: 7px 0 0; padding: 6px 7px; font-size: 11.5px; }
+  #filt-chips .chip { font-size: 10.5px; }
+  .legende { margin: 8px 0 0; gap: 3px; font-size: 11px; }
+  #stats { margin: 8px 0 0; font-size: 11px; }
+  .apropos-ligne { margin: 6px 0 0; }
   #fiche { top: 0; right: 0; bottom: 0; left: 0; width: auto; max-width: none; border-radius: 0; }
   #mini { width: 148px; }
   #mini-carte { height: 88px; }
@@ -2048,9 +2056,8 @@ function serialiserFichierData(centres) {
       ["S1", "S2", "S3"].map(function (sx) {
         return '<th class="tb-tri tb-c" data-col="' + sx + '">' + sx + fleche(sx) + "</th>";
       }).join("") +
-      "<th>Machines</th></tr></thead><tbody>";
+      "</tr></thead><tbody>";
     lignes.forEach(function (c) {
-      var machs = machinesDuCentre(MACHINES, infosDe(c));
       h += "<tr>";
       h += '<td><button type="button" class="tb-nom" data-id="' + esc(c.id) + '">' + esc(c.nom) + "</button></td>";
       h += "<td>" + esc(c.ville || "") + "</td>";
@@ -2061,9 +2068,7 @@ function serialiserFichierData(centres) {
         if (state.mod !== "im" && p.rth) cel += '<span class="tb-b tb-rth">' + p.rth + " rth</span>";
         h += '<td class="tb-c">' + (cel || '<span class="tb-vide">\u2014</span>') + "</td>";
       });
-      h += '<td class="tb-machs">' + machs.map(function (m) {
-        return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '">' + esc(m.nom) + "</button>";
-      }).join("") + "</td></tr>";
+      h += "</tr>";
     });
     h += "</tbody></table>";
     tableauEl.innerHTML = h;
@@ -2078,7 +2083,6 @@ function serialiserFichierData(centres) {
   tableauEl.addEventListener("click", function (ev) {
     var b;
     if ((b = ev.target.closest(".tb-nom"))) { naviguer({ type: "centre", id: b.dataset.id }, true); return; }
-    if ((b = ev.target.closest(".mach-chip"))) { naviguer({ type: "machine", nom: b.dataset.mach }, true); return; }
     if ((b = ev.target.closest("th.tb-tri"))) {
       var col = b.dataset.col;
       if (triTable.col === col) triTable.sens = -triTable.sens;
@@ -2557,7 +2561,7 @@ function serialiserFichierData(centres) {
     carte.once("moveend", function () {
       naviguer({ type: "centre", id: c.id }, true);
     });
-    carte.flyTo([c.lat, c.lng], Math.max(typeof carte.getZoom === "function" ? carte.getZoom() : 10, 15), { duration: 1.1 });
+    carte.flyTo([c.lat, c.lng], Math.max(typeof carte.getZoom === "function" ? carte.getZoom() : 10, 15), { duration: 2.2 });
   }
   rechEl.addEventListener("input", majRech);
   rechEl.addEventListener("focus", majRech);
