@@ -226,6 +226,7 @@ del.df-sup, ins.df-add { display: inline; }
 .apercu-bandeau button { border: 0; border-radius: 8px; background: #1f6fd6; color: #fff; font: 700 11.5px "Inter"; padding: 6px 10px; cursor: pointer; }
 .apercu-bandeau button:hover { background: #185cb3; }
 .rech-item.rech-actif { background: #eef4fd; color: #1f6fd6; }
+mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 1px; }
 .btn-ann:hover { background: #e4e1d8; }
 
 #placement { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1400; display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 28px); background: #1b2a4a; color: #fff; border-radius: 999px; padding: 8px 9px 8px 16px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); }
@@ -249,6 +250,7 @@ del.df-sup, ins.df-add { display: inline; }
 .lien-sauv:hover { color: #1b2a4a; }
 
 .leaflet-control-attribution { font-size: 10px; }
+.ctrl-recentrer { font-size: 17px; }
 
 #cmp-barre { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1350; display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 28px); background: #1b2a4a; color: #fff; border-radius: 999px; padding: 8px 9px 8px 16px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); }
 #cmp-barre[hidden] { display: none; }
@@ -1234,6 +1236,24 @@ function serialiserFichierData(centres) {
 
   var carte = L.map("carte", { center: VUE_METRO.centre, zoom: VUE_METRO.zoom, zoomControl: false, minZoom: 3, maxZoom: 19 });
   L.control.zoom({ position: "topright" }).addTo(carte);
+  var CtrlRecentrer = L.Control.extend({
+    options: { position: "topright" },
+    onAdd: function () {
+      var div = L.DomUtil.create("div", "leaflet-bar");
+      var a = L.DomUtil.create("a", "ctrl-recentrer", div);
+      a.href = "#";
+      a.title = "Revenir à la vue d'ensemble";
+      a.setAttribute("aria-label", "Revenir à la vue d'ensemble");
+      a.innerHTML = "\u2316";
+      L.DomEvent.on(a, "click", function (e) {
+        L.DomEvent.stop(e);
+        var v = auxAntilles() ? VUE_MQ : VUE_METRO;
+        carte.flyTo(v.centre, v.zoom, { duration: 1.2 });
+      });
+      return div;
+    }
+  });
+  carte.addControl(new CtrlRecentrer());
   poserFond(carte, true);
 
   var grappe = L.markerClusterGroup({
@@ -2787,6 +2807,7 @@ function serialiserFichierData(centres) {
   function choisirRech(id) {
     var c = centreParId(id);
     if (!c) return;
+    var mots = normNom(rechEl.value).split(/\s+/).filter(Boolean);
     rechEl.value = c.nom;
     fermerRech();
     rechEl.blur();
@@ -2794,6 +2815,7 @@ function serialiserFichierData(centres) {
     if (!enTableau) {
       carte.once("moveend", function () {
         naviguer({ type: "centre", id: c.id }, true);
+        surlignerFiche(mots);
       });
     }
     carte.flyTo([c.lat, c.lng], Math.max(typeof carte.getZoom === "function" ? carte.getZoom() : 10, 15), { duration: 2.2 });
@@ -2806,6 +2828,62 @@ function serialiserFichierData(centres) {
         setTimeout(function () { tr.classList.remove("tb-cible"); }, 2400);
       }
     }
+  }
+  // Surlignage des mots recherchés dans la fiche ouverte ; un clic l'efface.
+  function cleTexte(s) {
+    return Array.from(s).map(function (ch) {
+      var n = ch.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return n.length === 1 ? n : ch.toLowerCase();
+    }).join("");
+  }
+  function retirerSurlignage() {
+    ficheContenu.querySelectorAll("mark.surl").forEach(function (m) {
+      m.replaceWith(m.ownerDocument.createTextNode(m.textContent));
+    });
+  }
+  function surlignerFiche(mots) {
+    if (!mots || !mots.length) return;
+    var marches = document.createTreeWalker(ficheContenu, 4);
+    var noeuds = [];
+    while (marches.nextNode()) noeuds.push(marches.currentNode);
+    var pose = false;
+    noeuds.forEach(function (nd) {
+      var txt = nd.nodeValue;
+      if (!txt || !txt.trim()) return;
+      var cle = cleTexte(txt);
+      var zones = [];
+      mots.forEach(function (m) {
+        var i = 0;
+        while ((i = cle.indexOf(m, i)) !== -1) { zones.push([i, i + m.length]); i += 1; }
+      });
+      if (!zones.length) return;
+      zones.sort(function (a, b) { return a[0] - b[0]; });
+      var fusion = [];
+      zones.forEach(function (z) {
+        var d = fusion[fusion.length - 1];
+        if (d && z[0] <= d[1]) d[1] = Math.max(d[1], z[1]);
+        else fusion.push([z[0], z[1]]);
+      });
+      var frag = nd.ownerDocument.createDocumentFragment();
+      var cur = 0;
+      fusion.forEach(function (z) {
+        if (z[0] > cur) frag.appendChild(nd.ownerDocument.createTextNode(txt.slice(cur, z[0])));
+        var mk = nd.ownerDocument.createElement("mark");
+        mk.className = "surl";
+        mk.textContent = txt.slice(z[0], z[1]);
+        frag.appendChild(mk);
+        cur = z[1];
+      });
+      if (cur < txt.length) frag.appendChild(nd.ownerDocument.createTextNode(txt.slice(cur)));
+      nd.parentNode.replaceChild(frag, nd);
+      pose = true;
+    });
+    if (!pose) return;
+    var premier = ficheContenu.querySelector("mark.surl");
+    if (premier && premier.scrollIntoView) premier.scrollIntoView({ block: "center", behavior: "smooth" });
+    setTimeout(function () {
+      document.addEventListener("click", retirerSurlignage, { once: true, capture: true });
+    }, 30);
   }
   rechEl.addEventListener("input", majRech);
   rechEl.addEventListener("focus", majRech);
