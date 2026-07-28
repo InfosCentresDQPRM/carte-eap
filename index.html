@@ -220,6 +220,12 @@ del.df-sup, ins.df-add { display: inline; }
 .btn-val { flex: 1; border: 0; border-radius: 10px; padding: 10px 0; background: #1b2a4a; color: #fff; font: 700 13px "Inter"; cursor: pointer; }
 .btn-ann { flex: 1; border: 0; border-radius: 10px; padding: 10px 0; background: #f1efe9; color: #5a6272; font: 700 13px "Inter"; cursor: pointer; }
 .btn-val:hover { background: #24406e; }
+.btn-apercu { flex: none; border: 1px solid #cfe0f7; border-radius: 10px; padding: 10px 14px; background: #eef4fd; color: #1f6fd6; font: 700 13px "Inter"; cursor: pointer; }
+.btn-apercu:hover { background: #dcebfb; }
+.apercu-bandeau { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -4px -4px 12px; padding: 9px 12px; background: #eef4fd; border: 1px solid #cfe0f7; border-radius: 10px; font: 600 12px "Inter"; color: #1f6fd6; }
+.apercu-bandeau button { border: 0; border-radius: 8px; background: #1f6fd6; color: #fff; font: 700 11.5px "Inter"; padding: 6px 10px; cursor: pointer; }
+.apercu-bandeau button:hover { background: #185cb3; }
+.rech-item.rech-actif { background: #eef4fd; color: #1f6fd6; }
 .btn-ann:hover { background: #e4e1d8; }
 
 #placement { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1400; display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 28px); background: #1b2a4a; color: #fff; border-radius: 999px; padding: 8px 9px 8px 16px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); }
@@ -1316,7 +1322,7 @@ function serialiserFichierData(centres) {
     }
     return '<dl class="conds">' + "<dt>" + esc(s.titre) + "</dt>" + ddTexte(s.texte, avecMails, s.just) + "</dl>";
   }
-  function corpsTheme(c, inf, cle) {
+  function corpsTheme(c, inf, cle, statique) {
     var els = elementsDuBloc(inf, cle, false, null);
     var avecMails = cle === "contacts";
     var out = "", tampon = "";
@@ -1327,7 +1333,7 @@ function serialiserFichierData(centres) {
       if (s.masque) return;
       if (s.type === "machines") {
         viderTampon();
-        out += rendreCaseMachines(s, inf, false);
+        out += rendreCaseMachines(s, inf, !!statique);
         return;
       }
       if (!s.texte) return;
@@ -1343,10 +1349,17 @@ function serialiserFichierData(centres) {
     return out;
   }
 
-  function ficheHtml(c) {
-    var inf = infosDe(c);
+  function ficheHtml(c, infBrouillon, apercu) {
+    var inf = infBrouillon || infosDe(c);
     var h = '<p class="sur-titre">' + esc(c.ville) + "</p><h2>" + esc(c.nom) + "</h2>";
     h += '<p class="etab">' + esc(c.etablissement) + "</p>";
+    if (apercu) {
+      themesDe(inf).forEach(function (th) {
+        if (th.masque) return;
+        h += secTheme(th.titre, corpsTheme(c, inf, th.cle, true));
+      });
+      return h;
+    }
     h += '<p class="ligne-actions">';
     if (inf.site) h += '<a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a>';
     h += '<button type="button" class="btn-modif">Modifier les infos</button>';
@@ -1528,6 +1541,7 @@ function serialiserFichierData(centres) {
     vueCourante = null;
     histo = [];
     editionEnAttente = null;
+    apercuEdition = null;
     ficheEl.hidden = true;
     majRetour();
   }
@@ -1535,6 +1549,7 @@ function serialiserFichierData(centres) {
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if (!aproposEl.hidden) { aproposEl.hidden = true; return; }
+    if (apercuEdition) { fermerApercu(); return; }
     if (!cmpOverlay.hidden) { fermerComparaison(); return; }
     if (placement) { annulerPlacement(); return; }
     if (editionEnAttente) { reprendreEdition(); return; }
@@ -1680,7 +1695,7 @@ function serialiserFichierData(centres) {
     h += '<div id="themes-edit">' + themesDe(inf).map(function (th) { return blocThemeHtml(c, inf, th); }).join("") + "</div>";
     h += '<button type="button" id="th-add">+ Ajouter un bloc (thème)</button>';
     h += '<div id="th-retablir" class="th-retablir">' + retablirHtml(themesDe(inf).map(function (t) { return t.cle; })) + "</div>";
-    h += '<div class="form-btns"><button type="button" class="btn-val">' + (creation ? "Créer le centre" : "Valider") + '</button><button type="button" class="btn-ann">Annuler</button></div>';
+    h += '<div class="form-btns"><button type="button" class="btn-val">' + (creation ? "Créer le centre" : "Valider") + '</button><button type="button" class="btn-apercu">Aperçu</button><button type="button" class="btn-ann">Annuler</button></div>';
     h += "</div>";
     return h;
   }
@@ -1691,12 +1706,70 @@ function serialiserFichierData(centres) {
     ficheMode = "edition";
     editionMajRef = c.id ? (MAJ_CONNUES[c.id] || null) : null;
     btnRetour.hidden = true;
+    var br = !creation && c.id ? lireBrouillon(c.id) : null;
+    if (br && br.b) {
+      var reprendre = confirm("Un brouillon non validé du " + quandLisible(new Date(br.quand).toISOString()) + " existe pour cette fiche.\nOK : reprendre ce brouillon. Annuler : repartir de la fiche actuelle.");
+      if (reprendre) {
+        var cB = Object.assign({}, c, br.b.data);
+        ficheContenu.innerHTML = formHtml(cB, false, br.b.infos);
+        ficheEl.hidden = false;
+        ficheContenu.scrollTop = 0;
+        return;
+      }
+      effacerBrouillon(c.id);
+    }
     ficheContenu.innerHTML = formHtml(c, creation);
     ficheEl.hidden = false;
     ficheContenu.scrollTop = 0;
   }
+  // Brouillon de secours : les saisies d'édition sont conservées dans le navigateur
+  // et proposées à la réouverture si elles n'ont pas été validées.
+  function cleBrouillon(id) { return "eap-brouillon-" + id; }
+  function sauverBrouillon() {
+    if (ficheMode !== "edition" || !ficheCentre || ficheCentre.id === null) return;
+    try {
+      localStorage.setItem(cleBrouillon(ficheCentre.id), JSON.stringify({ quand: Date.now(), b: lireForm(ficheCentre) }));
+    } catch (e) {}
+  }
+  function lireBrouillon(id) {
+    try {
+      var brut = localStorage.getItem(cleBrouillon(id));
+      return brut ? JSON.parse(brut) : null;
+    } catch (e) { return null; }
+  }
+  function effacerBrouillon(id) {
+    try { localStorage.removeItem(cleBrouillon(id)); } catch (e) {}
+  }
+  (function purgerBrouillons() {
+    try {
+      var seuil = Date.now() - 7 * 24 * 3600 * 1000;
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("eap-brouillon-") === 0) {
+          var v = JSON.parse(localStorage.getItem(k) || "{}");
+          if (!v.quand || v.quand < seuil) localStorage.removeItem(k);
+        }
+      }
+    } catch (e) {}
+  })();
+  var brouillonMinuterie = null;
+  function brouillonBientot() {
+    clearTimeout(brouillonMinuterie);
+    brouillonMinuterie = setTimeout(sauverBrouillon, 800);
+  }
+  ficheContenu.addEventListener("input", function () {
+    if (ficheMode === "edition") brouillonBientot();
+  });
+  ficheContenu.addEventListener("click", function () {
+    if (ficheMode === "edition") brouillonBientot();
+  });
+  ficheContenu.addEventListener("change", function () {
+    if (ficheMode === "edition") brouillonBientot();
+  });
   // Édition mise de côté le temps de créer une machine, restaurée ensuite avec son brouillon.
   var editionEnAttente = null;
+  // Aperçu de la fiche telle qu'elle s'afficherait, sans rien enregistrer.
+  var apercuEdition = null;
   function ouvrirCreationMachine() {
     if (!ficheCentre) return;
     editionEnAttente = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
@@ -1706,10 +1779,7 @@ function serialiserFichierData(centres) {
     ficheContenu.innerHTML = gestionMachinesHtml();
     ficheContenu.scrollTop = 0;
   }
-  function reprendreEdition() {
-    if (!editionEnAttente) return;
-    var e = editionEnAttente;
-    editionEnAttente = null;
+  function restaurerEdition(e) {
     ficheCentre = e.centre;
     ficheMode = "edition";
     btnRetour.hidden = true;
@@ -1717,6 +1787,30 @@ function serialiserFichierData(centres) {
     ficheContenu.innerHTML = formHtml(cB, e.creation, e.brouillon.infos);
     ficheEl.hidden = false;
     ficheContenu.scrollTop = 0;
+  }
+  function reprendreEdition() {
+    if (!editionEnAttente) return;
+    var e = editionEnAttente;
+    editionEnAttente = null;
+    restaurerEdition(e);
+  }
+  function ouvrirApercu() {
+    if (!ficheCentre) return;
+    apercuEdition = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
+    ficheMode = "apercu";
+    btnRetour.hidden = true;
+    var cB = Object.assign({}, apercuEdition.centre, apercuEdition.brouillon.data);
+    var h = '<div class="apercu-bandeau"><span>Aperçu — rien n\u2019est enregistré</span><button type="button" id="apercu-retour">\u2190 Revenir à l\u2019édition</button></div>';
+    h += ficheHtml(cB, apercuEdition.brouillon.infos, true);
+    ficheContenu.innerHTML = h;
+    ficheEl.hidden = false;
+    ficheContenu.scrollTop = 0;
+  }
+  function fermerApercu() {
+    if (!apercuEdition) return;
+    var e = apercuEdition;
+    apercuEdition = null;
+    restaurerEdition(e);
   }
   function rafraichirVueMachines() {
     if (editionEnAttente) ficheContenu.innerHTML = gestionMachinesHtml();
@@ -2265,6 +2359,8 @@ function serialiserFichierData(centres) {
       return;
     }
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
+    if (ev.target.closest(".btn-apercu") && ficheCentre) { ouvrirApercu(); return; }
+    if (ev.target.closest("#apercu-retour")) { fermerApercu(); return; }
     if (ev.target.closest(".mach-va-creer")) { ouvrirCreationMachine(); return; }
     if (ev.target.closest("#gcm-retour-edition")) { reprendreEdition(); return; }
     if ((b = ev.target.closest(".gcm-pli"))) {
@@ -2456,6 +2552,7 @@ function serialiserFichierData(centres) {
         }
         appliquerData(c, lu.data);
         INFOS[c.id] = lu.infos;
+        effacerBrouillon(c.id);
         sauverCentre(c);
         vueCourante = { type: "centre", id: c.id };
         histo = [];
@@ -2637,12 +2734,49 @@ function serialiserFichierData(centres) {
     rechListe.hidden = true;
     rechListe.innerHTML = "";
   }
+  // Texte de recherche d'une fiche : identité + tout le contenu affiché (cases, machines).
+  var cacheTexteFiche = {};
+  function texteFiche(c) {
+    if (cacheTexteFiche[c.id]) return cacheTexteFiche[c.id];
+    var inf = infosDe(c);
+    var morceaux = [c.nom, c.ville, c.etablissement];
+    var resp = inf.responsables || {};
+    morceaux.push(resp.im, resp.rth, inf.site);
+    (inf.ailleurs || []).forEach(function (x) { morceaux.push(x.texte); });
+    machinesDuCentre(MACHINES, inf).forEach(function (m) { morceaux.push(m.nom); });
+    themesDe(inf).forEach(function (th) {
+      if (th.masque) return;
+      morceaux.push(th.titre);
+      elementsDuBloc(inf, th.cle, false, null).forEach(function (s) {
+        if (s.masque || s.type === "machines") return;
+        morceaux.push(s.titre, s.texte);
+      });
+    });
+    var txt = normNom(morceaux.filter(Boolean).join(" "));
+    cacheTexteFiche[c.id] = txt;
+    return txt;
+  }
+  var rechSel = -1;
+  function marquerRechSel() {
+    var items = rechListe.querySelectorAll(".rech-item");
+    items.forEach(function (el, i) { el.classList.toggle("rech-actif", i === rechSel); });
+    if (rechSel >= 0 && items[rechSel] && items[rechSel].scrollIntoView) items[rechSel].scrollIntoView({ block: "nearest" });
+  }
   function majRech() {
     var q = normNom(rechEl.value);
+    rechSel = -1;
     if (q.length < 2) { fermerRech(); return; }
-    var trouves = CENTRES.filter(function (c) {
-      return centreVisible(c) && (normNom(c.nom).indexOf(q) !== -1 || normNom(c.ville).indexOf(q) !== -1);
-    }).sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); }).slice(0, 8);
+    var mots = q.split(/\s+/).filter(Boolean);
+    var directs = [], contenus = [];
+    CENTRES.forEach(function (c) {
+      if (!centreVisible(c)) return;
+      var ident = normNom((c.nom || "") + " " + (c.ville || ""));
+      if (mots.every(function (m) { return ident.indexOf(m) !== -1; })) { directs.push(c); return; }
+      var txt = texteFiche(c);
+      if (mots.every(function (m) { return txt.indexOf(m) !== -1; })) contenus.push(c);
+    });
+    var alpha = function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); };
+    var trouves = directs.sort(alpha).concat(contenus.sort(alpha)).slice(0, 8);
     if (!trouves.length) { fermerRech(); return; }
     rechListe.innerHTML = trouves.map(function (c) {
       return '<button type="button" class="rech-item" data-id="' + esc(c.id) + '">' + esc(c.nom) + " <span>" + esc(c.ville) + "</span></button>";
@@ -2675,7 +2809,24 @@ function serialiserFichierData(centres) {
   rechEl.addEventListener("input", majRech);
   rechEl.addEventListener("focus", majRech);
   rechEl.addEventListener("keydown", function (ev) {
-    if (ev.key === "Enter") { ev.preventDefault(); return; }
+    var items = rechListe.hidden ? [] : rechListe.querySelectorAll(".rech-item");
+    if (ev.key === "ArrowDown" && items.length) {
+      ev.preventDefault();
+      rechSel = Math.min(rechSel + 1, items.length - 1);
+      marquerRechSel();
+      return;
+    }
+    if (ev.key === "ArrowUp" && items.length) {
+      ev.preventDefault();
+      rechSel = Math.max(rechSel - 1, -1);
+      marquerRechSel();
+      return;
+    }
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      if (rechSel >= 0 && items[rechSel]) choisirRech(items[rechSel].dataset.id);
+      return;
+    }
     if (ev.key === "Escape") { fermerRech(); rechEl.blur(); ev.stopPropagation(); }
   });
   rechListe.addEventListener("mousedown", function (ev) {
@@ -2762,9 +2913,10 @@ function serialiserFichierData(centres) {
     var s = computeStats(CENTRES, state.sem, state.mod, state.machs, state.taille);
     totaux = { mq: mqTotal, hex: s.places - mqTotal, mqCls: mqCls };
     document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + (state.sem === "tous" ? "S1\u2013S3" : state.sem) + ")";
+    cacheTexteFiche = {};
     majEncart();
     rendreTableau();
-    if (!ficheEl.hidden && ficheMode !== "edition" && !editionEnAttente && vueCourante) afficherVue(vueCourante);
+    if (!ficheEl.hidden && ficheMode !== "edition" && ficheMode !== "apercu" && !editionEnAttente && vueCourante) afficherVue(vueCourante);
   }
 
   function brancher(idSeg, cle) {
