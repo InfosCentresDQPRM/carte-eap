@@ -62,6 +62,10 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #rech-zone { position: relative; margin: 11px 0 0; }
 #recherche { width: 100%; padding: 8px 10px; border: 1px solid #e3e0d8; border-radius: 10px; background: #fff; font: 600 12px "Inter"; color: #2c3345; }
 #recherche::placeholder { color: #8a8f9c; font-weight: 600; }
+#recherche { padding-right: 30px; }
+#rech-vider { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 22px; height: 22px; border: 0; border-radius: 50%; background: #f1efe9; color: #5a6272; font: 700 13px "Inter"; line-height: 1; cursor: pointer; }
+#rech-vider:hover { background: #e4e1d8; color: #1b2a4a; }
+#rech-vider[hidden] { display: none; }
 #rech-liste { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30; background: #fff; border: 1px solid #e3e0d8; border-radius: 10px; box-shadow: 0 10px 28px rgba(27,42,74,.16); max-height: 236px; overflow-y: auto; padding: 4px; }
 #rech-liste[hidden] { display: none; }
 .rech-item { display: block; width: 100%; text-align: left; border: 0; border-radius: 7px; background: none; padding: 8px 9px; font: 600 12px "Inter"; color: #1b2a4a; cursor: pointer; }
@@ -319,6 +323,7 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
   <h1>Centres EAP</h1>
   <div id="rech-zone">
     <input id="recherche" type="text" autocomplete="off" placeholder="Rechercher un centre…" aria-label="Rechercher un centre">
+    <button id="rech-vider" type="button" aria-label="Effacer la recherche" hidden>&times;</button>
     <div id="rech-liste" hidden></div>
   </div>
   <div class="seg" id="seg-sem">
@@ -855,15 +860,22 @@ function serialiserFichierData(centres) {
   // Secours raster si MapLibre indisponible (sobre mais libellés partiellement en anglais) :
   var TUILES_SECOURS = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
   var ATTRIB_SECOURS = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
-  function poserFond(map, avecAttribution) {
+  var TUILES_SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+  var ATTRIB_SAT = "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics";
+  function poserFond(map, avecAttribution, avecSelecteur) {
+    var plan = null;
     if (L.maplibreGL && window.maplibregl && maplibregl.supported !== false) {
       try {
-        L.maplibreGL({ style: STYLE_VECTEUR }).addTo(map);
+        plan = L.maplibreGL({ style: STYLE_VECTEUR });
         if (avecAttribution && map.attributionControl) map.attributionControl.addAttribution(ATTRIB);
-        return;
-      } catch (e) {}
+      } catch (e) { plan = null; }
     }
-    L.tileLayer(TUILES_SECOURS, { subdomains: "abcd", maxZoom: 19, attribution: avecAttribution ? ATTRIB_SECOURS : "" }).addTo(map);
+    if (!plan) plan = L.tileLayer(TUILES_SECOURS, { subdomains: "abcd", maxZoom: 19, attribution: avecAttribution ? ATTRIB_SECOURS : "" });
+    plan.addTo(map);
+    if (avecSelecteur && L.control.layers) {
+      var sat = L.tileLayer(TUILES_SAT, { maxZoom: 19, attribution: avecAttribution ? ATTRIB_SAT : "" });
+      L.control.layers({ "Plan": plan, "Satellite": sat }, null, { position: "topright" }).addTo(map);
+    }
   }
   // Ville depuis la position (géocodage inverse Géoplateforme, sans clé, silencieux en cas d'échec).
   function villeDepuis(latlng, cb) {
@@ -1048,8 +1060,17 @@ function serialiserFichierData(centres) {
       }
     });
   }
-  function historiqueHtml(entrees, cible) {
-    var h = '<p class="sur-titre">Journal</p><h2>Historique des modifications</h2>';
+  function ouvrirHistoriqueFiche(id) {
+    var c = centreParId(id);
+    apiLire("journal?select=id,quand,cible,cle&cible=eq.centres&cle=eq." + encodeURIComponent(id) + "&order=id.desc&limit=50", function (lignes) {
+      if (!lignes) { alert("Historique indisponible pour le moment."); return; }
+      naviguer({ type: "historique", entrees: lignes, filtre: c ? c.nom : id });
+    });
+  }
+  function historiqueHtml(entrees, cible, filtre) {
+    var h = filtre
+      ? '<p class="sur-titre">Journal \u00b7 ' + esc(filtre) + '</p><h2>Historique de la fiche</h2>'
+      : '<p class="sur-titre">Journal</p><h2>Historique des modifications</h2>';
     if (!entrees.length) return h + '<p class="texte">Aucune modification enregistrée pour le moment.</p>';
     var fait = false;
     h += '<div class="histo-liste">' + entrees.map(function (e) {
@@ -1254,7 +1275,7 @@ function serialiserFichierData(centres) {
     }
   });
   carte.addControl(new CtrlRecentrer());
-  poserFond(carte, true);
+  poserFond(carte, true, true);
 
   var grappe = L.markerClusterGroup({
     maxClusterRadius: 34,
@@ -1411,7 +1432,7 @@ function serialiserFichierData(centres) {
       h += secTheme(th.titre, corpsTheme(c, inf, th.cle, apercu));
     });
     if (!apercu && MAJ_CONNUES[c.id]) {
-      h += '<p class="maj-ligne"><button type="button" class="lien-sauv fiche-maj">Fiche mise à jour le ' + esc(quandLisible(MAJ_CONNUES[c.id])) + "</button></p>";
+      h += '<p class="maj-ligne"><button type="button" class="lien-sauv fiche-maj">Fiche mise à jour le ' + esc(quandLisible(MAJ_CONNUES[c.id])) + '</button> · <button type="button" class="lien-sauv fiche-histo">Historique de la fiche</button></p>';
     }
     return h;
   }
@@ -1526,7 +1547,7 @@ function serialiserFichierData(centres) {
     } else if (v.type === "historique") {
       ficheCentre = null;
       ficheMode = "historique";
-      ficheContenu.innerHTML = historiqueHtml(v.entrees, v.cible);
+      ficheContenu.innerHTML = historiqueHtml(v.entrees, v.cible, v.filtre);
     } else if (v.type === "histo-diff") {
       ficheCentre = null;
       ficheMode = "histo-diff";
@@ -1567,6 +1588,12 @@ function serialiserFichierData(centres) {
     majRetour();
   }
   document.getElementById("fiche-fermer").addEventListener("click", fermerFiche);
+  window.addEventListener("beforeunload", function (e) {
+    if (ficheMode === "edition" || ficheMode === "apercu" || editionEnAttente) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if (!aproposEl.hidden) { aproposEl.hidden = true; return; }
@@ -2235,7 +2262,9 @@ function serialiserFichierData(centres) {
     var lignes = lignesTriees();
     function fleche(c) { return triTable.col === c ? (triTable.sens > 0 ? " \u25B4" : " \u25BE") : ""; }
     var h = '<p class="tb-outils"><button type="button" class="lien-sauv" id="tb-csv">Exporter (CSV)</button></p>';
+    var pleine = cmp.length >= cmpMax();
     h += '<table class="tb"><thead><tr>' +
+      '<th class="tb-c" title="Comparer">\u21C4</th>' +
       '<th class="tb-tri" data-col="nom">Centre' + fleche("nom") + "</th>" +
       '<th class="tb-tri" data-col="ville">Ville' + fleche("ville") + "</th>" +
       ["S1", "S2", "S3"].map(function (sx) {
@@ -2243,7 +2272,10 @@ function serialiserFichierData(centres) {
       }).join("") +
       "</tr></thead><tbody>";
     lignes.forEach(function (c) {
+      var coche = cmp.indexOf(c.id) !== -1;
       h += "<tr>";
+      h += '<td class="tb-c"><input type="checkbox" class="tb-cmp" data-id="' + esc(c.id) + '"' + (coche ? " checked" : "") +
+        (!coche && pleine ? ' disabled title="Liste de comparaison pleine (' + cmpMax() + ' centres)"' : "") + "></td>";
       h += '<td><button type="button" class="tb-nom" data-id="' + esc(c.id) + '">' + esc(c.nom) + "</button></td>";
       h += "<td>" + esc(c.ville || "") + "</td>";
       ["S1", "S2", "S3"].forEach(function (sx) {
@@ -2290,6 +2322,7 @@ function serialiserFichierData(centres) {
   tableauEl.addEventListener("click", function (ev) {
     var b;
     if (ev.target.closest("#tb-csv")) { exporterCsv(); return; }
+    if ((b = ev.target.closest(".tb-cmp"))) { basculerCmp(b.dataset.id); rendreTableau(); return; }
     if ((b = ev.target.closest(".tb-nom"))) { naviguer({ type: "centre", id: b.dataset.id }, true); return; }
     if ((b = ev.target.closest("th.tb-tri"))) {
       var col = b.dataset.col;
@@ -2375,6 +2408,7 @@ function serialiserFichierData(centres) {
     }
     if ((b = ev.target.closest(".histo-item"))) { ouvrirHistoDiff(b.dataset.id); return; }
     if (ev.target.closest(".fiche-maj")) { ouvrirHistorique(false, ficheCentre ? ficheCentre.id : null); return; }
+    if (ev.target.closest(".fiche-histo") && ficheCentre) { ouvrirHistoriqueFiche(ficheCentre.id); return; }
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
       naviguer({ type: "centre", id: b.dataset.id });
       return;
@@ -2809,6 +2843,7 @@ function serialiserFichierData(centres) {
     if (!c) return;
     var mots = normNom(rechEl.value).split(/\s+/).filter(Boolean);
     rechEl.value = c.nom;
+    majCroixRech();
     fermerRech();
     rechEl.blur();
     var enTableau = !tableauEl.hidden;
@@ -2885,7 +2920,15 @@ function serialiserFichierData(centres) {
       document.addEventListener("click", retirerSurlignage, { once: true, capture: true });
     }, 30);
   }
-  rechEl.addEventListener("input", majRech);
+  var rechVider = document.getElementById("rech-vider");
+  function majCroixRech() { rechVider.hidden = !rechEl.value; }
+  rechVider.addEventListener("click", function () {
+    rechEl.value = "";
+    fermerRech();
+    majCroixRech();
+    rechEl.focus();
+  });
+  rechEl.addEventListener("input", function () { majCroixRech(); majRech(); });
   rechEl.addEventListener("focus", majRech);
   rechEl.addEventListener("keydown", function (ev) {
     var items = rechListe.hidden ? [] : rechListe.querySelectorAll(".rech-item");
