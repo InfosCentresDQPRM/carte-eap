@@ -1353,20 +1353,17 @@ function serialiserFichierData(centres) {
     var inf = infBrouillon || infosDe(c);
     var h = '<p class="sur-titre">' + esc(c.ville) + "</p><h2>" + esc(c.nom) + "</h2>";
     h += '<p class="etab">' + esc(c.etablissement) + "</p>";
-    if (apercu) {
-      themesDe(inf).forEach(function (th) {
-        if (th.masque) return;
-        h += secTheme(th.titre, corpsTheme(c, inf, th.cle, true));
-      });
-      return h;
+    if (!apercu) {
+      h += '<p class="ligne-actions">';
+      if (inf.site) h += '<a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a>';
+      h += '<button type="button" class="btn-modif">Modifier les infos</button>';
+      var dansCmp = cmp.indexOf(c.id) !== -1;
+      var cmpPleine = !dansCmp && cmp.length >= cmpMax();
+      h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? ' disabled title="Liste de comparaison pleine (' + cmpMax() + ' centres) — retirez-en un d\u2019abord"' : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
+      h += '<button type="button" class="btn-modif btn-pdf">PDF</button></p>';
+    } else if (inf.site) {
+      h += '<p class="ligne-actions"><a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a></p>';
     }
-    h += '<p class="ligne-actions">';
-    if (inf.site) h += '<a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a>';
-    h += '<button type="button" class="btn-modif">Modifier les infos</button>';
-    var dansCmp = cmp.indexOf(c.id) !== -1;
-    var cmpPleine = !dansCmp && cmp.length >= cmpMax();
-    h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? ' disabled title="Liste de comparaison pleine (' + cmpMax() + ' centres) — retirez-en un d\u2019abord"' : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
-    h += '<button type="button" class="btn-modif btn-pdf">PDF</button></p>';
     if (inf.photos && inf.photos.length) {
       h += '<div class="photos">' + inf.photos.map(function (p) {
         return '<a href="' + esc(p) + '" target="_blank" rel="noopener"><img src="' + esc(p) + '" alt="' + esc(c.nom) + '" loading="lazy"></a>';
@@ -1380,16 +1377,20 @@ function serialiserFichierData(centres) {
     if (refs) h += '<div class="refs">' + refs + "</div>";
     if (inf.ailleurs && inf.ailleurs.length) {
       h += '<section class="sec"><h3>Formation en partie ailleurs</h3><div class="aills">' + inf.ailleurs.map(function (a) {
-        if (a.id) return '<button type="button" class="aill" data-id="' + esc(a.id) + '">' + esc(a.texte) + " →</button>";
+        if (a.id && !apercu) return '<button type="button" class="aill" data-id="' + esc(a.id) + '">' + esc(a.texte) + " →</button>";
         if (a.url) return '<a class="aill-lien" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + esc(a.texte) + " ↗</a>";
+        if (a.id) {
+          var cible = centreParId(a.id);
+          return '<span class="aill-txt">' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : "") + "</span>";
+        }
         return '<span class="aill-txt">' + esc(a.texte) + "</span>";
       }).join("") + "</div></section>";
     }
     themesDe(inf).forEach(function (th) {
       if (th.masque) return;
-      h += secTheme(th.titre, corpsTheme(c, inf, th.cle));
+      h += secTheme(th.titre, corpsTheme(c, inf, th.cle, apercu));
     });
-    if (MAJ_CONNUES[c.id]) {
+    if (!apercu && MAJ_CONNUES[c.id]) {
       h += '<p class="maj-ligne"><button type="button" class="lien-sauv fiche-maj">Fiche mise à jour le ' + esc(quandLisible(MAJ_CONNUES[c.id])) + "</button></p>";
     }
     return h;
