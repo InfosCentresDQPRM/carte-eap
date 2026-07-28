@@ -35,6 +35,8 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #maj-globale { position: fixed; bottom: 21px; right: 64px; z-index: 1130; border: 0; border-radius: 999px; background: rgba(255,255,255,.82); padding: 4px 11px; font: 600 10.5px "Inter"; color: #8a8f9c; cursor: pointer; }
 #maj-globale:hover { color: #1b2a4a; background: rgba(255,255,255,.97); }
 #maj-globale[hidden] { display: none; }
+#presence { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1130; display: flex; align-items: center; gap: 6px; border-radius: 999px; background: rgba(255,255,255,.82); padding: 5px 12px; font: 700 11.5px "Inter"; color: #5a6272; box-shadow: 0 6px 18px rgba(27,42,74,.12); }
+#presence[hidden] { display: none; }
 .histo-item.histo-cible { background: #fdf3df; border-color: #e8c988; }
 #tableau { position: fixed; inset: 0; z-index: 900; background: #f4f1ea; overflow: auto; padding: 14px 14px 64px 288px; }
 #tableau[hidden] { display: none; }
@@ -395,6 +397,10 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
     <button type="button" id="gs-infos">infos.js</button>
   </div>
 </div>
+<div id="presence" hidden aria-label="Personnes connectées">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+  <span id="presence-nb">1</span>
+</div>
 <div id="tableau" hidden></div>
 <button id="vue-bascule" type="button">Tableau</button>
 <button id="maj-globale" type="button" hidden></button>
@@ -416,6 +422,7 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
 </section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
 <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.20/leaflet-maplibre-gl.js"></script>
@@ -955,6 +962,30 @@ function serialiserFichierData(centres) {
     b.textContent = "Mis à jour le " + quandLisible(iso);
     b.hidden = false;
   }
+  var presenceLancee = false;
+  function demarrerPresence() {
+    if (presenceLancee || !BASE || typeof window.supabase === "undefined" || !window.supabase.createClient) return;
+    presenceLancee = true;
+    try {
+      var client = window.supabase.createClient(BASE.url, BASE.cle);
+      var canal = client.channel("carte-eap-presence", {
+        config: { presence: { key: "v-" + Math.random().toString(36).slice(2) + Date.now().toString(36) } }
+      });
+      canal.on("presence", { event: "sync" }, function () {
+        var n = Object.keys(canal.presenceState()).length;
+        var el = document.getElementById("presence");
+        if (n > 0) {
+          document.getElementById("presence-nb").textContent = n;
+          el.hidden = false;
+        } else {
+          el.hidden = true;
+        }
+      });
+      canal.subscribe(function (etat) {
+        if (etat === "SUBSCRIBED") canal.track({});
+      });
+    } catch (e) {}
+  }
   function chargerMajGlobale() {
     apiLire("journal?select=quand&order=id.desc&limit=1", function (l) {
       if (l && l.length) majGlobale(l[0].quand);
@@ -1000,7 +1031,7 @@ function serialiserFichierData(centres) {
           apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok2) {
             enLigne = ok1 && ok2;
             majEtat(enLigne ? "enligne" : "horsligne");
-            if (enLigne) chargerMajGlobale();
+            if (enLigne) { chargerMajGlobale(); demarrerPresence(); }
           });
         }, true);
         return;
@@ -1025,6 +1056,7 @@ function serialiserFichierData(centres) {
         enLigne = true;
         majEtat("enligne");
         chargerMajGlobale();
+        demarrerPresence();
         remplirSelectMachines();
         render();
       });
@@ -1256,14 +1288,13 @@ function serialiserFichierData(centres) {
   }
 
   var carte = L.map("carte", { center: VUE_METRO.centre, zoom: VUE_METRO.zoom, zoomControl: false, minZoom: 3, maxZoom: 19 });
-  L.control.zoom({ position: "topright" }).addTo(carte);
+  L.control.zoom({ position: "topright", zoomInTitle: "", zoomOutTitle: "" }).addTo(carte);
   var CtrlRecentrer = L.Control.extend({
     options: { position: "topright" },
     onAdd: function () {
       var div = L.DomUtil.create("div", "leaflet-bar");
       var a = L.DomUtil.create("a", "ctrl-recentrer", div);
       a.href = "#";
-      a.title = "Revenir à la vue d'ensemble";
       a.setAttribute("aria-label", "Revenir à la vue d'ensemble");
       a.innerHTML = "\u2316";
       L.DomEvent.on(a, "click", function (e) {
@@ -1276,6 +1307,8 @@ function serialiserFichierData(centres) {
   });
   carte.addControl(new CtrlRecentrer());
   poserFond(carte, true, true);
+  var bascCouches = document.querySelector(".leaflet-control-layers-toggle");
+  if (bascCouches) bascCouches.removeAttribute("title");
 
   var grappe = L.markerClusterGroup({
     maxClusterRadius: 34,
@@ -1350,7 +1383,7 @@ function serialiserFichierData(centres) {
     if (s.titre) h += '<h4 class="sous-mod">' + esc(s.titre) + "</h4>";
     h += '<div class="mach-chips">' + machs.map(function (m) {
       if (statique) return '<span class="mach-chip">' + esc(m.nom) + "</span>";
-      return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '" title="Voir les centres possédant cette machine">' + esc(m.nom) + "</button>";
+      return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '">' + esc(m.nom) + "</button>";
     }).join("") + "</div>";
     return h;
   }
@@ -1400,7 +1433,7 @@ function serialiserFichierData(centres) {
       h += '<button type="button" class="btn-modif">Modifier les infos</button>';
       var dansCmp = cmp.indexOf(c.id) !== -1;
       var cmpPleine = !dansCmp && cmp.length >= cmpMax();
-      h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? ' disabled title="Liste de comparaison pleine (' + cmpMax() + ' centres) — retirez-en un d\u2019abord"' : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
+      h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? " disabled" : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
       h += '<button type="button" class="btn-modif btn-pdf">PDF</button></p>';
     } else if (inf.site) {
       h += '<p class="ligne-actions"><a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a></p>';
@@ -1444,7 +1477,7 @@ function serialiserFichierData(centres) {
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
       return '<div class="gc-item">' +
-        '<input type="checkbox" class="gc-actif" data-id="' + esc(c.id) + '"' + (c.actif ? " checked" : "") + ' title="Afficher / masquer">' +
+        '<input type="checkbox" class="gc-actif" data-id="' + esc(c.id) + '"' + (c.actif ? " checked" : "") + '>' +
         '<button type="button" class="res gc-nom" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>" +
         "</div>";
     }).join("");
@@ -1497,8 +1530,8 @@ function serialiserFichierData(centres) {
     function ligneMach(m, prof) {
       return '<div class="gcm-ligne" style="margin-left:' + (prof * 16) + 'px">' +
         '<span class="gcm-mach-nom">' + esc(m.nom) + "</span>" +
-        '<select class="gcm-dest" data-type="mach" data-nom="' + esc(m.nom) + '" title="Ranger dans\u2026">' + optionsDestCat([], m.cat || null) + "</select>" +
-        '<button type="button" class="btn-mini rouge gcm-mach-del" data-nom="' + esc(m.nom) + '" title="Supprimer cette machine">&times;</button>' +
+        '<select class="gcm-dest" data-type="mach" data-nom="' + esc(m.nom) + '">' + optionsDestCat([], m.cat || null) + "</select>" +
+        '<button type="button" class="btn-mini rouge gcm-mach-del" data-nom="' + esc(m.nom) + '">&times;</button>' +
         "</div>";
     }
     function ligneCat(c, prof) {
@@ -1507,12 +1540,12 @@ function serialiserFichierData(centres) {
       var replie = !!catsRepliees[c.id];
       var n = enfants.length + machs.length;
       var s = '<div class="gcm-ligne" style="margin-left:' + (prof * 16) + 'px">' +
-        '<button type="button" class="btn-mini gcm-pli" data-id="' + esc(c.id) + '" title="' + (replie ? "Déplier" : "Replier") + '">' + (replie ? "\u25b8" : "\u25be") + "</button>" +
+        '<button type="button" class="btn-mini gcm-pli" data-id="' + esc(c.id) + '">' + (replie ? "\u25b8" : "\u25be") + "</button>" +
         '<span class="gcm-cat-nom">' + esc(c.nom) + (replie && n ? ' <span class="gcm-nb">(' + n + ")</span>" : "") + "</span>" +
-        '<button type="button" class="btn-mini large gcm-souscat" data-id="' + esc(c.id) + '" title="Créer une sous-catégorie">+ cat.</button>' +
-        '<button type="button" class="btn-mini large gcm-machplus" data-cat="' + esc(c.id) + '" title="Créer une machine dans cette catégorie">+ mach.</button>' +
-        '<select class="gcm-dest" data-type="cat" data-id="' + esc(c.id) + '" title="Ranger dans\u2026">' + optionsDestCat(interdites, c.parent || null) + "</select>" +
-        '<button type="button" class="btn-mini rouge gcm-cat-del" data-id="' + esc(c.id) + '" title="Supprimer cette catégorie">&times;</button>' +
+        '<button type="button" class="btn-mini large gcm-souscat" data-id="' + esc(c.id) + '">+ cat.</button>' +
+        '<button type="button" class="btn-mini large gcm-machplus" data-cat="' + esc(c.id) + '">+ mach.</button>' +
+        '<select class="gcm-dest" data-type="cat" data-id="' + esc(c.id) + '">' + optionsDestCat(interdites, c.parent || null) + "</select>" +
+        '<button type="button" class="btn-mini rouge gcm-cat-del" data-id="' + esc(c.id) + '">&times;</button>' +
         "</div>";
       if (!replie) {
         enfants.forEach(function (sc) { s += ligneCat(sc, prof + 1); });
@@ -1626,12 +1659,12 @@ function serialiserFichierData(centres) {
       (s.cle ? ' data-cle="' + esc(s.cle) + '"' : "") +
       (mach ? ' data-type="machines"' : "") + ">";
     h += '<div class="ssec-haut">';
-    h += '<label class="vis" title="Afficher cette case sur la fiche"><input type="checkbox" class="ssec-vis"' + (s.masque ? "" : " checked") + "></label>";
+    h += '<label class="vis"><input type="checkbox" class="ssec-vis"' + (s.masque ? "" : " checked") + "></label>";
     h += '<input class="ssec-titre" placeholder="Titre de la case" value="' + esc(s.titre || "") + '">';
-    if (!mach) h += '<button type="button" class="btn-mini ssec-pos" title="' + titrePos(pos) + '">' + glyphePos(pos) + "</button>";
-    h += '<button type="button" class="btn-mini ssec-up" title="Monter">&uarr;</button>';
-    h += '<button type="button" class="btn-mini ssec-down" title="Descendre">&darr;</button>';
-    h += '<button type="button" class="btn-mini rouge ssec-del" title="Supprimer la case">&times;</button>';
+    if (!mach) h += '<button type="button" class="btn-mini ssec-pos">' + glyphePos(pos) + "</button>";
+    h += '<button type="button" class="btn-mini ssec-up">&uarr;</button>';
+    h += '<button type="button" class="btn-mini ssec-down">&darr;</button>';
+    h += '<button type="button" class="btn-mini rouge ssec-del">&times;</button>';
     h += "</div>";
     if (mach) {
       var liste = Array.isArray(inf && inf.machinesListe) ? inf.machinesListe.slice() : machinesDuCentre(MACHINES, inf || {}).map(function (m) { return m.nom; });
@@ -1642,10 +1675,10 @@ function serialiserFichierData(centres) {
       h += "</div>";
     } else {
       h += '<div class="ssec-outils">';
-      h += '<button type="button" class="btn-fmt" data-fmt="**" title="Gras"><b>G</b></button>';
-      h += '<button type="button" class="btn-fmt" data-fmt="*" title="Italique"><i>I</i></button>';
-      h += '<button type="button" class="btn-fmt" data-fmt="__" title="Souligné"><u>S</u></button>';
-      h += '<button type="button" class="btn-just' + (s.just ? " actif" : "") + '" title="Justifier le texte">\u2261</button>';
+      h += '<button type="button" class="btn-fmt" data-fmt="**"><b>G</b></button>';
+      h += '<button type="button" class="btn-fmt" data-fmt="*"><i>I</i></button>';
+      h += '<button type="button" class="btn-fmt" data-fmt="__"><u>S</u></button>';
+      h += '<button type="button" class="btn-just' + (s.just ? " actif" : "") + '">\u2261</button>';
       h += "</div>";
       h += '<textarea class="ssec-texte" placeholder="Contenu">' + esc(s.texte || "") + "</textarea>";
     }
@@ -1653,7 +1686,7 @@ function serialiserFichierData(centres) {
     return h;
   }
   function mchipHtml(nom) {
-    return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="mchip-del" title="Retirer">&times;</button></span>';
+    return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="mchip-del">&times;</button></span>';
   }
   function optionsMachinesArbre(exclues) {
     var h = "";
@@ -1678,11 +1711,11 @@ function serialiserFichierData(centres) {
     var perso = !estThemeStandard(th.cle);
     var h = '<div class="th-bloc" data-cle="' + esc(th.cle) + '" data-perso="' + (perso ? "1" : "0") + '">';
     h += '<div class="th-barre">';
-    h += '<label class="vis" title="Afficher ce bloc sur la fiche"><input type="checkbox" class="th-vis"' + (th.masque ? "" : " checked") + "></label>";
+    h += '<label class="vis"><input type="checkbox" class="th-vis"' + (th.masque ? "" : " checked") + "></label>";
     h += '<input class="th-titre" value="' + esc(th.titre) + '" placeholder="Titre du bloc">';
-    h += '<button type="button" class="btn-mini th-up" title="Monter le bloc">&uarr;</button>';
-    h += '<button type="button" class="btn-mini th-down" title="Descendre le bloc">&darr;</button>';
-    h += '<button type="button" class="btn-mini rouge th-del" title="Supprimer le bloc">&times;</button>';
+    h += '<button type="button" class="btn-mini th-up">&uarr;</button>';
+    h += '<button type="button" class="btn-mini th-down">&darr;</button>';
+    h += '<button type="button" class="btn-mini rouge th-del">&times;</button>';
     h += "</div>";
     var els = elementsDuBloc(inf, th.cle, true, modalitesDe(c));
     h += '<div class="ssecs">' + els.map(function (s) { return ssecItem(s, inf); }).join("") + "</div>";
@@ -2264,7 +2297,7 @@ function serialiserFichierData(centres) {
     var h = '<p class="tb-outils"><button type="button" class="lien-sauv" id="tb-csv">Exporter (CSV)</button></p>';
     var pleine = cmp.length >= cmpMax();
     h += '<table class="tb"><thead><tr>' +
-      '<th class="tb-c" title="Comparer">\u21C4</th>' +
+      '<th class="tb-c">\u21C4</th>' +
       '<th class="tb-tri" data-col="nom">Centre' + fleche("nom") + "</th>" +
       '<th class="tb-tri" data-col="ville">Ville' + fleche("ville") + "</th>" +
       ["S1", "S2", "S3"].map(function (sx) {
@@ -2275,7 +2308,7 @@ function serialiserFichierData(centres) {
       var coche = cmp.indexOf(c.id) !== -1;
       h += "<tr>";
       h += '<td class="tb-c"><input type="checkbox" class="tb-cmp" data-id="' + esc(c.id) + '"' + (coche ? " checked" : "") +
-        (!coche && pleine ? ' disabled title="Liste de comparaison pleine (' + cmpMax() + ' centres)"' : "") + "></td>";
+        (!coche && pleine ? " disabled" : "") + "></td>";
       h += '<td><button type="button" class="tb-nom" data-id="' + esc(c.id) + '">' + esc(c.nom) + "</button></td>";
       h += "<td>" + esc(c.ville || "") + "</td>";
       ["S1", "S2", "S3"].forEach(function (sx) {
@@ -2564,7 +2597,6 @@ function serialiserFichierData(centres) {
       var nouv = item.dataset.pos === "haut" ? "gauche" : "haut";
       item.dataset.pos = nouv;
       b.textContent = glyphePos(nouv);
-      b.title = titrePos(nouv);
       return;
     }
     if ((b = ev.target.closest(".ssec-up"))) { deplacer(b.closest(".ssec-item"), -1); return; }
@@ -2702,7 +2734,7 @@ function serialiserFichierData(centres) {
   }
   function majFiltChips() {
     filtChips.innerHTML = state.machs.map(function (nom) {
-      return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="filt-del" title="Retirer ce filtre">&times;</button></span>';
+      return '<span class="mchip" data-nom="' + esc(nom) + '">' + esc(nom) + '<button type="button" class="filt-del">&times;</button></span>';
     }).join("");
   }
   function basculerFiltreMachine(nom) {
