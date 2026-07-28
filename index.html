@@ -35,8 +35,9 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #maj-globale { position: fixed; bottom: 21px; right: 64px; z-index: 1130; border: 0; border-radius: 999px; background: rgba(255,255,255,.82); padding: 4px 11px; font: 600 10.5px "Inter"; color: #8a8f9c; cursor: pointer; }
 #maj-globale:hover { color: #1b2a4a; background: rgba(255,255,255,.97); }
 #maj-globale[hidden] { display: none; }
-#presence { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1130; display: flex; align-items: center; gap: 6px; border-radius: 999px; background: rgba(255,255,255,.82); padding: 5px 12px; font: 700 11.5px "Inter"; color: #5a6272; box-shadow: 0 6px 18px rgba(27,42,74,.12); }
+#presence { position: fixed; top: 14px; right: 14px; z-index: 1130; display: flex; align-items: center; gap: 6px; border-radius: 999px; background: rgba(255,255,255,.82); padding: 5px 12px; font: 700 11.5px "Inter"; color: #5a6272; box-shadow: 0 6px 18px rgba(27,42,74,.12); }
 #presence[hidden] { display: none; }
+.leaflet-top.leaflet-right { margin-top: 46px; }
 .histo-item.histo-cible { background: #fdf3df; border-color: #e8c988; }
 #tableau { position: fixed; inset: 0; z-index: 900; background: #f4f1ea; overflow: auto; padding: 14px 14px 64px 288px; }
 #tableau[hidden] { display: none; }
@@ -74,11 +75,10 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .rech-item span { color: #8a8f9c; font-weight: 400; }
 .rech-item:hover { background: #f1efe9; }
 .maj-ligne { margin: 22px 0 0; padding-top: 10px; border-top: 1px solid #eceae3; }
-.tb-outils { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.tb-outils { display: flex; justify-content: flex-end; margin: 0 0 8px; padding-right: 92px; }
 .tb-cible td { background: #fdf3df !important; transition: background .4s; }
 .histo-liste { display: grid; gap: 7px; margin: 12px 0 0; }
 .histo-item span { display: block; margin-top: 2px; font: 400 11.5px "Inter"; color: #8a8f9c; }
-.df-legende { margin: 4px 0 14px; font: 600 11.5px "Inter"; color: #8a8f9c; display: flex; gap: 10px; }
 .df-sup { background: #fbe4e1; color: #b3382f; text-decoration: line-through; text-decoration-thickness: 1px; border-radius: 3px; padding: 0 2px; }
 .df-add { background: #e0f3e4; color: #1e7c37; text-decoration: none; border-radius: 3px; padding: 0 2px; }
 del.df-sup, ins.df-add { display: inline; }
@@ -256,7 +256,8 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
 .lien-sauv:hover { color: #1b2a4a; }
 
 .leaflet-control-attribution { font-size: 10px; }
-.ctrl-recentrer { font-size: 17px; }
+.ctrl-recentrer { display: flex; align-items: center; justify-content: center; }
+.leaflet-control-layers-toggle, .leaflet-touch .leaflet-control-layers-toggle { width: 30px; height: 30px; background-size: 19px 19px; }
 
 #cmp-barre { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1350; display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 28px); background: #1b2a4a; color: #fff; border-radius: 999px; padding: 8px 9px 8px 16px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); }
 #cmp-barre[hidden] { display: none; }
@@ -363,7 +364,7 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
     <p class="sur-titre">À propos</p>
     <h2>Carte des centres EAP</h2>
     <p>Cette carte a été mise en place pour y voir plus clair dans le choix des stages. Toutes les fiches sont entièrement personnalisables : chacun peut y partager un retour d'expérience ou mettre à jour les informations d'un centre.</p>
-    <p>Cette liberté engage la responsabilité de chacun : merci de ne pas supprimer d'informations sans raison et de ne rien publier d'erroné, pour quelque raison que ce soit.</p>
+    <p>Cette liberté engage la responsabilité de chacun : merci de ne pas supprimer d'informations sans raison et de veiller à l'exactitude de ce que vous publiez.</p>
     <p>Pour signaler un problème ou faire une suggestion : <a href="mailto:infos.centres.dqprm@gmail.com">infos.centres.dqprm@gmail.com</a></p>
   </div>
 </div>
@@ -1280,7 +1281,6 @@ function serialiserFichierData(centres) {
   }
   function histoDiffHtml(v) {
     var h = '<p class="sur-titre">Modification du ' + esc(quandLisible(v.apres.quand)) + "</p>";
-    h += '<p class="df-legende"><del class="df-sup">supprimé</del> <ins class="df-add">ajouté</ins></p>';
     h += v.apres.cible === "reglages"
       ? histoDiffReglagesHtml(v.avant ? v.avant.valeur : null, v.apres.valeur || {})
       : histoDiffCentreHtml(v.avant ? v.avant.valeur : null, v.apres.valeur || {});
@@ -1296,7 +1296,7 @@ function serialiserFichierData(centres) {
       var a = L.DomUtil.create("a", "ctrl-recentrer", div);
       a.href = "#";
       a.setAttribute("aria-label", "Revenir à la vue d'ensemble");
-      a.innerHTML = "\u2316";
+      a.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><line x1="12" y1="1.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22.5" y2="12"/></svg>';
       L.DomEvent.on(a, "click", function (e) {
         L.DomEvent.stop(e);
         var v = auxAntilles() ? VUE_MQ : VUE_METRO;
