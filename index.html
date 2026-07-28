@@ -63,6 +63,9 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .rech-item { display: block; width: 100%; text-align: left; border: 0; border-radius: 7px; background: none; padding: 8px 9px; font: 600 12px "Inter"; color: #1b2a4a; cursor: pointer; }
 .rech-item span { color: #8a8f9c; font-weight: 400; }
 .rech-item:hover { background: #f1efe9; }
+.maj-ligne { margin: 22px 0 0; padding-top: 10px; border-top: 1px solid #eceae3; }
+.tb-outils { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.tb-cible td { background: #fdf3df !important; transition: background .4s; }
 .histo-liste { display: grid; gap: 7px; margin: 12px 0 0; }
 .histo-item span { display: block; margin-top: 2px; font: 400 11.5px "Inter"; color: #8a8f9c; }
 .df-legende { margin: 4px 0 14px; font: 600 11.5px "Inter"; color: #8a8f9c; display: flex; gap: 10px; }
@@ -248,8 +251,10 @@ del.df-sup, ins.df-add { display: inline; }
 #cmp-fermer { position: fixed; top: 12px; right: 14px; z-index: 1610; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1efe9; color: #1b2a4a; font: 700 16px "Inter"; cursor: pointer; box-shadow: 0 4px 14px rgba(27,42,74,.18); }
 #cmp-fermer:hover { background: #e4e1d8; }
 #cmp-contenu { max-width: 1060px; margin: 0 auto; padding: 18px 22px 40px; }
-.cmp-grille { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; align-items: start; }
-.cmp-grille::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #ddd9cf; }
+.cmp-zone { position: relative; }
+.cmp-trait { position: absolute; top: 0; bottom: 0; width: 1px; background: #ddd9cf; }
+.cmp-grille { display: grid; align-items: start; }
+.cmp-grille > .cmp-cel, .cmp-grille > .cmp-h3 { padding-left: 13px; padding-right: 13px; }
 .cmp-tete { position: sticky; top: 0; background: #fff; padding: 6px 0 10px; border-bottom: 1px solid #eceae3; z-index: 5; }
 .cmp-tete .sur-titre { margin: 0; }
 .cmp-tete h2 { margin: 2px 0 2px; font: 700 19px "Sora", sans-serif; color: #1b2a4a; }
@@ -261,7 +266,7 @@ del.df-sup, ins.df-add { display: inline; }
 #comparaison .photos img { height: 72px; }
 @media (max-width: 640px) {
   #cmp-contenu { padding: 14px 10px 30px; }
-  .cmp-grille { gap: 0 12px; }
+  .cmp-grille > .cmp-cel, .cmp-grille > .cmp-h3 { padding-left: 6px; padding-right: 6px; }
   .cmp-tete h2 { font-size: 15px; }
 }
 
@@ -1317,8 +1322,8 @@ function serialiserFichierData(centres) {
     if (inf.site) h += '<a class="lien-site" href="' + esc(inf.site) + '" target="_blank" rel="noopener">Site du centre ↗</a>';
     h += '<button type="button" class="btn-modif">Modifier les infos</button>';
     var dansCmp = cmp.indexOf(c.id) !== -1;
-    var cmpPleine = !dansCmp && cmp.length >= 2;
-    h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? ' disabled title="Liste de comparaison pleine (2 centres) — retirez-en un d\u2019abord"' : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
+    var cmpPleine = !dansCmp && cmp.length >= cmpMax();
+    h += '<button type="button" class="btn-modif btn-cmp' + (dansCmp ? " actif" : "") + '"' + (cmpPleine ? ' disabled title="Liste de comparaison pleine (' + cmpMax() + ' centres) — retirez-en un d\u2019abord"' : "") + ">" + (dansCmp ? "Retirer de la comparaison" : "+ Comparer") + "</button>";
     h += '<button type="button" class="btn-modif btn-pdf">PDF</button></p>';
     if (inf.photos && inf.photos.length) {
       h += '<div class="photos">' + inf.photos.map(function (p) {
@@ -1342,6 +1347,9 @@ function serialiserFichierData(centres) {
       if (th.masque) return;
       h += secTheme(th.titre, corpsTheme(c, inf, th.cle));
     });
+    if (MAJ_CONNUES[c.id]) {
+      h += '<p class="maj-ligne"><button type="button" class="lien-sauv fiche-maj">Fiche mise à jour le ' + esc(quandLisible(MAJ_CONNUES[c.id])) + "</button></p>";
+    }
     return h;
   }
 
@@ -1828,8 +1836,11 @@ function serialiserFichierData(centres) {
     }).join(" · ");
     if (!ficheEl.hidden && ficheMode === "vue" && vueCourante) afficherVue(vueCourante);
   }
+  function cmpMax() {
+    return window.matchMedia && window.matchMedia("(max-width: 640px)").matches ? 2 : 4;
+  }
   function ajouterCmp(id) {
-    if (cmp.indexOf(id) !== -1 || cmp.length >= 2) return;
+    if (cmp.indexOf(id) !== -1 || cmp.length >= cmpMax()) return;
     cmp.push(id);
     majCmp();
   }
@@ -1859,23 +1870,40 @@ function serialiserFichierData(centres) {
   function basculerCmp(id) {
     var i = cmp.indexOf(id);
     if (i !== -1) cmp.splice(i, 1);
-    else if (cmp.length < 2) cmp.push(id);
+    else if (cmp.length < cmpMax()) cmp.push(id);
     majCmp();
   }
   function normNom(s) {
     return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
   }
-  function alignerParNom(lA, lB, nomDe) {
-    var lignes = [], prisB = {};
-    lA.forEach(function (a) {
-      var n = normNom(nomDe(a)), b = null;
-      for (var i = 0; i < lB.length; i++) {
-        if (!prisB[i] && normNom(nomDe(lB[i])) === n) { b = lB[i]; prisB[i] = true; break; }
-      }
-      lignes.push([a, b]);
+  function alignerN(listes, nomDe) {
+    var occ = listes.map(function () { return {}; });
+    var cles = [], vu = {};
+    listes.forEach(function (l, li) {
+      l.forEach(function (x) {
+        var n = normNom(nomDe(x));
+        var k = occ[li][n] || 0;
+        occ[li][n] = k + 1;
+        var cle = n + "\u0001" + k;
+        if (!vu[cle]) { vu[cle] = true; cles.push(cle); }
+      });
     });
-    lB.forEach(function (b, i) { if (!prisB[i]) lignes.push([null, b]); });
-    return lignes;
+    var files = listes.map(function (l) {
+      var f = {};
+      l.forEach(function (x) {
+        var n = normNom(nomDe(x));
+        (f[n] = f[n] || []).push(x);
+      });
+      return f;
+    });
+    return cles.map(function (cle) {
+      var p = cle.lastIndexOf("\u0001");
+      var n = cle.slice(0, p), k = Number(cle.slice(p + 1));
+      return listes.map(function (_, li) { return (files[li][n] || [])[k] || null; });
+    });
+  }
+  function alignerParNom(lA, lB, nomDe) {
+    return alignerN([lA, lB], nomDe);
   }
   function cmpTeteHtml(c) {
     var h = '<div class="cmp-tete"><p class="sur-titre">' + esc(c.ville) + "</p><h2>" + esc(c.nom) + "</h2>";
@@ -1897,37 +1925,44 @@ function serialiserFichierData(centres) {
     }
     return h || '<span class="cmp-vide">—</span>';
   }
-  function comparaisonHtml(cA, cB) {
-    var infA = infosDe(cA), infB = infosDe(cB);
-    var h = '<div class="cmp-grille">';
-    h += '<div class="cmp-cel">' + cmpTeteHtml(cA) + '</div><div class="cmp-cel">' + cmpTeteHtml(cB) + "</div>";
-    h += '<div class="cmp-cel">' + cmpProfilHtml(cA) + '</div><div class="cmp-cel">' + cmpProfilHtml(cB) + "</div>";
-    var thA = themesDe(infA).filter(function (t) { return !t.masque; });
-    var thB = themesDe(infB).filter(function (t) { return !t.masque; });
-    alignerParNom(thA, thB, function (t) { return estThemeStandard(t.cle) ? t.cle : t.titre; }).forEach(function (paire) {
-      var tA = paire[0], tB = paire[1];
-      var elsA = tA ? elementsDuBloc(infA, tA.cle, false, null).filter(function (s) { return !s.masque; }) : [];
-      var elsB = tB ? elementsDuBloc(infB, tB.cle, false, null).filter(function (s) { return !s.masque; }) : [];
+  function comparaisonHtml(liste) {
+    var infs = liste.map(infosDe);
+    var n = liste.length;
+    function cel(i, contenu, cls) {
+      return '<div class="' + (cls || "cmp-cel") + '">' + contenu + "</div>";
+    }
+    var h = '<div class="cmp-zone">';
+    for (var k = 1; k < n; k++) h += '<i class="cmp-trait" style="left:' + (100 * k / n).toFixed(3) + '%"></i>';
+    h += '<div class="cmp-grille" style="grid-template-columns: repeat(' + n + ', 1fr)">';
+    liste.forEach(function (c, i) { h += cel(i, cmpTeteHtml(c)); });
+    liste.forEach(function (c, i) { h += cel(i, cmpProfilHtml(c)); });
+    var ths = infs.map(function (inf) {
+      return themesDe(inf).filter(function (t) { return !t.masque; });
+    });
+    alignerN(ths, function (t) { return estThemeStandard(t.cle) ? t.cle : t.titre; }).forEach(function (rangTh) {
+      var els = rangTh.map(function (t, i) {
+        return t ? elementsDuBloc(infs[i], t.cle, false, null).filter(function (s) { return !s.masque; }) : [];
+      });
       var lignes = [];
-      alignerParNom(elsA, elsB, function (s) { return s.type === "machines" ? "\u0000machines" : s.titre; }).forEach(function (pc) {
-        var a = pc[0] ? rendreCaseSolo(pc[0], infA, tA && tA.cle === "contacts", true) : "";
-        var b = pc[1] ? rendreCaseSolo(pc[1], infB, tB && tB.cle === "contacts", true) : "";
-        if (a || b) lignes.push([a, b]);
+      alignerN(els, function (s) { return s.type === "machines" ? "\u0000machines" : s.titre; }).forEach(function (rangCase) {
+        var rend = rangCase.map(function (s, i) {
+          return s ? rendreCaseSolo(s, infs[i], rangTh[i] && rangTh[i].cle === "contacts", true) : "";
+        });
+        if (rend.some(Boolean)) lignes.push(rend);
       });
       if (!lignes.length) return;
-      h += '<div class="cmp-h3">' + esc(tA ? tA.titre : "") + '</div><div class="cmp-h3">' + esc(tB ? tB.titre : "") + "</div>";
-      lignes.forEach(function (l) {
-        h += '<div class="cmp-cel">' + (l[0] || '<span class="cmp-vide">—</span>') + '</div><div class="cmp-cel">' + (l[1] || '<span class="cmp-vide">—</span>') + "</div>";
+      rangTh.forEach(function (t, i) { h += cel(i, esc(t ? t.titre : ""), "cmp-h3"); });
+      lignes.forEach(function (rend) {
+        rend.forEach(function (r, i) { h += cel(i, r || '<span class="cmp-vide">—</span>'); });
       });
     });
-    h += "</div>";
+    h += "</div></div>";
     return h;
   }
   function ouvrirComparaison() {
-    if (cmp.length < 2) return;
-    var cA = centreParId(cmp[0]), cB = centreParId(cmp[1]);
-    if (!cA || !cB) return;
-    cmpContenu.innerHTML = comparaisonHtml(cA, cB);
+    var liste = cmp.map(centreParId).filter(Boolean);
+    if (liste.length < 2) return;
+    cmpContenu.innerHTML = comparaisonHtml(liste);
     cmpOverlay.hidden = false;
     cmpOverlay.scrollTop = 0;
   }
@@ -2027,6 +2062,23 @@ function serialiserFichierData(centres) {
   var tableauEl = document.getElementById("tableau");
   var basculeBtn = document.getElementById("vue-bascule");
   var triTable = { col: "nom", sens: 1 };
+  function centreVisible(c) {
+    return c.actif && passeFiltreMachines(c, state.machs) &&
+      passeTaille(c, state.sem, state.mod, state.taille) &&
+      totalDisplayed(c, state.sem, state.mod) > 0;
+  }
+  function lignesTriees() {
+    var lignes = CENTRES.filter(centreVisible);
+    var s = triTable.sens;
+    lignes.sort(function (a, b) {
+      if (triTable.col === "nom" || triTable.col === "ville") {
+        return s * String(a[triTable.col] || "").localeCompare(String(b[triTable.col] || ""), "fr");
+      }
+      return s * (totalSem(a, triTable.col) - totalSem(b, triTable.col)) ||
+        String(a.nom || "").localeCompare(String(b.nom || ""), "fr");
+    });
+    return lignes;
+  }
   function totalSem(c, s) {
     var p = placesFor(c, s);
     var t = 0;
@@ -2036,21 +2088,10 @@ function serialiserFichierData(centres) {
   }
   function rendreTableau() {
     if (tableauEl.hidden) return;
-    var lignes = CENTRES.filter(function (c) {
-      return c.actif && passeFiltreMachines(c, state.machs) &&
-        passeTaille(c, state.sem, state.mod, state.taille) &&
-        totalDisplayed(c, state.sem, state.mod) > 0;
-    });
-    var s = triTable.sens;
-    lignes.sort(function (a, b) {
-      if (triTable.col === "nom" || triTable.col === "ville") {
-        return s * String(a[triTable.col] || "").localeCompare(String(b[triTable.col] || ""), "fr");
-      }
-      return s * (totalSem(a, triTable.col) - totalSem(b, triTable.col)) ||
-        String(a.nom || "").localeCompare(String(b.nom || ""), "fr");
-    });
+    var lignes = lignesTriees();
     function fleche(c) { return triTable.col === c ? (triTable.sens > 0 ? " \u25B4" : " \u25BE") : ""; }
-    var h = '<table class="tb"><thead><tr>' +
+    var h = '<p class="tb-outils"><button type="button" class="lien-sauv" id="tb-csv">Exporter (CSV)</button></p>';
+    h += '<table class="tb"><thead><tr>' +
       '<th class="tb-tri" data-col="nom">Centre' + fleche("nom") + "</th>" +
       '<th class="tb-tri" data-col="ville">Ville' + fleche("ville") + "</th>" +
       ["S1", "S2", "S3"].map(function (sx) {
@@ -2073,6 +2114,28 @@ function serialiserFichierData(centres) {
     h += "</tbody></table>";
     tableauEl.innerHTML = h;
   }
+  function champCsv(v) {
+    v = String(v == null ? "" : v);
+    return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  function exporterCsv() {
+    var tetes = ["Centre", "Ville"];
+    ["S1", "S2", "S3"].forEach(function (sx) {
+      if (state.mod !== "rth") tetes.push(sx + " imagerie");
+      if (state.mod !== "im") tetes.push(sx + " radiothérapie");
+    });
+    var lignes = [tetes.join(";")];
+    lignesTriees().forEach(function (c) {
+      var l = [champCsv(c.nom), champCsv(c.ville)];
+      ["S1", "S2", "S3"].forEach(function (sx) {
+        var p = placesFor(c, sx);
+        if (state.mod !== "rth") l.push(p.im);
+        if (state.mod !== "im") l.push(p.rth);
+      });
+      lignes.push(l.join(";"));
+    });
+    telecharger("centres-eap.csv", "\ufeff" + lignes.join("\r\n"));
+  }
   function basculerVue() {
     tableauEl.hidden = !tableauEl.hidden;
     basculeBtn.textContent = tableauEl.hidden ? "Tableau" : "Carte";
@@ -2082,6 +2145,7 @@ function serialiserFichierData(centres) {
   basculeBtn.addEventListener("click", basculerVue);
   tableauEl.addEventListener("click", function (ev) {
     var b;
+    if (ev.target.closest("#tb-csv")) { exporterCsv(); return; }
     if ((b = ev.target.closest(".tb-nom"))) { naviguer({ type: "centre", id: b.dataset.id }, true); return; }
     if ((b = ev.target.closest("th.tb-tri"))) {
       var col = b.dataset.col;
@@ -2166,6 +2230,7 @@ function serialiserFichierData(centres) {
       return;
     }
     if ((b = ev.target.closest(".histo-item"))) { ouvrirHistoDiff(b.dataset.id); return; }
+    if (ev.target.closest(".fiche-maj")) { ouvrirHistorique(false); return; }
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
       naviguer({ type: "centre", id: b.dataset.id });
       return;
@@ -2544,7 +2609,7 @@ function serialiserFichierData(centres) {
     var q = normNom(rechEl.value);
     if (q.length < 2) { fermerRech(); return; }
     var trouves = CENTRES.filter(function (c) {
-      return c.actif && (normNom(c.nom).indexOf(q) !== -1 || normNom(c.ville).indexOf(q) !== -1);
+      return centreVisible(c) && (normNom(c.nom).indexOf(q) !== -1 || normNom(c.ville).indexOf(q) !== -1);
     }).sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); }).slice(0, 8);
     if (!trouves.length) { fermerRech(); return; }
     rechListe.innerHTML = trouves.map(function (c) {
@@ -2558,10 +2623,22 @@ function serialiserFichierData(centres) {
     rechEl.value = c.nom;
     fermerRech();
     rechEl.blur();
-    carte.once("moveend", function () {
-      naviguer({ type: "centre", id: c.id }, true);
-    });
+    var enTableau = !tableauEl.hidden;
+    if (!enTableau) {
+      carte.once("moveend", function () {
+        naviguer({ type: "centre", id: c.id }, true);
+      });
+    }
     carte.flyTo([c.lat, c.lng], Math.max(typeof carte.getZoom === "function" ? carte.getZoom() : 10, 15), { duration: 2.2 });
+    if (enTableau) {
+      var nomEl = tableauEl.querySelector('.tb-nom[data-id="' + id + '"]');
+      var tr = nomEl && nomEl.closest("tr");
+      if (tr) {
+        if (tr.scrollIntoView) tr.scrollIntoView({ block: "center", behavior: "smooth" });
+        tr.classList.add("tb-cible");
+        setTimeout(function () { tr.classList.remove("tb-cible"); }, 2400);
+      }
+    }
   }
   rechEl.addEventListener("input", majRech);
   rechEl.addEventListener("focus", majRech);
