@@ -32,6 +32,10 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #gestion-btn { bottom: 14px; right: 14px; font-size: 15px; }
 #vue-bascule { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1140; border: 1px solid #e3e0d8; border-radius: 999px; background: rgba(255,255,255,.97); padding: 8px 16px; font: 700 12px "Inter"; color: #1b2a4a; cursor: pointer; box-shadow: 0 8px 24px rgba(27,42,74,.16); }
 #vue-bascule:hover { border-color: #b9b4a6; }
+#maj-globale { position: fixed; bottom: 21px; right: 64px; z-index: 1130; border: 0; border-radius: 999px; background: rgba(255,255,255,.82); padding: 4px 11px; font: 600 10.5px "Inter"; color: #8a8f9c; cursor: pointer; }
+#maj-globale:hover { color: #1b2a4a; background: rgba(255,255,255,.97); }
+#maj-globale[hidden] { display: none; }
+.histo-item.histo-cible { background: #fdf3df; border-color: #e8c988; }
 #tableau { position: fixed; inset: 0; z-index: 900; background: #f4f1ea; overflow: auto; padding: 14px 14px 64px 288px; }
 #tableau[hidden] { display: none; }
 .tb { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e3e0d8; border-radius: 12px; overflow: hidden; font: 400 12.5px "Inter"; color: #2c3345; }
@@ -279,6 +283,7 @@ del.df-sup, ins.df-add { display: inline; }
 #mini-ouvrir { bottom: 14px; left: 14px; font-size: 11px; }
 
 @media (max-width: 640px) {
+  #maj-globale { right: 14px; bottom: 62px; }
   #panneau { width: 184px; padding: 9px 11px 9px; }
   #panneau h1 { font-size: 16px; margin-top: 2px; }
   .sur-titre { font-size: 9.5px; letter-spacing: 1.1px; }
@@ -379,6 +384,7 @@ del.df-sup, ins.df-add { display: inline; }
 </div>
 <div id="tableau" hidden></div>
 <button id="vue-bascule" type="button">Tableau</button>
+<button id="maj-globale" type="button" hidden></button>
 <button id="gestion-btn" class="flottant" type="button" aria-label="Ouvrir la gestion">&#9881;</button>
 <button id="panneau-ouvrir" class="flottant" type="button" hidden aria-label="Afficher le panneau">&#9776;</button>
 <button id="mini-ouvrir" class="flottant" type="button" hidden aria-label="Afficher l'encart Martinique">MQ</button>
@@ -916,9 +922,23 @@ function serialiserFichierData(centres) {
   function sauverCentre(c) {
     if (!BASE || !enLigne) { majEtat(BASE ? "echec" : "local"); return; }
     apiEcrire("centres", [{ id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }], function (ok, lignes) {
-      if (ok && lignes && lignes[0] && lignes[0].maj) MAJ_CONNUES[c.id] = lignes[0].maj;
+      if (ok && lignes && lignes[0] && lignes[0].maj) {
+        MAJ_CONNUES[c.id] = lignes[0].maj;
+        majGlobale(lignes[0].maj);
+      }
       majEtat(ok ? "enligne" : "echec");
     }, true);
+  }
+  function majGlobale(iso) {
+    if (!iso) return;
+    var b = document.getElementById("maj-globale");
+    b.textContent = "Mis à jour le " + quandLisible(iso);
+    b.hidden = false;
+  }
+  function chargerMajGlobale() {
+    apiLire("journal?select=quand&order=id.desc&limit=1", function (l) {
+      if (l && l.length) majGlobale(l[0].quand);
+    });
   }
   // Modification ciblée d'un centre : on repart de la version fraîche de la base,
   // on applique le petit changement dessus, puis on enregistre — rien d'autre n'est écrasé.
@@ -960,6 +980,7 @@ function serialiserFichierData(centres) {
           apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok2) {
             enLigne = ok1 && ok2;
             majEtat(enLigne ? "enligne" : "horsligne");
+            if (enLigne) chargerMajGlobale();
           });
         }, true);
         return;
@@ -983,6 +1004,7 @@ function serialiserFichierData(centres) {
         }
         enLigne = true;
         majEtat("enligne");
+        chargerMajGlobale();
         remplirSelectMachines();
         render();
       });
@@ -1008,17 +1030,24 @@ function serialiserFichierData(centres) {
     if (e.valeur && e.valeur.data && e.valeur.data.nom) return e.valeur.data.nom;
     return e.cle;
   }
-  function ouvrirHistorique(racine) {
+  function ouvrirHistorique(racine, cibleCle) {
     apiLire("journal?select=id,quand,cible,cle&order=id.desc&limit=50", function (lignes) {
       if (!lignes) { alert("Historique indisponible pour le moment."); return; }
-      naviguer({ type: "historique", entrees: lignes }, racine);
+      naviguer({ type: "historique", entrees: lignes, cible: cibleCle || null }, racine);
+      if (cibleCle) {
+        var el = ficheContenu.querySelector(".histo-cible");
+        if (el && el.scrollIntoView) el.scrollIntoView({ block: "center" });
+      }
     });
   }
-  function historiqueHtml(entrees) {
+  function historiqueHtml(entrees, cible) {
     var h = '<p class="sur-titre">Journal</p><h2>Historique des modifications</h2>';
     if (!entrees.length) return h + '<p class="texte">Aucune modification enregistrée pour le moment.</p>';
+    var fait = false;
     h += '<div class="histo-liste">' + entrees.map(function (e) {
-      return '<button type="button" class="res histo-item" data-id="' + e.id + '">' +
+      var estCible = !!cible && !fait && e.cle === cible;
+      if (estCible) fait = true;
+      return '<button type="button" class="res histo-item' + (estCible ? " histo-cible" : "") + '" data-id="' + e.id + '">' +
         esc(nomCible(e)) + "<span>" + esc(quandLisible(e.quand)) + "</span></button>";
     }).join("") + "</div>";
     return h;
@@ -1463,7 +1492,7 @@ function serialiserFichierData(centres) {
     } else if (v.type === "historique") {
       ficheCentre = null;
       ficheMode = "historique";
-      ficheContenu.innerHTML = historiqueHtml(v.entrees);
+      ficheContenu.innerHTML = historiqueHtml(v.entrees, v.cible);
     } else if (v.type === "histo-diff") {
       ficheCentre = null;
       ficheMode = "histo-diff";
@@ -2230,7 +2259,7 @@ function serialiserFichierData(centres) {
       return;
     }
     if ((b = ev.target.closest(".histo-item"))) { ouvrirHistoDiff(b.dataset.id); return; }
-    if (ev.target.closest(".fiche-maj")) { ouvrirHistorique(false); return; }
+    if (ev.target.closest(".fiche-maj")) { ouvrirHistorique(false, ficheCentre ? ficheCentre.id : null); return; }
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
       naviguer({ type: "centre", id: b.dataset.id });
       return;
@@ -2589,6 +2618,9 @@ function serialiserFichierData(centres) {
   document.getElementById("gm-histo").addEventListener("click", function () {
     gestionMenu.hidden = true;
     gmSauv.hidden = true;
+    ouvrirHistorique(ficheEl.hidden);
+  });
+  document.getElementById("maj-globale").addEventListener("click", function () {
     ouvrirHistorique(ficheEl.hidden);
   });
 
