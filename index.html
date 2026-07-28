@@ -115,6 +115,10 @@ del.df-sup, ins.df-add { display: inline; }
 #fiche { position: fixed; top: 14px; right: 14px; bottom: 14px; z-index: 1200; width: 440px; max-width: calc(100vw - 28px); background: #fff; border: 1px solid #e3e0d8; border-radius: 14px; box-shadow: 0 14px 36px rgba(27,42,74,.2); display: flex; flex-direction: column; }
 #fiche[hidden] { display: none; }
 .fiche-barre { display: flex; align-items: center; gap: 8px; margin: 8px 8px 0; flex: none; }
+#fiche-presence { margin-left: auto; display: flex; align-items: center; gap: 5px; font: 700 11px "Inter"; color: #8a8f9c; }
+#fiche-presence[hidden] { display: none; }
+#fp-edite-zone { display: flex; align-items: center; gap: 5px; color: #b3382f; }
+#fp-edite-zone[hidden] { display: none; }
 #fiche-retour { border: 0; border-radius: 999px; background: #f1efe9; color: #1b2a4a; font: 600 12px "Inter"; padding: 7px 13px; cursor: pointer; }
 #fiche-retour:hover { background: #e4e1d8; }
 #fiche-retour[hidden] { display: none; }
@@ -372,6 +376,12 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
 <aside id="fiche" hidden aria-label="Fiche du centre">
   <div class="fiche-barre">
     <button id="fiche-retour" type="button" hidden>&larr; Retour</button>
+    <span id="fiche-presence" hidden aria-label="Personnes sur cette fiche">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <b id="fp-voit">1</b>
+      <span id="fp-edite-zone" hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+      <b id="fp-edite">1</b></span>
+    </span>
     <button id="fiche-fermer" type="button" aria-label="Fermer la fiche">&times;</button>
   </div>
   <div id="fiche-contenu"></div>
@@ -954,6 +964,7 @@ function serialiserFichierData(centres) {
         MAJ_CONNUES[c.id] = lignes[0].maj;
         majGlobale(lignes[0].maj);
       }
+      if (ok) diffuserMaj();
       majEtat(ok ? "enligne" : "echec");
     }, true);
   }
@@ -964,6 +975,53 @@ function serialiserFichierData(centres) {
     b.hidden = false;
   }
   var presenceLancee = false;
+  var canalPresence = null;
+  var etatPresence = {};
+  var suiviLocal = { fiche: null, edite: false };
+  function etatLocalPresence() {
+    var enEdition = ficheMode === "edition" || ficheMode === "apercu" || !!editionEnAttente;
+    var id = null;
+    if (!ficheEl.hidden) {
+      if (ficheCentre && ficheCentre.id) id = ficheCentre.id;
+      else if (!enEdition && vueCourante && vueCourante.type === "centre") id = vueCourante.id;
+    }
+    return { fiche: id, edite: enEdition && !!id };
+  }
+  function comptesFiche(id) {
+    var voit = 0, edite = 0;
+    if (!id) return { voit: 0, edite: 0 };
+    Object.keys(etatPresence).forEach(function (k) {
+      (etatPresence[k] || []).forEach(function (p) {
+        if (p && p.fiche === id) {
+          voit++;
+          if (p.edite) edite++;
+        }
+      });
+    });
+    return { voit: voit, edite: edite };
+  }
+  function majPresenceFiche() {
+    var el = document.getElementById("fiche-presence");
+    var id = etatLocalPresence().fiche;
+    if (!id || !presenceLancee || ficheEl.hidden) { el.hidden = true; return; }
+    var c = comptesFiche(id);
+    if (c.voit < 1) c.voit = 1;
+    document.getElementById("fp-voit").textContent = c.voit;
+    document.getElementById("fp-edite").textContent = c.edite;
+    document.getElementById("fp-edite-zone").hidden = c.edite < 1;
+    el.hidden = false;
+  }
+  function autresEditeurs(id) {
+    var n = comptesFiche(id).edite;
+    if (suiviLocal.fiche === id && suiviLocal.edite) n -= 1;
+    return Math.max(0, n);
+  }
+  function diffuserMaj() {
+    if (canalPresence) {
+      try { canalPresence.send({ type: "broadcast", event: "maj", payload: {} }); } catch (e) {}
+    }
+  }
+  var majRecueMinuterie = null;
   function demarrerPresence() {
     if (presenceLancee || !BASE || typeof window.supabase === "undefined" || !window.supabase.createClient) return;
     presenceLancee = true;
@@ -972,8 +1030,10 @@ function serialiserFichierData(centres) {
       var canal = client.channel("carte-eap-presence", {
         config: { presence: { key: "v-" + Math.random().toString(36).slice(2) + Date.now().toString(36) } }
       });
+      canalPresence = canal;
       canal.on("presence", { event: "sync" }, function () {
-        var n = Object.keys(canal.presenceState()).length;
+        etatPresence = canal.presenceState() || {};
+        var n = Object.keys(etatPresence).length;
         var el = document.getElementById("presence");
         if (n > 0) {
           document.getElementById("presence-nb").textContent = n;
@@ -981,10 +1041,23 @@ function serialiserFichierData(centres) {
         } else {
           el.hidden = true;
         }
+        majPresenceFiche();
+      });
+      canal.on("broadcast", { event: "maj" }, function () {
+        clearTimeout(majRecueMinuterie);
+        majRecueMinuterie = setTimeout(rafraichirDonnees, 400);
       });
       canal.subscribe(function (etat) {
-        if (etat === "SUBSCRIBED") canal.track({});
+        if (etat === "SUBSCRIBED") canal.track(suiviLocal);
       });
+      setInterval(function () {
+        var e = etatLocalPresence();
+        if (e.fiche !== suiviLocal.fiche || e.edite !== suiviLocal.edite) {
+          suiviLocal = e;
+          try { canal.track(suiviLocal); } catch (err) {}
+        }
+        majPresenceFiche();
+      }, 1500);
     } catch (e) {}
   }
   function chargerMajGlobale() {
@@ -1017,7 +1090,43 @@ function serialiserFichierData(centres) {
   function sauverMachines() {
     if (!BASE || !enLigne) return;
     apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok) {
+      if (ok) diffuserMaj();
       majEtat(ok ? "enligne" : "echec");
+    });
+  }
+  function appliquerLignesCentres(lignes) {
+    CENTRES.length = 0;
+    lignes.forEach(function (l) {
+      var c = Object.assign({ id: l.id }, l.data || {});
+      CENTRES.push(c);
+      INFOS[l.id] = l.infos || {};
+      MAJ_CONNUES[l.id] = l.maj;
+    });
+  }
+  function appliquerReglages(val) {
+    var lm = Array.isArray(val) ? val : (val && Array.isArray(val.machines) ? val.machines : null);
+    var lc = (val && Array.isArray(val.categories)) ? val.categories : null;
+    if (lm && lm.length) {
+      MACHINES.length = 0;
+      lm.forEach(function (m) { if (m && m.nom) MACHINES.push({ nom: m.nom, alias: m.alias && m.alias.length ? m.alias : [m.nom], cat: m.cat || null }); });
+      CATS.length = 0;
+      (lc || []).forEach(function (c) { if (c && c.id && c.nom) CATS.push({ id: c.id, nom: c.nom, parent: c.parent || null }); });
+    }
+  }
+  // Mise à jour silencieuse quand une modification est diffusée par un autre onglet.
+  var majDifferee = false;
+  function rafraichirDonnees() {
+    if (!BASE || !enLigne) return;
+    if (ficheMode === "edition" || ficheMode === "apercu" || editionEnAttente) { majDifferee = true; return; }
+    apiLire("centres?select=*&order=id.asc", function (lignes) {
+      if (!lignes || !lignes.length) return;
+      appliquerLignesCentres(lignes);
+      apiLire("reglages?select=*&cle=eq.machines", function (regs) {
+        appliquerReglages(regs && regs.length ? regs[0].valeur : null);
+        remplirSelectMachines();
+        render();
+        chargerMajGlobale();
+      });
     });
   }
   function chargerDepuisBase() {
@@ -1037,23 +1146,9 @@ function serialiserFichierData(centres) {
         }, true);
         return;
       }
-      CENTRES.length = 0;
-      lignes.forEach(function (l) {
-        var c = Object.assign({ id: l.id }, l.data || {});
-        CENTRES.push(c);
-        INFOS[l.id] = l.infos || {};
-        MAJ_CONNUES[l.id] = l.maj;
-      });
+      appliquerLignesCentres(lignes);
       apiLire("reglages?select=*&cle=eq.machines", function (regs) {
-        var val = regs && regs.length ? regs[0].valeur : null;
-        var lm = Array.isArray(val) ? val : (val && Array.isArray(val.machines) ? val.machines : null);
-        var lc = (val && Array.isArray(val.categories)) ? val.categories : null;
-        if (lm && lm.length) {
-          MACHINES.length = 0;
-          lm.forEach(function (m) { if (m && m.nom) MACHINES.push({ nom: m.nom, alias: m.alias && m.alias.length ? m.alias : [m.nom], cat: m.cat || null }); });
-          CATS.length = 0;
-          (lc || []).forEach(function (c) { if (c && c.id && c.nom) CATS.push({ id: c.id, nom: c.nom, parent: c.parent || null }); });
-        }
+        appliquerReglages(regs && regs.length ? regs[0].valeur : null);
         enLigne = true;
         majEtat("enligne");
         chargerMajGlobale();
@@ -1619,6 +1714,7 @@ function serialiserFichierData(centres) {
     apercuEdition = null;
     ficheEl.hidden = true;
     majRetour();
+    verifierMajDifferee();
   }
   document.getElementById("fiche-fermer").addEventListener("click", fermerFiche);
   window.addEventListener("beforeunload", function (e) {
@@ -1783,6 +1879,10 @@ function serialiserFichierData(centres) {
 
   var editionMajRef = null;
   function ouvrirEdition(c, creation) {
+    if (!creation && c.id && autresEditeurs(c.id) > 0) {
+      var continuer = confirm("Quelqu'un modifie cette fiche en ce moment.\nOK : modifier quand même. Annuler : revenir à la fiche.");
+      if (!continuer) return;
+    }
     ficheCentre = c;
     ficheMode = "edition";
     editionMajRef = c.id ? (MAJ_CONNUES[c.id] || null) : null;
@@ -2623,6 +2723,7 @@ function serialiserFichierData(centres) {
     if (ev.target.closest(".btn-ann")) {
       if (vueCourante) afficherVue(vueCourante);
       else fermerFiche();
+      verifierMajDifferee();
       return;
     }
     if (ev.target.closest(".btn-val") && ficheCentre) {
@@ -3071,6 +3172,13 @@ function serialiserFichierData(centres) {
     majEncart();
     rendreTableau();
     if (!ficheEl.hidden && ficheMode !== "edition" && ficheMode !== "apercu" && !editionEnAttente && vueCourante) afficherVue(vueCourante);
+    verifierMajDifferee();
+  }
+  function verifierMajDifferee() {
+    if (majDifferee && ficheMode !== "edition" && ficheMode !== "apercu" && !editionEnAttente) {
+      majDifferee = false;
+      setTimeout(rafraichirDonnees, 0);
+    }
   }
 
   function brancher(idSeg, cle) {
