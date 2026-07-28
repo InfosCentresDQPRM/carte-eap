@@ -166,10 +166,10 @@ del.df-sup, ins.df-add { display: inline; }
 .mach-chip { border: 1px solid #cfe0f7; background: #eef4fd; border-radius: 999px; padding: 5px 11px; font: 600 12px "Inter"; color: #1f6fd6; cursor: pointer; }
 .mach-chip:hover { background: #dcebfb; }
 .mach-liste-centres { display: grid; gap: 6px; }
-.aills { display: flex; flex-wrap: wrap; gap: 6px; }
-.aill, .aill-lien { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: #fdf3e7; border: 1px solid #f0dcc2; color: #a96a32; font: 600 12px "Inter"; cursor: pointer; text-decoration: none; }
+.aills { display: grid; gap: 7px; }
+.aill-ligne { margin: 0; font-size: 13px; line-height: 1.55; color: #2c3345; }
+.aill, .aill-lien { display: inline-flex; align-items: center; vertical-align: baseline; margin-left: 2px; padding: 1px 9px; border-radius: 999px; background: #fdf3e7; border: 1px solid #f0dcc2; color: #a96a32; font: 600 11px "Inter"; cursor: pointer; text-decoration: none; white-space: nowrap; }
 .aill:hover, .aill-lien:hover { background: #fae7ce; }
-.aill-txt { display: inline-flex; padding: 5px 11px; border-radius: 999px; background: #f7f6f1; border: 1px solid #e3e0d8; color: #5a6272; font: 600 12px "Inter"; }
 .res { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; text-align: left; padding: 9px 11px; border: 1px solid #eceae3; border-radius: 10px; background: #fff; margin: 0; font: 600 13px "Inter"; color: #1b2a4a; cursor: pointer; }
 .res span { color: #8a8f9c; font: 400 12px "Inter"; }
 .res:hover { background: #f7f6f1; }
@@ -1106,7 +1106,7 @@ function serialiserFichierData(centres) {
   function appliquerReglages(val) {
     var lm = Array.isArray(val) ? val : (val && Array.isArray(val.machines) ? val.machines : null);
     var lc = (val && Array.isArray(val.categories)) ? val.categories : null;
-    if (lm && lm.length) {
+    if (lm) {
       MACHINES.length = 0;
       lm.forEach(function (m) { if (m && m.nom) MACHINES.push({ nom: m.nom, alias: m.alias && m.alias.length ? m.alias : [m.nom], cat: m.cat || null }); });
       CATS.length = 0;
@@ -1546,13 +1546,13 @@ function serialiserFichierData(centres) {
     if (refs) h += '<div class="refs">' + refs + "</div>";
     if (inf.ailleurs && inf.ailleurs.length) {
       h += '<section class="sec"><h3>Formation en partie ailleurs</h3><div class="aills">' + inf.ailleurs.map(function (a) {
-        if (a.id && !apercu) return '<button type="button" class="aill" data-id="' + esc(a.id) + '">' + esc(a.texte) + " →</button>";
-        if (a.url) return '<a class="aill-lien" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + esc(a.texte) + " ↗</a>";
+        if (a.id && !apercu) return '<p class="aill-ligne">' + esc(a.texte) + ' <button type="button" class="aill" data-id="' + esc(a.id) + '">fiche \u2192</button></p>';
+        if (a.url) return '<p class="aill-ligne">' + esc(a.texte) + ' <a class="aill-lien" href="' + esc(a.url) + '" target="_blank" rel="noopener">lien \u2197</a></p>';
         if (a.id) {
           var cible = centreParId(a.id);
-          return '<span class="aill-txt">' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : "") + "</span>";
+          return '<p class="aill-ligne">' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : "") + "</p>";
         }
-        return '<span class="aill-txt">' + esc(a.texte) + "</span>";
+        return '<p class="aill-ligne">' + esc(a.texte) + "</p>";
       }).join("") + "</div></section>";
     }
     themesDe(inf).forEach(function (th) {
