@@ -27,9 +27,32 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 #filt-chips:empty { margin: 0; }
 #gestion-menu { position: fixed; right: 14px; bottom: 62px; z-index: 1150; width: 236px; background: rgba(255,255,255,.97); border: 1px solid #e3e0d8; border-radius: 12px; box-shadow: 0 10px 28px rgba(27,42,74,.18); padding: 8px; }
 #gestion-menu[hidden] { display: none; }
-#gm-centres, #gm-machines { display: block; width: 100%; margin: 0; padding: 9px 10px; border: 0; border-radius: 8px; background: none; font: 600 12px "Inter"; color: #2c3345; cursor: pointer; text-align: left; }
-#gm-centres:hover, #gm-machines:hover { background: #f1efe9; color: #1b2a4a; }
+#gm-centres, #gm-machines, #gm-histo { display: block; width: 100%; margin: 0; padding: 9px 10px; border: 0; border-radius: 8px; background: none; font: 600 12px "Inter"; color: #2c3345; cursor: pointer; text-align: left; }
+#gm-centres:hover, #gm-machines:hover, #gm-histo:hover { background: #f1efe9; color: #1b2a4a; }
 #gestion-btn { bottom: 14px; right: 14px; font-size: 15px; }
+#vue-bascule { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1140; border: 1px solid #e3e0d8; border-radius: 999px; background: rgba(255,255,255,.97); padding: 8px 16px; font: 700 12px "Inter"; color: #1b2a4a; cursor: pointer; box-shadow: 0 8px 24px rgba(27,42,74,.16); }
+#vue-bascule:hover { border-color: #b9b4a6; }
+#tableau { position: fixed; inset: 0; z-index: 900; background: #f4f1ea; overflow: auto; padding: 14px 14px 64px 288px; }
+#tableau[hidden] { display: none; }
+.tb { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e3e0d8; border-radius: 12px; overflow: hidden; font: 400 12.5px "Inter"; color: #2c3345; }
+.tb th { position: sticky; top: 0; background: #f3f1ea; color: #5a6272; font: 700 11px "Inter"; letter-spacing: .5px; text-transform: uppercase; text-align: left; padding: 9px 11px; border-bottom: 1px solid #e3e0d8; z-index: 2; }
+.tb th.tb-c, .tb td.tb-c { text-align: center; }
+.tb th.tb-tri { cursor: pointer; user-select: none; }
+.tb th.tb-tri:hover { color: #1b2a4a; }
+.tb td { padding: 8px 11px; border-bottom: 1px solid #f0eee7; vertical-align: top; }
+.tb tbody tr:last-child td { border-bottom: 0; }
+.tb tbody tr:hover td { background: #fbfaf6; }
+.tb-nom { border: 0; background: none; padding: 0; font: 700 12.5px "Inter"; color: #1b2a4a; cursor: pointer; text-align: left; }
+.tb-nom:hover { color: #1f6fd6; }
+.tb-b { display: inline-block; margin: 1px 2px; padding: 2px 7px; border-radius: 999px; font: 600 11px "Inter"; white-space: nowrap; }
+.tb-im { background: #e3edfb; color: #1f5fae; }
+.tb-rth { background: #fdeeda; color: #c06a00; }
+.tb-vide { color: #cfc9ba; }
+.tb-machs { max-width: 320px; }
+.tb-machs .mach-chip { margin: 1px 2px 1px 0; }
+@media (max-width: 900px) {
+  #tableau { padding-left: 14px; padding-top: 62px; }
+}
 #gm-sauv { margin: 6px 2px 2px; padding: 8px 8px 2px; border-top: 1px solid #eceae3; font: 600 11.5px "Inter"; color: #8a8f9c; }
 #gm-sauv[hidden] { display: none; }
 #gs-data, #gs-infos { display: block; width: 100%; margin: 0 0 6px; padding: 7px 9px; border: 1px dashed #cfc9ba; border-radius: 8px; background: none; font: 600 11.5px "Inter"; color: #5a6272; cursor: pointer; text-align: left; }
@@ -273,8 +296,8 @@ del.df-sup, ins.df-add { display: inline; }
     <div id="rech-liste" hidden></div>
   </div>
   <div class="seg" id="seg-sem">
-    <button type="button" data-val="tous">Tous</button>
-    <button type="button" data-val="S1" class="actif">S1</button>
+    <button type="button" data-val="tous" class="actif">Tous</button>
+    <button type="button" data-val="S1">S1</button>
     <button type="button" data-val="S2">S2</button>
     <button type="button" data-val="S3">S3</button>
   </div>
@@ -341,6 +364,8 @@ del.df-sup, ins.df-add { display: inline; }
     <button type="button" id="gs-infos">infos.js</button>
   </div>
 </div>
+<div id="tableau" hidden></div>
+<button id="vue-bascule" type="button">Tableau</button>
 <button id="gestion-btn" class="flottant" type="button" aria-label="Ouvrir la gestion">&#9881;</button>
 <button id="panneau-ouvrir" class="flottant" type="button" hidden aria-label="Afficher le panneau">&#9776;</button>
 <button id="mini-ouvrir" class="flottant" type="button" hidden aria-label="Afficher l'encart Martinique">MQ</button>
@@ -793,7 +818,7 @@ function serialiserFichierData(centres) {
   "use strict";
   if (typeof window === "undefined" || typeof L === "undefined") { return; }
 
-  var state = { sem: "S1", mod: "tous", taille: "tous", machs: [] };
+  var state = { sem: "tous", mod: "tous", taille: "tous", machs: [] };
   var VUE_METRO = { centre: [46.6, 2.6], zoom: 6 };
   var VUE_MQ = { centre: [14.64, -61.02], zoom: 10 };
   // Fond sobre ET en français : Plan IGN « atténué » (tuiles vectorielles Géoplateforme, sans clé).
@@ -1990,6 +2015,78 @@ function serialiserFichierData(centres) {
     });
   }
 
+  // ——— Vue tableau (mêmes filtres que la carte) ———
+  var tableauEl = document.getElementById("tableau");
+  var basculeBtn = document.getElementById("vue-bascule");
+  var triTable = { col: "nom", sens: 1 };
+  function totalSem(c, s) {
+    var p = placesFor(c, s);
+    var t = 0;
+    if (state.mod !== "rth") t += p.im;
+    if (state.mod !== "im") t += p.rth;
+    return t;
+  }
+  function rendreTableau() {
+    if (tableauEl.hidden) return;
+    var lignes = CENTRES.filter(function (c) {
+      return c.actif && passeFiltreMachines(c, state.machs) &&
+        passeTaille(c, state.sem, state.mod, state.taille) &&
+        totalDisplayed(c, state.sem, state.mod) > 0;
+    });
+    var s = triTable.sens;
+    lignes.sort(function (a, b) {
+      if (triTable.col === "nom" || triTable.col === "ville") {
+        return s * String(a[triTable.col] || "").localeCompare(String(b[triTable.col] || ""), "fr");
+      }
+      return s * (totalSem(a, triTable.col) - totalSem(b, triTable.col)) ||
+        String(a.nom || "").localeCompare(String(b.nom || ""), "fr");
+    });
+    function fleche(c) { return triTable.col === c ? (triTable.sens > 0 ? " \u25B4" : " \u25BE") : ""; }
+    var h = '<table class="tb"><thead><tr>' +
+      '<th class="tb-tri" data-col="nom">Centre' + fleche("nom") + "</th>" +
+      '<th class="tb-tri" data-col="ville">Ville' + fleche("ville") + "</th>" +
+      ["S1", "S2", "S3"].map(function (sx) {
+        return '<th class="tb-tri tb-c" data-col="' + sx + '">' + sx + fleche(sx) + "</th>";
+      }).join("") +
+      "<th>Machines</th></tr></thead><tbody>";
+    lignes.forEach(function (c) {
+      var machs = machinesDuCentre(MACHINES, infosDe(c));
+      h += "<tr>";
+      h += '<td><button type="button" class="tb-nom" data-id="' + esc(c.id) + '">' + esc(c.nom) + "</button></td>";
+      h += "<td>" + esc(c.ville || "") + "</td>";
+      ["S1", "S2", "S3"].forEach(function (sx) {
+        var p = placesFor(c, sx);
+        var cel = "";
+        if (state.mod !== "rth" && p.im) cel += '<span class="tb-b tb-im">' + p.im + " im</span>";
+        if (state.mod !== "im" && p.rth) cel += '<span class="tb-b tb-rth">' + p.rth + " rth</span>";
+        h += '<td class="tb-c">' + (cel || '<span class="tb-vide">\u2014</span>') + "</td>";
+      });
+      h += '<td class="tb-machs">' + machs.map(function (m) {
+        return '<button type="button" class="mach-chip" data-mach="' + esc(m.nom) + '">' + esc(m.nom) + "</button>";
+      }).join("") + "</td></tr>";
+    });
+    h += "</tbody></table>";
+    tableauEl.innerHTML = h;
+  }
+  function basculerVue() {
+    tableauEl.hidden = !tableauEl.hidden;
+    basculeBtn.textContent = tableauEl.hidden ? "Tableau" : "Carte";
+    document.getElementById("mini").style.display = tableauEl.hidden ? "" : "none";
+    rendreTableau();
+  }
+  basculeBtn.addEventListener("click", basculerVue);
+  tableauEl.addEventListener("click", function (ev) {
+    var b;
+    if ((b = ev.target.closest(".tb-nom"))) { naviguer({ type: "centre", id: b.dataset.id }, true); return; }
+    if ((b = ev.target.closest(".mach-chip"))) { naviguer({ type: "machine", nom: b.dataset.mach }, true); return; }
+    if ((b = ev.target.closest("th.tb-tri"))) {
+      var col = b.dataset.col;
+      if (triTable.col === col) triTable.sens = -triTable.sens;
+      else triTable = { col: col, sens: 1 };
+      rendreTableau();
+    }
+  });
+
   // ——— Placement d'un point sur la carte ———
   var placement = null;
   var barrePl = document.getElementById("placement");
@@ -2460,7 +2557,7 @@ function serialiserFichierData(centres) {
     carte.once("moveend", function () {
       naviguer({ type: "centre", id: c.id }, true);
     });
-    carte.flyTo([c.lat, c.lng], Math.max(typeof carte.getZoom === "function" ? carte.getZoom() : 10, 11), { duration: 1.1 });
+    carte.flyTo([c.lat, c.lng], Math.max(typeof carte.getZoom === "function" ? carte.getZoom() : 10, 15), { duration: 1.1 });
   }
   rechEl.addEventListener("input", majRech);
   rechEl.addEventListener("focus", majRech);
@@ -2553,6 +2650,7 @@ function serialiserFichierData(centres) {
     totaux = { mq: mqTotal, hex: s.places - mqTotal, mqCls: mqCls };
     document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + (state.sem === "tous" ? "S1\u2013S3" : state.sem) + ")";
     majEncart();
+    rendreTableau();
     if (!ficheEl.hidden && ficheMode !== "edition" && !editionEnAttente && vueCourante) afficherVue(vueCourante);
   }
 
