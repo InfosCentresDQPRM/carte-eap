@@ -178,9 +178,16 @@ del.df-sup, ins.df-add { display: inline; }
 .res:hover { background: #f7f6f1; }
 .gc-nouveau { display: block; width: 100%; margin: 10px 0 12px; border: 1px dashed #cfc9ba; border-radius: 10px; background: none; padding: 9px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
 .gc-nouveau:hover { border-color: #a96a32; color: #a96a32; }
-.gc-item { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.gc-item { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; position: relative; border-radius: 8px; }
 .gc-item input { width: 16px; height: 16px; flex: none; accent-color: #1b2a4a; cursor: pointer; }
-.gc-item .res { flex: 1; }
+.gc-item .res { flex: 1; position: relative; z-index: 1; }
+/* Appui long (6 s) pour armer la suppression : un fond rouge se remplit de gauche à droite. */
+.gc-item .gc-jauge { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #f4d3d0; border-radius: 8px; z-index: 0; pointer-events: none; }
+.gc-item.gc-appui .gc-jauge { width: 100%; transition: width 6s linear; }
+.gc-item.gc-arme { background: #fbeceb; }
+.gc-suppr { flex: none; z-index: 1; width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%; background: #c62f27; color: #fff; font: 700 14px "Inter"; line-height: 22px; cursor: pointer; display: none; }
+.gc-item.gc-arme .gc-suppr { display: block; }
+.gc-suppr:hover { background: #a5241d; }
 .form label { display: block; margin: 14px 0 3px; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #8a8f9c; }
 .form input, .form textarea, .form select { width: 100%; border: 1px solid #ddd9cf; border-radius: 8px; padding: 7px 9px; font: 13px "Inter"; color: #2c3345; background: #fff; }
 .form textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
@@ -1207,6 +1214,38 @@ function serialiserFichierData(centres) {
       majEtat(ok ? "enligne" : "echec");
     }, true);
   }
+  // Retire un centre de la mémoire locale (sans toucher à la base).
+  function retirerCentreLocal(id) {
+    for (var i = CENTRES.length - 1; i >= 0; i--) { if (CENTRES[i].id === id) CENTRES.splice(i, 1); }
+    delete INFOS[id];
+    delete MAJ_CONNUES[id];
+  }
+  // Suppression douce : le centre est marqué supprimé en base (donc archivé dans
+  // l'historique et restaurable), puis retiré de la carte et de toutes les listes.
+  function supprimerCentre(id, apres) {
+    var c = centreParId(id);
+    if (!c) { if (apres) apres(); return; }
+    if (!BASE || !enLigne) {
+      // Hors ligne : on retire seulement de l'affichage courant.
+      retirerCentreLocal(id);
+      render();
+      majEtat(BASE ? "echec" : "local");
+      if (apres) apres();
+      return;
+    }
+    var data = copieData(c);
+    data.supprime = true;
+    apiEcrire("centres", [{ id: id, data: data, infos: INFOS[id] || {} }], function (ok, lignes) {
+      if (ok) {
+        if (lignes && lignes[0] && lignes[0].maj) { MAJ_CONNUES[id] = lignes[0].maj; majGlobale(lignes[0].maj); }
+        retirerCentreLocal(id);
+        diffuserMaj();
+        render();
+      }
+      majEtat(ok ? "enligne" : "echec");
+      if (apres) apres();
+    }, true);
+  }
   // Réécrit toutes les fiches au gabarit standard (mêmes blocs et cases partout,
   // terminologie RX / RT / MN) : une seule écriture groupée, tracée dans l'historique.
   function harmoniserToutesLesFiches() {
@@ -1363,6 +1402,9 @@ function serialiserFichierData(centres) {
   function appliquerLignesCentres(lignes) {
     CENTRES.length = 0;
     lignes.forEach(function (l) {
+      // Un centre supprimé (suppression douce) reste en base pour l'historique,
+      // mais n'apparaît plus nulle part dans la carte.
+      if (l.data && l.data.supprime) return;
       var c = Object.assign({ id: l.id }, l.data || {});
       CENTRES.push(c);
       INFOS[l.id] = l.infos || {};
@@ -1839,11 +1881,14 @@ function serialiserFichierData(centres) {
     h += '<button type="button" id="gc-harmoniser" class="gc-nouveau">Harmoniser la structure de toutes les fiches (gabarit commun + RX / RT / MN)</button>';
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
-      return '<div class="gc-item">' +
+      return '<div class="gc-item" data-id="' + esc(c.id) + '">' +
+        '<span class="gc-jauge"></span>' +
         '<input type="checkbox" class="gc-actif" data-id="' + esc(c.id) + '"' + (c.actif ? " checked" : "") + '>' +
         '<button type="button" class="res gc-nom" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>" +
+        '<button type="button" class="gc-suppr" data-id="' + esc(c.id) + '" aria-label="Supprimer ce centre" title="Supprimer ce centre">\u00d7</button>' +
         "</div>";
     }).join("");
+    h += '<p class="etab" style="margin-top:10px">Pour supprimer un centre : maintenir le doigt (ou le clic) sur sa ligne pendant 6 secondes, jusqu\u2019\u00e0 l\u2019apparition d\u2019une croix rouge.</p>';
     return h;
   }
 
@@ -2833,7 +2878,20 @@ function serialiserFichierData(centres) {
     if ((b = ev.target.closest(".histo-item"))) { ouvrirHistoDiff(b.dataset.id); return; }
     if (ev.target.closest(".fiche-maj")) { ouvrirHistorique(false, ficheCentre ? ficheCentre.id : null); return; }
     if (ev.target.closest(".fiche-histo") && ficheCentre) { ouvrirHistoriqueFiche(ficheCentre.id); return; }
+    if ((b = ev.target.closest(".gc-suppr"))) {
+      var cS = centreParId(b.dataset.id);
+      var nomS = cS ? (cS.nom || cS.id) : b.dataset.id;
+      if (confirm("Supprimer « " + nomS + " » ?\n\nToutes les infos de ce centre (fiche, avis, contacts…) disparaîtront de la carte.\nCette suppression reste récupérable dans l'historique.")) {
+        desarmerItem();
+        supprimerCentre(b.dataset.id);
+      } else {
+        desarmerItem();
+      }
+      return;
+    }
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
+      // Un appui long venant d'armer la suppression ne doit pas aussi ouvrir la fiche.
+      if (longReussi) { longReussi = false; return; }
       naviguer({ type: "centre", id: b.dataset.id });
       return;
     }
@@ -3096,6 +3154,44 @@ function serialiserFichierData(centres) {
     if (ev.target.closest("#gs-data")) telecharger("data.js", serialiserFichierData(CENTRES));
     else if (ev.target.closest("#gs-infos")) telecharger("infos.js", serialiserFichierInfos(MACHINES, CATS, INFOS, CENTRES.map(function (c) { return c.id; })));
   });
+
+  // ——— Appui long (6 s) sur une ligne de « Gérer les centres » pour armer la suppression ———
+  var appuiSuppr = null, itemArme = null, longReussi = false;
+  function desarmerItem() {
+    if (itemArme) { itemArme.classList.remove("gc-arme"); itemArme = null; }
+  }
+  function annulerAppui() {
+    if (appuiSuppr) { clearTimeout(appuiSuppr); appuiSuppr = null; }
+    if (itemPresse) { itemPresse.classList.remove("gc-appui"); itemPresse = null; }
+  }
+  var itemPresse = null;
+  function debutAppuiSuppr(ev) {
+    // Un appui qui commence sur la case à cocher ou sur la croix ne doit pas armer.
+    if (ev.target.closest(".gc-actif") || ev.target.closest(".gc-suppr")) return;
+    var item = ev.target.closest(".gc-item");
+    if (!item || item === itemArme) return;
+    if (ev.type === "touchstart") { /* on laisse le scroll possible : pas de preventDefault ici */ }
+    annulerAppui();
+    desarmerItem();
+    longReussi = false;
+    itemPresse = item;
+    item.classList.add("gc-appui");
+    appuiSuppr = setTimeout(function () {
+      appuiSuppr = null;
+      item.classList.remove("gc-appui");
+      item.classList.add("gc-arme");
+      itemArme = item;
+      itemPresse = null;
+      longReussi = true;
+    }, 6000);
+  }
+  ficheContenu.addEventListener("mousedown", debutAppuiSuppr);
+  ficheContenu.addEventListener("touchstart", debutAppuiSuppr, { passive: true });
+  ficheContenu.addEventListener("mouseup", annulerAppui);
+  ficheContenu.addEventListener("mouseleave", annulerAppui);
+  ficheContenu.addEventListener("touchend", annulerAppui);
+  ficheContenu.addEventListener("touchcancel", annulerAppui);
+  ficheContenu.addEventListener("touchmove", annulerAppui, { passive: true });
 
   function majMachSel(bloc) {
     var deja = [];
@@ -3401,8 +3497,7 @@ function serialiserFichierData(centres) {
     var om = auxAntilles();
     miniNom.textContent = om ? "Hexagone" : "Martinique";
     miniBtn.setAttribute("aria-label", om ? "Revenir à l'Hexagone" : "Aller à la Martinique");
-    var n = om ? totaux.hex : totaux.mq;
-    miniBadge.textContent = n > 0 ? n + " pl." : "";
+    miniBadge.textContent = "";
     miniCouche.clearLayers();
     var cMQ = centreParId("martinique-chu");
     if (!om && cMQ && totaux.mq > 0) {
