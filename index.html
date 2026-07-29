@@ -75,9 +75,6 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .rech-item span { color: #8a8f9c; font-weight: 400; }
 .rech-item:hover { background: #f1efe9; }
 .maj-ligne { margin: 22px 0 0; padding-top: 10px; border-top: 1px solid #eceae3; }
-.fiche-ref { margin: 12px 0 0; font: 400 11px "Inter"; color: #a8adb9; }
-.fiche-ref-copie { border: 0; background: none; padding: 0; font: 600 11px "SF Mono", "Consolas", monospace; color: #8b91a0; cursor: pointer; }
-.fiche-ref-copie:hover { color: #a96a32; text-decoration: underline; }
 .tb-outils { display: flex; justify-content: flex-end; margin: 0 0 8px; }
 .tb-cible td { background: #fdf3df !important; transition: background .4s; }
 .histo-liste { display: grid; gap: 7px; margin: 12px 0 0; }
@@ -178,14 +175,11 @@ del.df-sup, ins.df-add { display: inline; }
 .res:hover { background: #f7f6f1; }
 .gc-nouveau { display: block; width: 100%; margin: 10px 0 12px; border: 1px dashed #cfc9ba; border-radius: 10px; background: none; padding: 9px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
 .gc-nouveau:hover { border-color: #a96a32; color: #a96a32; }
-.gc-item { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; position: relative; border-radius: 8px; }
+.gc-item { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; border-radius: 8px; }
 .gc-item input { width: 16px; height: 16px; flex: none; accent-color: #1b2a4a; cursor: pointer; }
-.gc-item .res { flex: 1; position: relative; z-index: 1; }
-/* Appui long (6 s) pour armer la suppression : un fond rouge se remplit de gauche à droite. */
-.gc-item .gc-jauge { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #f4d3d0; border-radius: 8px; z-index: 0; pointer-events: none; }
-.gc-item.gc-appui .gc-jauge { width: 100%; transition: width 6s linear; }
+.gc-item .res { flex: 1; }
 .gc-item.gc-arme { background: #fbeceb; }
-.gc-suppr { flex: none; z-index: 1; width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%; background: #c62f27; color: #fff; font: 700 14px "Inter"; line-height: 22px; cursor: pointer; display: none; }
+.gc-suppr { flex: none; width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%; background: #c62f27; color: #fff; font: 700 14px "Inter"; line-height: 22px; cursor: pointer; display: none; }
 .gc-item.gc-arme .gc-suppr { display: block; }
 .gc-suppr:hover { background: #a5241d; }
 .form label { display: block; margin: 14px 0 3px; font: 700 11px "Inter"; letter-spacing: .7px; text-transform: uppercase; color: #8a8f9c; }
@@ -225,6 +219,12 @@ del.df-sup, ins.df-add { display: inline; }
 .th-re { border: 1px dashed #cfc9ba; border-radius: 999px; background: none; padding: 4px 11px; font: 600 11px "Inter"; color: #5a6272; cursor: pointer; }
 .th-re:hover { border-color: #a96a32; color: #a96a32; }
 .ssec-item { border: 1px solid #eceae3; border-radius: 10px; padding: 10px; margin: 11px 0 0; display: grid; gap: 6px; background: #fff; }
+.aill-row { border: 1px solid #eceae3; border-radius: 10px; padding: 10px; margin: 8px 0 0; display: grid; gap: 6px; background: #fff; }
+.aill-haut { display: flex; gap: 6px; }
+.aill-haut textarea { flex: 1; min-height: 46px; }
+.aill-bas { display: flex; gap: 6px; align-items: center; }
+.aill-bas select { flex: 1; }
+.aill-bas input { flex: 1; }
 .ssec-haut { display: flex; gap: 6px; }
 .ssec-haut input.ssec-titre { flex: 1; }
 .ssec-add { display: block; width: 100%; margin: 8px 0 0; border: 1px dashed #cfc9ba; border-radius: 10px; background: none; padding: 8px 0; font: 600 12px "Inter"; color: #5a6272; cursor: pointer; }
@@ -1870,7 +1870,6 @@ function serialiserFichierData(centres) {
     if (!apercu && MAJ_CONNUES[c.id]) {
       h += '<p class="maj-ligne"><button type="button" class="lien-sauv fiche-maj">Fiche mise à jour le ' + esc(quandLisible(MAJ_CONNUES[c.id])) + '</button> · <button type="button" class="lien-sauv fiche-histo">Historique de la fiche</button></p>';
     }
-    if (c.id) h += '<p class="fiche-ref">Réf. de cette fiche (renvois « ailleurs ») : <button type="button" class="fiche-ref-copie" data-ref="' + esc(c.id) + '" title="Cliquer pour copier">' + esc(c.id) + '</button></p>';
     return h;
   }
 
@@ -1882,13 +1881,11 @@ function serialiserFichierData(centres) {
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
       return '<div class="gc-item" data-id="' + esc(c.id) + '">' +
-        '<span class="gc-jauge"></span>' +
         '<input type="checkbox" class="gc-actif" data-id="' + esc(c.id) + '"' + (c.actif ? " checked" : "") + '>' +
         '<button type="button" class="res gc-nom" data-id="' + esc(c.id) + '">' + esc(c.nom || c.id) + "<span>" + esc(c.ville || "") + "</span></button>" +
         '<button type="button" class="gc-suppr" data-id="' + esc(c.id) + '" aria-label="Supprimer ce centre" title="Supprimer ce centre">\u00d7</button>' +
         "</div>";
     }).join("");
-    h += '<p class="etab" style="margin-top:10px">Pour supprimer un centre : maintenir le doigt (ou le clic) sur sa ligne pendant 6 secondes, jusqu\u2019\u00e0 l\u2019apparition d\u2019une croix rouge.</p>';
     return h;
   }
 
@@ -2148,14 +2145,39 @@ function serialiserFichierData(centres) {
     zone.innerHTML = retablirHtml(presentes);
   }
 
+  function optionsCentres(courant) {
+    var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
+    var h = '<option value=""' + (courant ? "" : " selected") + ">\u2014 choisir un centre \u2014</option>";
+    return h + liste.map(function (c) {
+      return '<option value="' + esc(c.id) + '"' + (courant === c.id ? " selected" : "") + ">" + esc(c.nom || c.id) + "</option>";
+    }).join("");
+  }
+  function aillItem(a) {
+    a = a || { texte: "", id: "", url: "" };
+    var mode = a.id ? "centre" : (a.url ? "url" : "aucun");
+    var h = '<div class="aill-row" data-mode="' + mode + '">';
+    h += '<div class="aill-haut">';
+    h += '<textarea class="aill-texte" placeholder="Ce qui se fait ailleurs">' + esc(a.texte || "") + "</textarea>";
+    h += '<button type="button" class="btn-mini rouge aill-del">&times;</button>';
+    h += "</div>";
+    h += '<div class="aill-bas">';
+    h += '<select class="aill-mode">' +
+      '<option value="aucun"' + (mode === "aucun" ? " selected" : "") + ">Sans renvoi</option>" +
+      '<option value="centre"' + (mode === "centre" ? " selected" : "") + ">Fiche d\u2019un centre de la carte\u2026</option>" +
+      '<option value="url"' + (mode === "url" ? " selected" : "") + ">Lien internet\u2026</option>" +
+      "</select>";
+    h += '<select class="aill-centre"' + (mode === "centre" ? "" : " hidden") + ">" + optionsCentres(a.id || "") + "</select>";
+    h += '<input class="aill-url" type="url" placeholder="https://\u2026" value="' + esc(a.url || "") + '"' + (mode === "url" ? "" : " hidden") + ">";
+    h += "</div>";
+    h += "</div>";
+    return h;
+  }
+
   function formHtml(c, creation, infBrouillon) {
     // L'édition part toujours du gabarit standard (mêmes blocs et cases partout,
     // terminologie RX / RT / MN) ; rien n'est enregistré tant qu'on ne valide pas.
     var inf = infBrouillon || OutilHarmonisation.harmoniserFiche(infosDe(c));
     var resp = inf.responsables || {};
-    var aill = (inf.ailleurs || []).map(function (a) {
-      return a.texte + (a.id ? " | " + a.id : a.url ? " | " + a.url : "");
-    }).join("\n");
     var h = '<p class="sur-titre">' + (creation ? "Création" : esc(c.ville)) + "</p><h2>" + (creation ? "Nouveau centre" : esc(c.nom)) + "</h2>";
     h += '<div class="form">';
     h += champ("Nom du centre", "c-nom", c.nom, creation ? "Ex. « Lille (COL) » — sert aussi à générer l\u2019identifiant du centre." : "");
@@ -2182,7 +2204,9 @@ function serialiserFichierData(centres) {
     h += champ("Site du centre", "site", inf.site);
     h += zone("Photos (une par ligne)", "photos", (inf.photos || []).join("\n"), false, "Une image par ligne, sous forme d\u2019adresse https://\u2026");
     h += '<div class="duo"><div>' + champ("Resp. imagerie", "resp-im", resp.im) + "</div><div>" + champ("Resp. radiothérapie", "resp-rth", resp.rth) + "</div></div>";
-    h += zone("Formation en partie ailleurs (une par ligne)", "ailleurs", aill, false, "Format : texte | id-d-un-centre-de-la-carte ou texte | https://… (ou texte seul)");
+    h += "<label>Formation en partie ailleurs</label>";
+    h += '<div id="aill-edit">' + (inf.ailleurs || []).map(function (a) { return aillItem(a); }).join("") + "</div>";
+    h += '<button type="button" id="aill-add" class="ssec-add">+ Ajouter une formation ailleurs</button>';
     h += "<label>Blocs de la fiche (déplaçables)</label>";
     h += '<div id="themes-edit">' + themesDe(inf).map(function (th) { return blocThemeHtml(c, inf, th); }).join("") + "</div>";
     h += '<button type="button" id="th-add">+ Ajouter un bloc (thème)</button>';
@@ -2266,27 +2290,6 @@ function serialiserFichierData(centres) {
   var editionEnAttente = null;
   // Aperçu de la fiche telle qu'elle s'afficherait, sans rien enregistrer.
   var apercuEdition = null;
-  // Copie la référence de fiche (utile pour les renvois « Formation en partie ailleurs »).
-  function copierRef(btn) {
-    var ref = btn.getAttribute("data-ref") || "";
-    function fait() {
-      var t = btn.textContent;
-      btn.textContent = "copié !";
-      setTimeout(function () { btn.textContent = t; }, 900);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(ref).then(fait, function () {});
-      return;
-    }
-    try {
-      var z = document.createElement("textarea");
-      z.value = ref;
-      document.body.appendChild(z);
-      z.select();
-      try { if (document.execCommand("copy")) fait(); } catch (e2) {}
-      document.body.removeChild(z);
-    } catch (e) {}
-  }
   function ouvrirCreationMachine() {
     if (!ficheCentre) return;
     editionEnAttente = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
@@ -2436,14 +2439,24 @@ function serialiserFichierData(centres) {
           ingenieurs: "",
           autres: ""
         },
-        ailleurs: v("ailleurs").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).map(function (l) {
-          var morceaux = l.split("|");
-          var e = { texte: morceaux[0].trim() };
-          var cible = (morceaux[1] || "").trim();
-          if (/^https?:\/\//i.test(cible)) e.url = cible;
-          else if (cible) e.id = cible;
-          return e;
-        }),
+        ailleurs: (function () {
+          var out = [];
+          ficheContenu.querySelectorAll("#aill-edit .aill-row").forEach(function (el) {
+            var texte = el.querySelector(".aill-texte").value.trim();
+            if (!texte) return;
+            var e = { texte: texte };
+            var mode = el.querySelector(".aill-mode").value;
+            if (mode === "centre") {
+              var cible = el.querySelector(".aill-centre").value;
+              if (cible) e.id = cible;
+            } else if (mode === "url") {
+              var url = el.querySelector(".aill-url").value.trim();
+              if (url) e.url = url;
+            }
+            out.push(e);
+          });
+          return out;
+        })(),
         themes: themesEgaleStandard(themes) ? [] : themes,
         themesAucun: themes.length === 0,
         sections: sections,
@@ -3052,6 +3065,11 @@ function serialiserFichierData(centres) {
       b.textContent = glyphePos(nouv);
       return;
     }
+    if (ev.target.closest("#aill-add")) {
+      document.getElementById("aill-edit").insertAdjacentHTML("beforeend", aillItem(null));
+      return;
+    }
+    if ((b = ev.target.closest(".aill-del"))) { b.closest(".aill-row").remove(); return; }
     if ((b = ev.target.closest(".ssec-up"))) { deplacer(b.closest(".ssec-item"), -1); return; }
     if ((b = ev.target.closest(".ssec-down"))) { deplacer(b.closest(".ssec-item"), 1); return; }
     if ((b = ev.target.closest(".ssec-del"))) { b.closest(".ssec-item").remove(); return; }
@@ -3072,8 +3090,6 @@ function serialiserFichierData(centres) {
     }
     if (ev.target.closest(".btn-cmp") && ficheCentre) { basculerCmp(ficheCentre.id); return; }
     if (ev.target.closest(".btn-pdf") && ficheCentre) { exporterPdf(ficheCentre); return; }
-    var refBtn = ev.target.closest(".fiche-ref-copie");
-    if (refBtn) { copierRef(refBtn); return; }
     if (ev.target.closest(".btn-modif") && ficheCentre) { ouvrirEdition(ficheCentre, false); return; }
     if (ev.target.closest(".btn-ann")) {
       if (vueCourante) afficherVue(vueCourante);
@@ -3117,6 +3133,14 @@ function serialiserFichierData(centres) {
     }
   });
   ficheContenu.addEventListener("change", function (ev) {
+    var mode = ev.target.closest(".aill-mode");
+    if (mode) {
+      var item = mode.closest(".aill-row");
+      item.dataset.mode = mode.value;
+      item.querySelector(".aill-centre").hidden = mode.value !== "centre";
+      item.querySelector(".aill-url").hidden = mode.value !== "url";
+      return;
+    }
     var sel = ev.target.closest(".mach-sel");
     if (sel && sel.value) {
       ajouterChip(sel.closest(".th-bloc"), sel.value);
@@ -3162,26 +3186,18 @@ function serialiserFichierData(centres) {
   }
   function annulerAppui() {
     if (appuiSuppr) { clearTimeout(appuiSuppr); appuiSuppr = null; }
-    if (itemPresse) { itemPresse.classList.remove("gc-appui"); itemPresse = null; }
   }
-  var itemPresse = null;
   function debutAppuiSuppr(ev) {
-    // Un appui qui commence sur la case à cocher ou sur la croix ne doit pas armer.
     if (ev.target.closest(".gc-actif") || ev.target.closest(".gc-suppr")) return;
     var item = ev.target.closest(".gc-item");
     if (!item || item === itemArme) return;
-    if (ev.type === "touchstart") { /* on laisse le scroll possible : pas de preventDefault ici */ }
     annulerAppui();
     desarmerItem();
     longReussi = false;
-    itemPresse = item;
-    item.classList.add("gc-appui");
     appuiSuppr = setTimeout(function () {
       appuiSuppr = null;
-      item.classList.remove("gc-appui");
       item.classList.add("gc-arme");
       itemArme = item;
-      itemPresse = null;
       longReussi = true;
     }, 6000);
   }
@@ -3497,6 +3513,10 @@ function serialiserFichierData(centres) {
     var om = auxAntilles();
     miniNom.textContent = om ? "Hexagone" : "Martinique";
     miniBtn.setAttribute("aria-label", om ? "Revenir à l'Hexagone" : "Aller à la Martinique");
+    if (btnMiniOuvrir) {
+      btnMiniOuvrir.textContent = om ? "Hex" : "MQ";
+      btnMiniOuvrir.setAttribute("aria-label", om ? "Afficher l'encart Hexagone" : "Afficher l'encart Martinique");
+    }
     miniBadge.textContent = "";
     miniCouche.clearLayers();
     var cMQ = centreParId("martinique-chu");
@@ -3531,7 +3551,7 @@ function serialiserFichierData(centres) {
   }
   document.getElementById("panneau-fermer").addEventListener("click", function () { ui.panneau = false; sauverUi(); majUi(); });
   btnPanneauOuvrir.addEventListener("click", function () { ui.panneau = true; sauverUi(); majUi(); });
-  document.getElementById("mini-fermer").addEventListener("click", function () { ui.mini = false; sauverUi(); majUi(); });
+  document.getElementById("mini-fermer").addEventListener("click", function () { ui.mini = false; sauverUi(); majUi(); majEncart(); });
   btnMiniOuvrir.addEventListener("click", function () {
     ui.mini = true;
     sauverUi();
