@@ -75,6 +75,9 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .rech-item span { color: #8a8f9c; font-weight: 400; }
 .rech-item:hover { background: #f1efe9; }
 .maj-ligne { margin: 22px 0 0; padding-top: 10px; border-top: 1px solid #eceae3; }
+.fiche-ref { margin: 12px 0 0; font: 400 11px "Inter"; color: #a8adb9; }
+.fiche-ref-copie { border: 0; background: none; padding: 0; font: 600 11px "SF Mono", "Consolas", monospace; color: #8b91a0; cursor: pointer; }
+.fiche-ref-copie:hover { color: #a96a32; text-decoration: underline; }
 .tb-outils { display: flex; justify-content: flex-end; margin: 0 0 8px; }
 .tb-cible td { background: #fdf3df !important; transition: background .4s; }
 .histo-liste { display: grid; gap: 7px; margin: 12px 0 0; }
@@ -548,12 +551,247 @@ function computeStats(centres, sem, mod, machs, taille) {
   return { centres: nc, places: np };
 }
 
+// ——— Outil d’harmonisation des fiches (copie embarquée d’outil-harmonisation.js) ———
+// Harmonisation des fiches : même structure partout (modèle Angers) et
+// terminologie RX / RT / MN dans la disponibilité et les effectifs du service.
+// Fichier partagé : utilisé par le script de préparation (Node) et embarqué
+// dans la carte (bouton « Harmoniser la structure des fiches »).
+(function (racine) {
+  "use strict";
+
+  var THEMES_CANON = [
+    ["conditions", "Conditions"],
+    ["service", "Service de physique médicale"],
+    ["machines", "Machines et disponibilités"],
+    ["avisRecents", "Avis des promos récentes"],
+    ["avisPrecedents", "Avis des promos précédentes"],
+    ["commentaires-anciennes-promos", "Commentaires (anciennes promos)"],
+    ["contacts", "Contacts étudiants"]
+  ];
+
+  // Cases canoniques de chaque bloc, dans l'ordre d'affichage.
+  // id interne : cle réelle, ou "#details" pour la case Détails (sans cle).
+  var CASES_CANON = {
+    conditions: [
+      { cle: "statut", titre: "Statut" },
+      { cle: "salaire", titre: "Salaire (net)" },
+      { cle: "retraite", titre: "Cotisation retraite" },
+      { cle: "chomage", titre: "Cotisation chômage" },
+      { cle: "conges", titre: "Congés" },
+      { cle: "revisions", titre: "Révisions sur place" }
+    ],
+    service: [
+      { cle: "equipe.physiciens", titre: "Physiciens" },
+      { cle: "equipe.dosimetristes", titre: "Dosimétristes" },
+      { cle: "equipe.techniciens", titre: "Techniciens" },
+      { cle: "equipe.ingenieurs", titre: "Ingénieurs" },
+      { cle: "equipe.autres", titre: "Autres" }
+    ],
+    machines: [
+      { cle: "machinesListe", titre: "Machines", type: "machines", pos: "haut" },
+      { id: "#details", titre: "Détails", pos: "haut", just: true },
+      { cle: "machines", titre: "Disponibilité", pos: "haut", just: true }
+    ],
+    avisRecents: [
+      { cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true },
+      { cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true }
+    ],
+    avisPrecedents: [
+      { cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true },
+      { cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true }
+    ],
+    "commentaires-anciennes-promos": [],
+    contacts: [
+      { cle: "contacts", titre: "", pos: "haut" }
+    ]
+  };
+
+  // Ordre canonique des clés d'une section = ordre de la sérialisation (sSections),
+  // pour que réharmoniser une fiche déjà harmonisée ne change rien (JSON identique).
+  var CLES_SECTION = ["theme", "cle", "type", "titre", "pos", "just", "masque", "texte"];
+  function secOrdonnee(s) {
+    var n = {};
+    CLES_SECTION.forEach(function (k) { if (s[k] !== undefined) n[k] = s[k]; });
+    Object.keys(s).forEach(function (k) { if (n[k] === undefined && s[k] !== undefined) n[k] = s[k]; });
+    return n;
+  }
+
+  function normTitre(t) {
+    return String(t || "").toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ").trim();
+  }
+
+  // Rattachement d'une section existante à une case canonique de son bloc :
+  // d'abord par le titre affiché (il porte le sens voulu), sinon par la cle.
+  var TITRES_VERS_ID = {
+    conditions: { "statut": "statut", "salaire (net)": "salaire", "cotisation retraite": "retraite", "cotisation chomage": "chomage", "conges": "conges", "revisions sur place": "revisions" },
+    service: { "physiciens": "equipe.physiciens", "dosimetristes": "equipe.dosimetristes", "techniciens": "equipe.techniciens", "ingenieurs": "equipe.ingenieurs", "autres": "equipe.autres" },
+    machines: { "machines": "machinesListe", "details": "#details", "disponibilite": "machines", "disponibilites": "machines" },
+    avisRecents: { "imagerie (rx / mn)": "avisIm", "radiotherapie": "avisRth", "non tries": "avis" },
+    avisPrecedents: { "imagerie (rx / mn)": "avisAncIm", "radiotherapie": "avisAncRth", "non tries": "avisAnciens" },
+    contacts: { "": "contacts" }
+  };
+
+  function idCanonDeSection(s) {
+    if (s.type === "machines" || s.cle === "machinesListe") return "machinesListe";
+    var parTitre = (TITRES_VERS_ID[s.theme] || {})[normTitre(s.titre)];
+    if (parTitre !== undefined) return parTitre;
+    if (s.cle) return s.cle;
+    return null;
+  }
+
+  // ——— Terminologie : RX pour radiologie, RT pour radiothérapie, MN pour médecine nucléaire ———
+  function harmoniserRxRtMn(t) {
+    if (!t) return t;
+    return String(t)
+      .replace(/\bRTE\b/g, "RT")
+      .replace(/\bradioth[ée]rapies?\b/gi, "RT")
+      .replace(/\bm[ée]decine\s+nucl[ée]aires?\b/gi, "MN")
+      .replace(/\bradiologies?\b/gi, "RX")
+      .replace(/\bradiodiagnostics?\b/gi, "RX")
+      .replace(/\bradio\b(?!-)/gi, "RX");
+  }
+  // « (radiothérapie) » superflu dans dosimétristes / techniciens / ingénieurs.
+  function retirerParentheseRt(t) {
+    if (!t) return t;
+    return String(t)
+      .replace(/[ \t]*\(\s*(?:radioth[ée]rapie|RT)\s*\)/gi, "")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+$/gm, "")
+      .replace(/^[ \t]+—/gm, "—");
+  }
+
+  // ——— Harmonisation d'une fiche entière (structure + terminologie) ———
+  function harmoniserFiche(inf) {
+    inf = inf || {};
+    var f = JSON.parse(JSON.stringify(inf));
+
+    // Thèmes : les 7 standards, en reportant un éventuel masque.
+    var masques = {};
+    (f.themes || []).forEach(function (t) { if (t && t.cle && t.masque) masques[t.cle] = true; });
+    f.themes = THEMES_CANON.map(function (t) {
+      var th = { cle: t[0], titre: t[1] };
+      if (masques[t[0]]) th.masque = true;
+      return th;
+    });
+
+    // Textes encore rangés dans les anciens champs (fiches jamais rééditées) :
+    // convertis en sections de leur bloc, seulement si le bloc n'a pas déjà de
+    // case à clé — même règle de préséance que la carte (elementsDuBloc).
+    var HERITES = {
+      conditions: [["statut", "Statut"], ["salaire", "Salaire (net)"], ["retraite", "Cotisation retraite"], ["chomage", "Cotisation ch\u00f4mage"], ["conges", "Cong\u00e9s"], ["revisions", "R\u00e9visions sur place"]],
+      service: [["equipe.physiciens", "Physiciens"], ["equipe.dosimetristes", "Dosim\u00e9tristes"], ["equipe.techniciens", "Techniciens"], ["equipe.ingenieurs", "Ing\u00e9nieurs"], ["equipe.autres", "Autres"]],
+      machines: [["machines", "Disponibilit\u00e9"]],
+      avisRecents: [["avisIm", "Imagerie (RX / MN)"], ["avisRth", "Radioth\u00e9rapie"], ["avis", "Non tri\u00e9s"]],
+      avisPrecedents: [["avisAncIm", "Imagerie (RX / MN)"], ["avisAncRth", "Radioth\u00e9rapie"], ["avisAnciens", "Non tri\u00e9s"]],
+      contacts: [["contacts", ""]]
+    };
+    function lireHerite(o, cle) {
+      var m = cle.split(".");
+      var v = m.length > 1 ? ((o[m[0]] || {})[m[1]]) : o[cle];
+      return v || "";
+    }
+    var dejaMigre = {};
+    (f.sections || []).forEach(function (s) { if (s && s.cle) dejaMigre[s.theme] = true; });
+    Object.keys(HERITES).forEach(function (bloc) {
+      if (dejaMigre[bloc]) return;
+      HERITES[bloc].forEach(function (d) {
+        var v = lireHerite(f, d[0]);
+        if (!v) return;
+        f.sections = f.sections || [];
+        f.sections.push({ theme: bloc, cle: d[0], titre: d[1], pos: "haut", texte: v });
+      });
+    });
+
+    // Répartition des sections existantes par bloc, puis par case canonique.
+    var parTheme = {};
+    (f.sections || []).forEach(function (s) {
+      (parTheme[s.theme] = parTheme[s.theme] || []).push(s);
+    });
+
+    var sections = [];
+    THEMES_CANON.forEach(function (t) {
+      var cleBloc = t[0];
+      var existantes = parTheme[cleBloc] || [];
+      delete parTheme[cleBloc];
+
+      if (cleBloc === "commentaires-anciennes-promos") {
+        // Les commentaires gardent leurs cases (sous-titres libres) ; une case
+        // vide est créée si le bloc n'en a aucune.
+        if (!existantes.length) existantes = [{ theme: cleBloc, titre: "", texte: "" }];
+        existantes.forEach(function (s) {
+          var n = { theme: cleBloc, titre: s.titre || "", pos: "haut", just: true, texte: s.texte || "" };
+          if (s.masque) n.masque = true;
+          sections.push(secOrdonnee(n));
+        });
+        return;
+      }
+
+      var prises = existantes.map(function () { return false; });
+      (CASES_CANON[cleBloc] || []).forEach(function (d) {
+        var idC = d.id || d.cle;
+        var texte = "", masque = false;
+        existantes.forEach(function (s, i) {
+          if (prises[i]) return;
+          if (idCanonDeSection(s) !== idC) return;
+          prises[i] = true;
+          if (s.masque) masque = true;
+          var tx = s.texte || "";
+          if (!tx) return;
+          texte = texte ? texte + "\n\n" + tx : tx;
+        });
+        var n = { theme: cleBloc, titre: d.titre, texte: texte };
+        if (d.cle) n.cle = d.cle;
+        if (d.type) n.type = d.type;
+        if (d.pos) n.pos = d.pos;
+        if (d.just) n.just = true;
+        if (masque) n.masque = true;
+        sections.push(secOrdonnee(n));
+      });
+      // Cases non rattachées (personnalisées) : conservées après les canoniques.
+      existantes.forEach(function (s, i) { if (!prises[i]) sections.push(secOrdonnee(s)); });
+    });
+    // Blocs inconnus : conservés tels quels en fin de fiche.
+    Object.keys(parTheme).forEach(function (cleBloc) {
+      parTheme[cleBloc].forEach(function (s) { sections.push(secOrdonnee(s)); });
+    });
+    f.sections = sections;
+
+    // Terminologie : disponibilité + effectifs du service.
+    f.sections.forEach(function (s) {
+      if (s.theme === "machines" && s.cle === "machines") s.texte = harmoniserRxRtMn(s.texte);
+      if (s.theme === "service") {
+        if (s.cle === "equipe.dosimetristes" || s.cle === "equipe.techniciens" || s.cle === "equipe.ingenieurs") {
+          s.texte = retirerParentheseRt(s.texte);
+        }
+        s.texte = harmoniserRxRtMn(s.texte);
+      }
+    });
+
+    // Champs hérités : tout vit désormais dans les sections.
+    f.statut = ""; f.salaire = ""; f.retraite = ""; f.chomage = ""; f.conges = ""; f.revisions = "";
+    f.equipe = { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" };
+    f.machines = ""; f.avisIm = ""; f.avisRth = ""; f.avis = "";
+    f.avisAncIm = ""; f.avisAncRth = ""; f.avisAnciens = ""; f.contacts = "";
+    // machinesListe conservée telle quelle (null = détection automatique).
+
+    return f;
+  }
+
+  var api = { harmoniserFiche: harmoniserFiche, harmoniserRxRtMn: harmoniserRxRtMn, retirerParentheseRt: retirerParentheseRt, THEMES_CANON: THEMES_CANON, CASES_CANON: CASES_CANON };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else racine.OutilHarmonisation = api;
+})(typeof window !== "undefined" ? window : this);
+// ——— Fin de l’outil d’harmonisation ———
+
 var THEMES = [
   ["conditions", "Conditions"],
   ["service", "Service de physique médicale"],
   ["machines", "Machines et disponibilités"],
   ["avisRecents", "Avis des promos récentes"],
   ["avisPrecedents", "Avis des promos précédentes"],
+  ["commentaires-anciennes-promos", "Commentaires (anciennes promos)"],
   ["contacts", "Contacts étudiants"]
 ];
 function estThemeStandard(cle) {
@@ -799,7 +1037,8 @@ var ENTETE_INFOS = [
   "//   ailleurs : parties de formation dans d'autres centres,",
   "//     { texte: \"...\", id: \"id-dun-centre-de-la-carte\" } ou { texte: \"...\", url: \"https://...\" }",
   "//   themes : ordre et titres des grands blocs de la fiche, [{ cle, titre }] — [] = ordre standard.",
-  "//     Clés standard : conditions, service, machines, avisRecents, avisPrecedents, contacts.",
+  "//     Clés standard : conditions, service, machines, avisRecents, avisPrecedents,",
+  "//     commentaires-anciennes-promos, contacts.",
   "//     Une clé personnalisée crée un nouveau bloc (rempli par ses sections).",
   "//   sections : cases de la fiche { theme: cle-du-bloc, titre, texte, pos, just, masque }",
   "//     pos: \"haut\" = titre au-dessus du texte (sinon titre à gauche) ; just = texte justifié.",
@@ -965,6 +1204,33 @@ function serialiserFichierData(centres) {
         majGlobale(lignes[0].maj);
       }
       if (ok) diffuserMaj();
+      majEtat(ok ? "enligne" : "echec");
+    }, true);
+  }
+  // Réécrit toutes les fiches au gabarit standard (mêmes blocs et cases partout,
+  // terminologie RX / RT / MN) : une seule écriture groupée, tracée dans l'historique.
+  function harmoniserToutesLesFiches() {
+    if (!BASE || !enLigne) { alert("Impossible hors ligne : la carte doit être connectée à la base pour réécrire les fiches."); return; }
+    var lignes = [], modifiees = 0;
+    CENTRES.forEach(function (c) {
+      var avant = JSON.stringify(INFOS[c.id] || {});
+      var f = OutilHarmonisation.harmoniserFiche(infosDe(c));
+      if (JSON.stringify(f) !== avant) modifiees += 1;
+      INFOS[c.id] = f;
+      lignes.push({ id: c.id, data: copieData(c), infos: f });
+    });
+    apiEcrire("centres", lignes, function (ok, retour) {
+      if (ok) {
+        (retour || []).forEach(function (l, i) {
+          var id = (l && l.id) || (lignes[i] && lignes[i].id);
+          if (id && l && l.maj) { MAJ_CONNUES[id] = l.maj; majGlobale(l.maj); }
+        });
+        diffuserMaj();
+        alert("Fiches harmonisées : " + modifiees + " modifiée" + (modifiees > 1 ? "s" : "") + " sur " + lignes.length + ".");
+        if (ficheMode === "vue" && ficheCentre) ficheContenu.innerHTML = ficheHtml(ficheCentre);
+      } else {
+        alert("Échec de l'écriture : les fiches n'ont pas été réécrites en base.");
+      }
       majEtat(ok ? "enligne" : "echec");
     }, true);
   }
@@ -1562,6 +1828,7 @@ function serialiserFichierData(centres) {
     if (!apercu && MAJ_CONNUES[c.id]) {
       h += '<p class="maj-ligne"><button type="button" class="lien-sauv fiche-maj">Fiche mise à jour le ' + esc(quandLisible(MAJ_CONNUES[c.id])) + '</button> · <button type="button" class="lien-sauv fiche-histo">Historique de la fiche</button></p>';
     }
+    if (c.id) h += '<p class="fiche-ref">Réf. de cette fiche (renvois « ailleurs ») : <button type="button" class="fiche-ref-copie" data-ref="' + esc(c.id) + '" title="Cliquer pour copier">' + esc(c.id) + '</button></p>';
     return h;
   }
 
@@ -1569,6 +1836,7 @@ function serialiserFichierData(centres) {
     var h = '<p class="sur-titre">Gestion</p><h2>Centres</h2>';
     h += '<p class="etab">Cochez pour afficher un centre sur la carte, décochez pour le masquer. Cliquez sur un nom pour ouvrir sa fiche.</p>';
     h += '<button type="button" id="gc-nouveau" class="gc-nouveau">+ Nouveau centre (placer un point sur la carte)</button>';
+    h += '<button type="button" id="gc-harmoniser" class="gc-nouveau">Harmoniser la structure de toutes les fiches (gabarit commun + RX / RT / MN)</button>';
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
       return '<div class="gc-item">' +
@@ -1836,7 +2104,9 @@ function serialiserFichierData(centres) {
   }
 
   function formHtml(c, creation, infBrouillon) {
-    var inf = infBrouillon || infosDe(c);
+    // L'édition part toujours du gabarit standard (mêmes blocs et cases partout,
+    // terminologie RX / RT / MN) ; rien n'est enregistré tant qu'on ne valide pas.
+    var inf = infBrouillon || OutilHarmonisation.harmoniserFiche(infosDe(c));
     var resp = inf.responsables || {};
     var aill = (inf.ailleurs || []).map(function (a) {
       return a.texte + (a.id ? " | " + a.id : a.url ? " | " + a.url : "");
@@ -1951,6 +2221,27 @@ function serialiserFichierData(centres) {
   var editionEnAttente = null;
   // Aperçu de la fiche telle qu'elle s'afficherait, sans rien enregistrer.
   var apercuEdition = null;
+  // Copie la référence de fiche (utile pour les renvois « Formation en partie ailleurs »).
+  function copierRef(btn) {
+    var ref = btn.getAttribute("data-ref") || "";
+    function fait() {
+      var t = btn.textContent;
+      btn.textContent = "copié !";
+      setTimeout(function () { btn.textContent = t; }, 900);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ref).then(fait, function () {});
+      return;
+    }
+    try {
+      var z = document.createElement("textarea");
+      z.value = ref;
+      document.body.appendChild(z);
+      z.select();
+      try { if (document.execCommand("copy")) fait(); } catch (e2) {}
+      document.body.removeChild(z);
+    } catch (e) {}
+  }
   function ouvrirCreationMachine() {
     if (!ficheCentre) return;
     editionEnAttente = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
@@ -2547,6 +2838,10 @@ function serialiserFichierData(centres) {
       return;
     }
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
+    if (ev.target.closest("#gc-harmoniser")) {
+      if (confirm("Réécrire toutes les fiches au gabarit standard (mêmes blocs et cases partout, terminologie RX / RT / MN) ?\nChaque version reste consultable dans l'historique.")) harmoniserToutesLesFiches();
+      return;
+    }
     if (ev.target.closest(".btn-apercu") && ficheCentre) { ouvrirApercu(); return; }
     if (ev.target.closest("#apercu-retour")) { fermerApercu(); return; }
     if (ev.target.closest(".mach-va-creer")) { ouvrirCreationMachine(); return; }
@@ -2719,6 +3014,8 @@ function serialiserFichierData(centres) {
     }
     if (ev.target.closest(".btn-cmp") && ficheCentre) { basculerCmp(ficheCentre.id); return; }
     if (ev.target.closest(".btn-pdf") && ficheCentre) { exporterPdf(ficheCentre); return; }
+    var refBtn = ev.target.closest(".fiche-ref-copie");
+    if (refBtn) { copierRef(refBtn); return; }
     if (ev.target.closest(".btn-modif") && ficheCentre) { ouvrirEdition(ficheCentre, false); return; }
     if (ev.target.closest(".btn-ann")) {
       if (vueCourante) afficherVue(vueCourante);
