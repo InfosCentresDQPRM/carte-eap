@@ -261,7 +261,6 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
 #mini-btn { position: absolute; inset: 0; z-index: 6; background: none; border: 0; cursor: pointer; }
 #mini-btn:focus-visible { outline: 3px solid #1f6fd6; outline-offset: -3px; border-radius: 12px; }
 .mini-titre { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding: 8px 11px 6px; font: 600 12px "Sora", sans-serif; color: #1b2a4a; }
-#mini-badge { font: 600 11px "Inter"; color: #e07c00; }
 #mini-carte { height: 106px; pointer-events: none; background: #f4f3ef; }
 
 #etat { position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 1300; max-width: calc(100vw - 28px); background: #a96a32; color: #fff; border-radius: 999px; padding: 9px 18px; font: 600 12px "Inter"; box-shadow: 0 10px 28px rgba(27,42,74,.3); text-align: center; }
@@ -406,7 +405,7 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
 <aside id="mini">
   <button id="mini-btn" type="button" aria-label="Aller à la Martinique"></button>
   <button type="button" class="coin-fermer" id="mini-fermer" aria-label="Masquer l'encart Martinique">&times;</button>
-  <p class="mini-titre"><span id="mini-nom">Martinique</span><span id="mini-badge"></span></p>
+  <p class="mini-titre"><span id="mini-nom">Martinique</span></p>
   <div id="mini-carte"></div>
 </aside>
 <div id="gestion-menu" hidden>
@@ -558,11 +557,12 @@ function computeStats(centres, sem, mod, machs, taille) {
   return { centres: nc, places: np };
 }
 
-// ——— Outil d’harmonisation des fiches (copie embarquée d’outil-harmonisation.js) ———
-// Harmonisation des fiches : même structure partout (modèle Angers) et
-// terminologie RX / RT / MN dans la disponibilité et les effectifs du service.
-// Fichier partagé : utilisé par le script de préparation (Node) et embarqué
-// dans la carte (bouton « Harmoniser la structure des fiches »).
+// ——— Gabarit des fiches (blocs et cases proposés à l'édition) — voir outil-fiches.js ———
+// Gabarit des fiches : blocs et cases standard proposés à la création et à
+// l'édition. Ce module COMPLÈTE une fiche pour l'éditeur — il n'en transforme
+// jamais le contenu : textes, titres et ordre existants restent intacts, et les
+// cases ajoutées (marquées canon) ne sont enregistrées que si on les remplit.
+// Fichier partagé : embarqué dans la carte et réutilisé par les scripts Node.
 (function (racine) {
   "use strict";
 
@@ -613,8 +613,8 @@ function computeStats(centres, sem, mod, machs, taille) {
     ]
   };
 
-  // Ordre canonique des clés d'une section = ordre de la sérialisation (sSections),
-  // pour que réharmoniser une fiche déjà harmonisée ne change rien (JSON identique).
+  // Ordre des clés d'une section = ordre de la sérialisation (sSections), pour
+  // des écritures JSON stables d'une passe à l'autre.
   var CLES_SECTION = ["theme", "cle", "type", "titre", "pos", "just", "masque", "texte"];
   function secOrdonnee(s) {
     var n = {};
@@ -648,57 +648,23 @@ function computeStats(centres, sem, mod, machs, taille) {
     return null;
   }
 
-  // ——— Terminologie : RX pour radiologie, RT pour radiothérapie, MN pour médecine nucléaire ———
-  function harmoniserRxRtMn(t) {
-    if (!t) return t;
-    return String(t)
-      .replace(/\bRTE\b/g, "RT")
-      .replace(/\bradioth[ée]rapies?\b/gi, "RT")
-      .replace(/\bm[ée]decine\s+nucl[ée]aires?\b/gi, "MN")
-      .replace(/\bradiologies?\b/gi, "RX")
-      .replace(/\bradiodiagnostics?\b/gi, "RX")
-      .replace(/\bradio\b(?!-)/gi, "RX");
+  // Textes encore rangés dans les anciens champs (fiches jamais rééditées) :
+  // convertis en sections de leur bloc, seulement si le bloc n'a pas déjà de
+  // case à clé — même règle de préséance que la carte (elementsDuBloc).
+  var HERITES = {
+    conditions: [["statut", "Statut"], ["salaire", "Salaire (net)"], ["retraite", "Cotisation retraite"], ["chomage", "Cotisation ch\u00f4mage"], ["conges", "Cong\u00e9s"], ["revisions", "R\u00e9visions sur place"]],
+    service: [["equipe.physiciens", "Physiciens"], ["equipe.dosimetristes", "Dosim\u00e9tristes"], ["equipe.techniciens", "Techniciens"], ["equipe.ingenieurs", "Ing\u00e9nieurs"], ["equipe.autres", "Autres"]],
+    machines: [["machines", "Disponibilit\u00e9"]],
+    avisRecents: [["avisIm", "Imagerie (RX / MN)"], ["avisRth", "Radioth\u00e9rapie"], ["avis", "Non tri\u00e9s"]],
+    avisPrecedents: [["avisAncIm", "Imagerie (RX / MN)"], ["avisAncRth", "Radioth\u00e9rapie"], ["avisAnciens", "Non tri\u00e9s"]],
+    contacts: [["contacts", ""]]
+  };
+  function lireHerite(o, cle) {
+    var m = cle.split(".");
+    var v = m.length > 1 ? ((o[m[0]] || {})[m[1]]) : o[cle];
+    return v || "";
   }
-  // « (radiothérapie) » superflu dans dosimétristes / techniciens / ingénieurs.
-  function retirerParentheseRt(t) {
-    if (!t) return t;
-    return String(t)
-      .replace(/[ \t]*\(\s*(?:radioth[ée]rapie|RT)\s*\)/gi, "")
-      .replace(/[ \t]{2,}/g, " ")
-      .replace(/[ \t]+$/gm, "")
-      .replace(/^[ \t]+—/gm, "—");
-  }
-
-  // ——— Harmonisation d'une fiche entière (structure + terminologie) ———
-  function harmoniserFiche(inf) {
-    inf = inf || {};
-    var f = JSON.parse(JSON.stringify(inf));
-
-    // Thèmes : les 7 standards, en reportant un éventuel masque.
-    var masques = {};
-    (f.themes || []).forEach(function (t) { if (t && t.cle && t.masque) masques[t.cle] = true; });
-    f.themes = THEMES_CANON.map(function (t) {
-      var th = { cle: t[0], titre: t[1] };
-      if (masques[t[0]]) th.masque = true;
-      return th;
-    });
-
-    // Textes encore rangés dans les anciens champs (fiches jamais rééditées) :
-    // convertis en sections de leur bloc, seulement si le bloc n'a pas déjà de
-    // case à clé — même règle de préséance que la carte (elementsDuBloc).
-    var HERITES = {
-      conditions: [["statut", "Statut"], ["salaire", "Salaire (net)"], ["retraite", "Cotisation retraite"], ["chomage", "Cotisation ch\u00f4mage"], ["conges", "Cong\u00e9s"], ["revisions", "R\u00e9visions sur place"]],
-      service: [["equipe.physiciens", "Physiciens"], ["equipe.dosimetristes", "Dosim\u00e9tristes"], ["equipe.techniciens", "Techniciens"], ["equipe.ingenieurs", "Ing\u00e9nieurs"], ["equipe.autres", "Autres"]],
-      machines: [["machines", "Disponibilit\u00e9"]],
-      avisRecents: [["avisIm", "Imagerie (RX / MN)"], ["avisRth", "Radioth\u00e9rapie"], ["avis", "Non tri\u00e9s"]],
-      avisPrecedents: [["avisAncIm", "Imagerie (RX / MN)"], ["avisAncRth", "Radioth\u00e9rapie"], ["avisAnciens", "Non tri\u00e9s"]],
-      contacts: [["contacts", ""]]
-    };
-    function lireHerite(o, cle) {
-      var m = cle.split(".");
-      var v = m.length > 1 ? ((o[m[0]] || {})[m[1]]) : o[cle];
-      return v || "";
-    }
+  function migrerHerites(f) {
     var dejaMigre = {};
     (f.sections || []).forEach(function (s) { if (s && s.cle) dejaMigre[s.theme] = true; });
     Object.keys(HERITES).forEach(function (bloc) {
@@ -710,87 +676,82 @@ function computeStats(centres, sem, mod, machs, taille) {
         f.sections.push({ theme: bloc, cle: d[0], titre: d[1], pos: "haut", texte: v });
       });
     });
+    return f;
+  }
 
-    // Répartition des sections existantes par bloc, puis par case canonique.
-    var parTheme = {};
-    (f.sections || []).forEach(function (s) {
-      (parTheme[s.theme] = parTheme[s.theme] || []).push(s);
+  // ——— Complète une fiche pour l'éditeur, sans rien transformer ———
+  // - anciens champs migrés en sections (fiches jamais rééditées) ;
+  // - blocs standard manquants insérés à leur rang, sans déplacer les existants ;
+  // - cases canoniques manquantes ajoutées vides en fin de bloc, marquées canon
+  //   (la validation ne les garde que remplies).
+  function completerPourEdition(inf) {
+    var f = migrerHerites(JSON.parse(JSON.stringify(inf || {})));
+
+    // Blocs : ordre existant conservé ; les standards absents s'insèrent chacun
+    // après le dernier bloc standard qui le précède dans l'ordre canonique.
+    var rang = {};
+    THEMES_CANON.forEach(function (t, i) { rang[t[0]] = i; });
+    var themes;
+    if (f.themes && f.themes.length) {
+      themes = f.themes.map(function (t) { return { cle: t.cle, titre: t.titre, masque: t.masque }; });
+      THEMES_CANON.forEach(function (t) {
+        if (themes.some(function (x) { return x.cle === t[0]; })) return;
+        var pos = 0;
+        themes.forEach(function (x, i) {
+          if (rang[x.cle] !== undefined && rang[x.cle] < rang[t[0]]) pos = i + 1;
+        });
+        themes.splice(pos, 0, { cle: t[0], titre: t[1] });
+      });
+    } else {
+      themes = THEMES_CANON.map(function (t) { return { cle: t[0], titre: t[1] }; });
+    }
+    f.themes = themes.map(function (t) {
+      var n = { cle: t.cle, titre: t.titre };
+      if (t.masque) n.masque = true;
+      return n;
     });
 
-    var sections = [];
+    // Cases : chaque case canonique absente de son bloc est proposée vide, en
+    // fin de bloc (l'éditeur regroupe par bloc, l'ordre du tableau est conservé).
+    f.sections = f.sections || [];
     THEMES_CANON.forEach(function (t) {
       var cleBloc = t[0];
-      var existantes = parTheme[cleBloc] || [];
-      delete parTheme[cleBloc];
-
+      var duBloc = f.sections.filter(function (s) { return s.theme === cleBloc; });
       if (cleBloc === "commentaires-anciennes-promos") {
-        // Les commentaires gardent leurs cases (sous-titres libres) ; une case
-        // vide est créée si le bloc n'en a aucune.
-        if (!existantes.length) existantes = [{ theme: cleBloc, titre: "", texte: "" }];
-        existantes.forEach(function (s) {
-          var n = { theme: cleBloc, titre: s.titre || "", pos: "haut", just: true, texte: s.texte || "" };
-          if (s.masque) n.masque = true;
-          sections.push(secOrdonnee(n));
-        });
+        if (!duBloc.length) f.sections.push({ theme: cleBloc, titre: "", pos: "haut", just: true, texte: "", canon: true });
         return;
       }
-
-      var prises = existantes.map(function () { return false; });
       (CASES_CANON[cleBloc] || []).forEach(function (d) {
         var idC = d.id || d.cle;
-        var texte = "", masque = false;
-        existantes.forEach(function (s, i) {
-          if (prises[i]) return;
-          if (idCanonDeSection(s) !== idC) return;
-          prises[i] = true;
-          if (s.masque) masque = true;
-          var tx = s.texte || "";
-          if (!tx) return;
-          texte = texte ? texte + "\n\n" + tx : tx;
-        });
-        var n = { theme: cleBloc, titre: d.titre, texte: texte };
+        var deja = duBloc.some(function (s) { return idCanonDeSection(s) === idC; });
+        if (deja) return;
+        var n = { theme: cleBloc, titre: d.titre, texte: "", canon: true };
         if (d.cle) n.cle = d.cle;
         if (d.type) n.type = d.type;
         if (d.pos) n.pos = d.pos;
         if (d.just) n.just = true;
-        if (masque) n.masque = true;
-        sections.push(secOrdonnee(n));
+        f.sections.push(secOrdonnee(n));
       });
-      // Cases non rattachées (personnalisées) : conservées après les canoniques.
-      existantes.forEach(function (s, i) { if (!prises[i]) sections.push(secOrdonnee(s)); });
     });
-    // Blocs inconnus : conservés tels quels en fin de fiche.
-    Object.keys(parTheme).forEach(function (cleBloc) {
-      parTheme[cleBloc].forEach(function (s) { sections.push(secOrdonnee(s)); });
-    });
-    f.sections = sections;
-
-    // Terminologie : disponibilité + effectifs du service.
-    f.sections.forEach(function (s) {
-      if (s.theme === "machines" && s.cle === "machines") s.texte = harmoniserRxRtMn(s.texte);
-      if (s.theme === "service") {
-        if (s.cle === "equipe.dosimetristes" || s.cle === "equipe.techniciens" || s.cle === "equipe.ingenieurs") {
-          s.texte = retirerParentheseRt(s.texte);
-        }
-        s.texte = harmoniserRxRtMn(s.texte);
-      }
-    });
-
-    // Champs hérités : tout vit désormais dans les sections.
-    f.statut = ""; f.salaire = ""; f.retraite = ""; f.chomage = ""; f.conges = ""; f.revisions = "";
-    f.equipe = { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" };
-    f.machines = ""; f.avisIm = ""; f.avisRth = ""; f.avis = "";
-    f.avisAncIm = ""; f.avisAncRth = ""; f.avisAnciens = ""; f.contacts = "";
-    // machinesListe conservée telle quelle (null = détection automatique).
 
     return f;
   }
 
-  var api = { harmoniserFiche: harmoniserFiche, harmoniserRxRtMn: harmoniserRxRtMn, retirerParentheseRt: retirerParentheseRt, THEMES_CANON: THEMES_CANON, CASES_CANON: CASES_CANON };
+  var api = {
+    completerPourEdition: completerPourEdition,
+    migrerHerites: migrerHerites,
+    idCanonDeSection: idCanonDeSection,
+    secOrdonnee: secOrdonnee,
+    normTitre: normTitre,
+    lireHerite: lireHerite,
+    THEMES_CANON: THEMES_CANON,
+    CASES_CANON: CASES_CANON,
+    HERITES: HERITES
+  };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else racine.OutilHarmonisation = api;
+  else racine.OutilFiches = api;
 })(typeof window !== "undefined" ? window : this);
-// ——— Fin de l’outil d’harmonisation ———
+// ——— Fin du gabarit des fiches ———
 
 var THEMES = [
   ["conditions", "Conditions"],
@@ -1246,33 +1207,6 @@ function serialiserFichierData(centres) {
       if (apres) apres();
     }, true);
   }
-  // Réécrit toutes les fiches au gabarit standard (mêmes blocs et cases partout,
-  // terminologie RX / RT / MN) : une seule écriture groupée, tracée dans l'historique.
-  function harmoniserToutesLesFiches() {
-    if (!BASE || !enLigne) { alert("Impossible hors ligne : la carte doit être connectée à la base pour réécrire les fiches."); return; }
-    var lignes = [], modifiees = 0;
-    CENTRES.forEach(function (c) {
-      var avant = JSON.stringify(INFOS[c.id] || {});
-      var f = OutilHarmonisation.harmoniserFiche(infosDe(c));
-      if (JSON.stringify(f) !== avant) modifiees += 1;
-      INFOS[c.id] = f;
-      lignes.push({ id: c.id, data: copieData(c), infos: f });
-    });
-    apiEcrire("centres", lignes, function (ok, retour) {
-      if (ok) {
-        (retour || []).forEach(function (l, i) {
-          var id = (l && l.id) || (lignes[i] && lignes[i].id);
-          if (id && l && l.maj) { MAJ_CONNUES[id] = l.maj; majGlobale(l.maj); }
-        });
-        diffuserMaj();
-        alert("Fiches harmonisées : " + modifiees + " modifiée" + (modifiees > 1 ? "s" : "") + " sur " + lignes.length + ".");
-        if (ficheMode === "vue" && ficheCentre) ficheContenu.innerHTML = ficheHtml(ficheCentre);
-      } else {
-        alert("Échec de l'écriture : les fiches n'ont pas été réécrites en base.");
-      }
-      majEtat(ok ? "enligne" : "echec");
-    }, true);
-  }
   function majGlobale(iso) {
     if (!iso) return;
     var b = document.getElementById("maj-globale");
@@ -1483,11 +1417,12 @@ function serialiserFichierData(centres) {
     if (e.cible === "reglages") return "Machines et catégories";
     var c = centreParId(e.cle);
     if (c) return c.nom || e.cle;
+    if (e.nom) return e.nom;
     if (e.valeur && e.valeur.data && e.valeur.data.nom) return e.valeur.data.nom;
     return e.cle;
   }
   function ouvrirHistorique(racine, cibleCle) {
-    apiLire("journal?select=id,quand,cible,cle&order=id.desc&limit=50", function (lignes) {
+    apiLire("journal?select=id,quand,cible,cle,nom:valeur->data->>nom&order=id.desc&limit=50", function (lignes) {
       if (!lignes) { alert("Historique indisponible pour le moment."); return; }
       naviguer({ type: "historique", entrees: lignes, cible: cibleCle || null }, racine);
       if (cibleCle) {
@@ -1498,7 +1433,7 @@ function serialiserFichierData(centres) {
   }
   function ouvrirHistoriqueFiche(id) {
     var c = centreParId(id);
-    apiLire("journal?select=id,quand,cible,cle&cible=eq.centres&cle=eq." + encodeURIComponent(id) + "&order=id.desc&limit=50", function (lignes) {
+    apiLire("journal?select=id,quand,cible,cle,nom:valeur->data->>nom&cible=eq.centres&cle=eq." + encodeURIComponent(id) + "&order=id.desc&limit=50", function (lignes) {
       if (!lignes) { alert("Historique indisponible pour le moment."); return; }
       naviguer({ type: "historique", entrees: lignes, filtre: c ? c.nom : id });
     });
@@ -1612,6 +1547,9 @@ function serialiserFichierData(centres) {
     if (avant && !!dA.actif !== !!dB.actif) {
       h += '<p class="texte">' + (dB.actif ? '<ins class="df-add">Centre activé.</ins>' : '<del class="df-sup">Centre désactivé.</del>') + "</p>";
     }
+    if (avant && !!dA.supprime !== !!dB.supprime) {
+      h += '<p class="texte">' + (dB.supprime ? '<del class="df-sup">Centre supprimé (retiré de la carte).</del>' : '<ins class="df-add">Centre restauré.</ins>') + "</p>";
+    }
     var tete = "";
     tete += diffLigne("Ville", dA.ville, dB.ville);
     ["S1", "S2", "S3"].forEach(function (s) {
@@ -1626,6 +1564,24 @@ function serialiserFichierData(centres) {
     tete += diffLigne("Position", avant ? (Number(dA.lat).toFixed(5) + ", " + Number(dA.lng).toFixed(5)) : "",
       Number(dB.lat).toFixed(5) + ", " + Number(dB.lng).toFixed(5));
     if (tete) h += '<div class="sec"><dl class="conds">' + tete + "</dl></div>";
+    var alA = Array.isArray(iA.ailleurs) ? iA.ailleurs : [];
+    var alB = Array.isArray(iB.ailleurs) ? iB.ailleurs : [];
+    function ligneAilleurs(a) {
+      var cible = a.id ? (function () { var x = centreParId(a.id); return "fiche : " + (x ? (x.nom || a.id) : a.id); })()
+        : a.url ? "lien : " + a.url : "";
+      return (a.texte || "") + (cible ? " \u2014 " + cible : "");
+    }
+    if (JSON.stringify(alA) !== JSON.stringify(alB)) {
+      var corpsAill = "";
+      var nAill = Math.max(alA.length, alB.length);
+      for (var iAill = 0; iAill < nAill; iAill++) {
+        var lA = iAill < alA.length ? ligneAilleurs(alA[iAill]) : "";
+        var lB = iAill < alB.length ? ligneAilleurs(alB[iAill]) : "";
+        if (lA === lB) { corpsAill += '<p class="texte">' + esc(lA) + "</p>"; continue; }
+        corpsAill += '<p class="texte">' + diffMots(lA, lB) + "</p>";
+      }
+      h += '<div class="sec"><h3>Formation en partie ailleurs</h3>' + corpsAill + "</div>";
+    }
     var phA = iA.photos || [], phB = iB.photos || [];
     if (phA.join("\n") !== phB.join("\n")) {
       h += '<div class="sec"><h3>Photos</h3>' + diffListeNoms(phA, phB) + "</div>";
@@ -1877,7 +1833,6 @@ function serialiserFichierData(centres) {
     var h = '<p class="sur-titre">Gestion</p><h2>Centres</h2>';
     h += '<p class="etab">Cochez pour afficher un centre sur la carte, décochez pour le masquer. Cliquez sur un nom pour ouvrir sa fiche.</p>';
     h += '<button type="button" id="gc-nouveau" class="gc-nouveau">+ Nouveau centre (placer un point sur la carte)</button>';
-    h += '<button type="button" id="gc-harmoniser" class="gc-nouveau">Harmoniser la structure de toutes les fiches (gabarit commun + RX / RT / MN)</button>';
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
       return '<div class="gc-item" data-id="' + esc(c.id) + '">' +
@@ -2051,11 +2006,6 @@ function serialiserFichierData(centres) {
     return "<label>" + label + '</label><textarea name="' + nom + '"' + (grand ? ' class="grand"' : "") + ">" + esc(valeur || "") + "</textarea>" + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
   }
   function glyphePos(pos) { return pos === "haut" ? "T\u2191" : "T\u2190"; }
-  function titrePos(pos) {
-    return pos === "haut"
-      ? "Titre au-dessus du texte — cliquer pour le mettre à gauche"
-      : "Titre à gauche du texte — cliquer pour le mettre au-dessus";
-  }
   function ssecItem(s, inf) {
     s = s || { titre: "", texte: "", pos: "gauche", masque: false };
     var pos = s.pos === "haut" ? "haut" : "gauche";
@@ -2063,6 +2013,7 @@ function serialiserFichierData(centres) {
     var h = '<div class="ssec-item" data-pos="' + pos + '"' +
       (s.just ? ' data-just="1"' : "") +
       (s.cle ? ' data-cle="' + esc(s.cle) + '"' : "") +
+      (s.canon ? ' data-canon="1"' : "") +
       (mach ? ' data-type="machines"' : "") + ">";
     h += '<div class="ssec-haut">';
     h += '<label class="vis"><input type="checkbox" class="ssec-vis"' + (s.masque ? "" : " checked") + "></label>";
@@ -2176,7 +2127,7 @@ function serialiserFichierData(centres) {
   function formHtml(c, creation, infBrouillon) {
     // L'édition part toujours du gabarit standard (mêmes blocs et cases partout,
     // terminologie RX / RT / MN) ; rien n'est enregistré tant qu'on ne valide pas.
-    var inf = infBrouillon || OutilHarmonisation.harmoniserFiche(infosDe(c));
+    var inf = infBrouillon || OutilFiches.completerPourEdition(infosDe(c));
     var resp = inf.responsables || {};
     var h = '<p class="sur-titre">' + (creation ? "Création" : esc(c.ville)) + "</p><h2>" + (creation ? "Nouveau centre" : esc(c.nom)) + "</h2>";
     h += '<div class="form">';
@@ -2248,7 +2199,7 @@ function serialiserFichierData(centres) {
   function sauverBrouillon() {
     if (ficheMode !== "edition" || !ficheCentre || ficheCentre.id === null) return;
     try {
-      localStorage.setItem(cleBrouillon(ficheCentre.id), JSON.stringify({ quand: Date.now(), b: lireForm(ficheCentre) }));
+      localStorage.setItem(cleBrouillon(ficheCentre.id), JSON.stringify({ quand: Date.now(), b: lireForm(ficheCentre, true) }));
     } catch (e) {}
   }
   function lireBrouillon(id) {
@@ -2292,7 +2243,7 @@ function serialiserFichierData(centres) {
   var apercuEdition = null;
   function ouvrirCreationMachine() {
     if (!ficheCentre) return;
-    editionEnAttente = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
+    editionEnAttente = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre, true) };
     ficheCentre = null;
     ficheMode = "gestion-machines";
     btnRetour.hidden = true;
@@ -2316,7 +2267,7 @@ function serialiserFichierData(centres) {
   }
   function ouvrirApercu() {
     if (!ficheCentre) return;
-    apercuEdition = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre) };
+    apercuEdition = { centre: ficheCentre, creation: ficheCentre.id === null, brouillon: lireForm(ficheCentre, true) };
     ficheMode = "apercu";
     btnRetour.hidden = true;
     var cB = Object.assign({}, apercuEdition.centre, apercuEdition.brouillon.data);
@@ -2349,14 +2300,10 @@ function serialiserFichierData(centres) {
     });
   }
 
-  function lireForm(c) {
+  function lireForm(c, pourBrouillon) {
     function v(nom) {
       var el = ficheContenu.querySelector('[name="' + nom + '"]');
       return el ? el.value.trim() : "";
-    }
-    function vSi(nom, sinon) {
-      var el = ficheContenu.querySelector('[name="' + nom + '"]');
-      return el ? el.value.trim() : (sinon || "");
     }
     function n(nom) {
       var x = parseInt(v(nom), 10);
@@ -2393,16 +2340,24 @@ function serialiserFichierData(centres) {
           masque: !el.querySelector(".ssec-vis").checked
         };
         if (el.dataset.cle) s.cle = el.dataset.cle;
+        var canon = el.dataset.canon === "1";
         if (el.dataset.type === "machines") {
           s.type = "machines";
           s.texte = "";
+          var chips = [];
+          el.querySelectorAll(".mach-liste .mchip").forEach(function (chip) { chips.push(chip.dataset.nom); });
+          // Case du gabarit restée vide : gardée au brouillon, jamais stockée.
+          if (canon && !chips.length && !s.masque && !pourBrouillon) return;
+          if (canon && pourBrouillon) s.canon = true;
           machinesItem = true;
-          el.querySelectorAll(".mach-liste .mchip").forEach(function (chip) { machinesListe.push(chip.dataset.nom); });
+          chips.forEach(function (n2) { machinesListe.push(n2); });
           sections.push(s);
           return;
         }
         var ta = el.querySelector(".ssec-texte");
         s.texte = ta ? ta.value.trim() : "";
+        if (canon && !s.texte && !s.masque && !pourBrouillon) return;
+        if (canon && pourBrouillon) s.canon = true;
         sections.push(s);
       });
     });
@@ -2909,10 +2864,6 @@ function serialiserFichierData(centres) {
       return;
     }
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
-    if (ev.target.closest("#gc-harmoniser")) {
-      if (confirm("Réécrire toutes les fiches au gabarit standard (mêmes blocs et cases partout, terminologie RX / RT / MN) ?\nChaque version reste consultable dans l'historique.")) harmoniserToutesLesFiches();
-      return;
-    }
     if (ev.target.closest(".btn-apercu") && ficheCentre) { ouvrirApercu(); return; }
     if (ev.target.closest("#apercu-retour")) { fermerApercu(); return; }
     if (ev.target.closest(".mach-va-creer")) { ouvrirCreationMachine(); return; }
@@ -3504,9 +3455,8 @@ function serialiserFichierData(centres) {
   });
 
   var miniNom = document.getElementById("mini-nom");
-  var miniBadge = document.getElementById("mini-badge");
   var miniBtn = document.getElementById("mini-btn");
-  var totaux = { mq: 0, hex: 0, mqCls: "im" };
+  var totaux = { mq: 0, mqCls: "im" };
 
   function auxAntilles() { return carte.getCenter().lng < -30; }
   function majEncart() {
@@ -3517,7 +3467,6 @@ function serialiserFichierData(centres) {
       btnMiniOuvrir.textContent = om ? "Hex" : "MQ";
       btnMiniOuvrir.setAttribute("aria-label", om ? "Afficher l'encart Hexagone" : "Afficher l'encart Martinique");
     }
-    miniBadge.textContent = "";
     miniCouche.clearLayers();
     var cMQ = centreParId("martinique-chu");
     if (!om && cMQ && totaux.mq > 0) {
@@ -3578,7 +3527,7 @@ function serialiserFichierData(centres) {
       if (c.id === "martinique-chu") { mqTotal = total; mqCls = cls; }
     }
     var s = computeStats(CENTRES, state.sem, state.mod, state.machs, state.taille);
-    totaux = { mq: mqTotal, hex: s.places - mqTotal, mqCls: mqCls };
+    totaux = { mq: mqTotal, mqCls: mqCls };
     document.getElementById("stats").textContent = s.centres + " centres · " + s.places + " places (" + (state.sem === "tous" ? "S1\u2013S3" : state.sem) + ")";
     cacheTexteFiche = {};
     majEncart();
