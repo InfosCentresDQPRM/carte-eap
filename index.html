@@ -1336,6 +1336,19 @@ function serialiserFichierData(centres) {
       majEtat(ok ? "enligne" : "echec");
     });
   }
+  // État publié dans data.js / infos.js, figé avant que la base ne remplace
+  // CENTRES et INFOS. Sert de version de référence pour comparer une
+  // modification qui n'a pas de version antérieure dans le journal
+  // (typiquement la première après une remise à zéro de l'historique).
+  var REF_PUBLIEE = (function () {
+    var r = { centres: {}, reglages: { machines: [], categories: [] } };
+    CENTRES.forEach(function (c) {
+      r.centres[c.id] = { id: c.id, data: copieData(c), infos: JSON.parse(JSON.stringify(INFOS[c.id] || {})) };
+    });
+    r.reglages.machines = JSON.parse(JSON.stringify(MACHINES));
+    r.reglages.categories = JSON.parse(JSON.stringify(CATS));
+    return r;
+  })();
   function appliquerLignesCentres(lignes) {
     CENTRES.length = 0;
     lignes.forEach(function (l) {
@@ -1488,7 +1501,17 @@ function serialiserFichierData(centres) {
         "&cle=eq." + encodeURIComponent(apres.cle) + "&id=lt." + apres.id +
         "&order=id.desc&limit=1", function (prec) {
         var avant = prec && prec.length ? prec[0] : null;
-        naviguer({ type: "histo-diff", apres: apres, avant: avant });
+        var publie = false;
+        if (!avant) {
+          var ref = apres.cible === "centres"
+            ? REF_PUBLIEE.centres[apres.cle]
+            : (apres.cle === "machines" ? { valeur: { cle: "machines", valeur: REF_PUBLIEE.reglages } } : null);
+          if (ref) {
+            avant = apres.cible === "centres" ? { valeur: ref } : ref;
+            publie = true;
+          }
+        }
+        naviguer({ type: "histo-diff", apres: apres, avant: avant, publie: publie });
       });
     });
   }
@@ -1667,7 +1690,8 @@ function serialiserFichierData(centres) {
     return h;
   }
   function histoDiffHtml(v) {
-    var h = '<p class="sur-titre">Modification du ' + esc(quandLisible(v.apres.quand)) + "</p>";
+    var h = '<p class="sur-titre">Modification du ' + esc(quandLisible(v.apres.quand)) +
+      (v.publie ? " \u00b7 compar\u00e9e \u00e0 la version publi\u00e9e" : "") + "</p>";
     h += v.apres.cible === "reglages"
       ? histoDiffReglagesHtml(v.avant ? v.avant.valeur : null, v.apres.valeur || {})
       : histoDiffCentreHtml(v.avant ? v.avant.valeur : null, v.apres.valeur || {});
