@@ -23,36 +23,45 @@
 // Tout se modifie aussi depuis la carte : « Modifier les infos » sur une fiche,
 // puis « Exporter infos.js » pour publier le fichier mis à jour.
 
-const CATEGORIES = [];
+const CATEGORIES = [
+  { id: "accelerateurs", nom: "Accélérateurs", parent: null },
+  { id: "stereotaxie-dediee", nom: "Stéréotaxie dédiée", parent: null },
+  { id: "curietherapie", nom: "Curiethérapie", parent: null },
+  { id: "rt-de-contact-et-peroperatoire", nom: "RT de contact et peropératoire", parent: null },
+  { id: "protontherapie", nom: "Protonthérapie", parent: null },
+  { id: "medecine-nucleaire", nom: "Médecine nucléaire", parent: null },
+  { id: "imagerie-rx", nom: "Imagerie RX", parent: null },
+  { id: "irm", nom: "IRM", parent: null },
+];
 
 const MACHINES = [
-  { nom: "TrueBeam", alias: ["TrueBeam"] },
-  { nom: "Halcyon", alias: ["Halcyon"] },
-  { nom: "Curiethérapie HDR", alias: ["Curiethérapie HDR"] },
-  { nom: "Curiethérapie LDR", alias: ["Curiethérapie LDR"] },
-  { nom: "SPECT-CT", alias: ["SPECT-CT"] },
-  { nom: "Caméra CZT", alias: ["Caméra CZT"] },
-  { nom: "TEP", alias: ["TEP"] },
-  { nom: "IRM", alias: ["IRM"] },
-  { nom: "Scanner", alias: ["Scanner"] },
-  { nom: "Mammographe", alias: ["Mammographe"] },
-  { nom: "Ethos", alias: ["Ethos"] },
-  { nom: "Gamma-caméra", alias: ["Gamma-caméra"] },
-  { nom: "IntraBeam", alias: ["IntraBeam"] },
-  { nom: "Clinac", alias: ["Clinac"] },
-  { nom: "Tomothérapie", alias: ["Tomothérapie"] },
-  { nom: "CyberKnife", alias: ["CyberKnife"] },
-  { nom: "Protonthérapie", alias: ["Protonthérapie"] },
-  { nom: "IRM-Linac", alias: ["IRM-Linac"] },
-  { nom: "Versa", alias: ["Versa"] },
-  { nom: "ZapX", alias: ["ZapX"] },
-  { nom: "X-Strahl / Papillon", alias: ["X-Strahl / Papillon"] },
-  { nom: "Curiethérapie PDR", alias: ["Curiethérapie PDR"] },
-  { nom: "Radixact", alias: ["Radixact"] },
-  { nom: "Synergy", alias: ["Synergy"] },
-  { nom: "EOS", alias: ["EOS"] },
-  { nom: "GammaKnife", alias: ["GammaKnife"] },
-  { nom: "TEP-IRM", alias: ["TEP-IRM"] },
+  { nom: "TrueBeam", alias: ["TrueBeam"], cat: "accelerateurs" },
+  { nom: "Halcyon", alias: ["Halcyon"], cat: "accelerateurs" },
+  { nom: "Curiethérapie HDR", alias: ["Curiethérapie HDR"], cat: "curietherapie" },
+  { nom: "Curiethérapie LDR", alias: ["Curiethérapie LDR"], cat: "curietherapie" },
+  { nom: "SPECT-CT", alias: ["SPECT-CT"], cat: "medecine-nucleaire" },
+  { nom: "Caméra CZT", alias: ["Caméra CZT"], cat: "medecine-nucleaire" },
+  { nom: "TEP", alias: ["TEP"], cat: "medecine-nucleaire" },
+  { nom: "IRM", alias: ["IRM"], cat: "irm" },
+  { nom: "Scanner", alias: ["Scanner"], cat: "imagerie-rx" },
+  { nom: "Mammographe", alias: ["Mammographe"], cat: "imagerie-rx" },
+  { nom: "Ethos", alias: ["Ethos"], cat: "accelerateurs" },
+  { nom: "Gamma-caméra", alias: ["Gamma-caméra"], cat: "medecine-nucleaire" },
+  { nom: "IntraBeam", alias: ["IntraBeam"], cat: "rt-de-contact-et-peroperatoire" },
+  { nom: "Clinac", alias: ["Clinac"], cat: "accelerateurs" },
+  { nom: "Tomothérapie", alias: ["Tomothérapie"], cat: "accelerateurs" },
+  { nom: "CyberKnife", alias: ["CyberKnife"], cat: "stereotaxie-dediee" },
+  { nom: "Protonthérapie", alias: ["Protonthérapie"], cat: "protontherapie" },
+  { nom: "IRM-Linac", alias: ["IRM-Linac"], cat: "accelerateurs" },
+  { nom: "Versa", alias: ["Versa"], cat: "accelerateurs" },
+  { nom: "ZapX", alias: ["ZapX"], cat: "stereotaxie-dediee" },
+  { nom: "X-Strahl / Papillon", alias: ["X-Strahl / Papillon"], cat: "rt-de-contact-et-peroperatoire" },
+  { nom: "Curiethérapie PDR", alias: ["Curiethérapie PDR"], cat: "curietherapie" },
+  { nom: "Radixact", alias: ["Radixact"], cat: "accelerateurs" },
+  { nom: "Synergy", alias: ["Synergy"], cat: "accelerateurs" },
+  { nom: "EOS", alias: ["EOS"], cat: "imagerie-rx" },
+  { nom: "GammaKnife", alias: ["GammaKnife"], cat: "stereotaxie-dediee" },
+  { nom: "TEP-IRM", alias: ["TEP-IRM"], cat: "medecine-nucleaire" },
 ];
 
 const INFOS = {
@@ -71,15 +80,7 @@ const INFOS = {
       { texte: "Imagerie en partie au CHU d'Angers : MN dans ses locaux, RX principalement (sauf mammographie et IRM)", url: "https://www.chu-angers.fr" },
       { texte: "Quelques jours de MN à l'ICO Nantes, prévus et pris en charge", id: "nantes-ico" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1930` },
@@ -90,8 +91,6 @@ const INFOS = {
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `8 en RT (ICO), 2 en MN (1 CHU + 1 ICO)` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `7` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `4` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie (ICO) : 2 TrueBeam, dont 1 en configuration Novalis STx dédié à la stéréotaxie, et 3 Halcyon.
 Curiethérapie : HDR utéro-vaginale, bas débit de dose prostate, interstitielle, flap, chéloïdes.
@@ -166,38 +165,16 @@ mathilde-levardon@hotmail.fr (promo 2021-2023)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1900+` },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : plateau 100 % Varian, avec 4 TrueBeam dont 2 STx, 2 Halcyon et 1 Ethos.` },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Équipe très sympa. J'ai beaucoup aimé mon DQ ici, je recommande le centre.
 
-Sinon, pour la ville en elle-même, plus mitigé : compliqué de trouver un logement (et si possible, prenez avec la clim) et c'est le bordel sur la route (ça doit être la proximité avec Marseille qui veut ça). Mais bon, au final, c'est quand même super, j'ai beaucoup appris !` },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
+Sinon, pour la ville en elle-même, plus mitigé : compliqué de trouver un logement (et si possible, prenez avec la clim) et c'est le bordel sur la route (ça doit être la proximité avec Marseille qui veut ça). Mais bon, au final, c'est quand même super, j'ai beaucoup appris !` }
     ],
     machinesListe: ["TrueBeam", "Halcyon", "Ethos"],
     machines: "",
@@ -221,15 +198,7 @@ Sinon, pour la ville en elle-même, plus mitigé : compliqué de trouver un loge
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1700` },
@@ -238,20 +207,11 @@ Sinon, pour la ville en elle-même, plus mitigé : compliqué de trouver un loge
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `théoriquement non` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `MN et RX : pas de physicien à plein temps` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `MN : plateau technique réduit (1 gamma-caméra et 1 TEP).` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Disponibilité après 19 h 30, sauf les jours de CQ mensuel.
 TOP réalisé par les manips DQA entre 13 h et 14 h, tous les jours.
 MN : gamma-caméra disponible à partir de 15 h le mardi, et TEP à 19 h 30.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "Radiothérapie", pos: "haut", just: true, texte: `Formation bonne en radiothérapie, bon encadrement, physicien disponible pour les questions.` },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `corentin.desport@gmail.com` }
     ],
@@ -277,35 +237,14 @@ MN : gamma-caméra disponible à partir de 15 h le mardi, et TEP à 19 h 30.` },
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1914` },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `non` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Disponibilité apres 19h30` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `fanny.solinhac@gmail.com` }
     ],
     machinesListe: [],
@@ -330,15 +269,7 @@ MN : gamma-caméra disponible à partir de 15 h le mardi, et TEP à 19 h 30.` },
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1928` },
@@ -349,8 +280,6 @@ MN : gamma-caméra disponible à partir de 15 h le mardi, et TEP à 19 h 30.` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `MN : 2 à temps plein (sur le Finistère nord). RT : 5,5 à temps plein (dont 0,5 recherche)` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `3` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `1 technicienne` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RTE — 3 accélérateurs : 2 TrueBeam Novalis STx miroir (MLC HD) et 1 Ethos (les promos précédentes citaient 2 TrueBeam Novalis STx dédiés stéréo et 1 TrueBeam « standard » permettant de faire les grands champs). 1 scanner Siemens SOMATOM. Stéréotaxie, VMAT.
 Curiethérapie : 1 projecteur de source HDR pour la curiethérapie utéro-vaginale ; 3 curiethérapies de prostate par semaine au bloc. Radiothérapie intra-opératoire régulière au bloc (IntraBeam).
@@ -378,7 +307,6 @@ Bureau DQ : petit open space, à côté de celui des physiciens, d'où une facil
       { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Très bon service, équipe sympa.
 
 Le DQ est très vite intégré à la routine CQ machine et CQ patient (ça se calme un peu plus en 2ᵉ année), les physiciens et la technicienne sont très dispo dès qu'il y a des questions ou pour l'encadrement. Le DQ va au bloc de curiethérapie de prostate une semaine sur deux.` },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `caroffpc@gmail.com (IM, promo 2024-2026)
 
 paul.gillet.pro@gmail.com (IM, promo 2023-2025)
@@ -417,27 +345,13 @@ mathieu.pavoine@gmail.com (PM)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1870` },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `oui` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 2 Clinac, 2 Halcyon, 2 tomothérapies, 1 CyberKnife. Curiethérapie HDR et LDR (I-125). IntraBeam + protonthérapie.
 
@@ -456,7 +370,6 @@ RT : créneau dédié aux CQ périodiques chaque semaine, sur une voire deux mac
       { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Bureaux adjacents avec ceux des encadrants, juste au-dessus des services d'imagerie et de MN : le contact est facile. Équipe médicale agréable et avec qui il est facile de discuter (manips, médecins, radiopharmaciens).
 
 Attention, 1 an de travaux d'aménagement de l'été 2024 à l'été 2025 entre le CHU et Baclesse va rendre l'accès en voiture compliqué, mais le tram passe à proximité, ainsi que quelques lignes de bus.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `1 tuteur qui gère la partie radiologie-IRM et 1 tuteur qui gère la partie médecine nucléaire : ils sont tous les deux géniaux. Professionnels, pédagogues et très compétents !` },
       { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Participation et réalisation des CQ (périodiques, patients, etc.). Autonomie recommandée.
 
@@ -492,37 +405,8 @@ thelie.alexis@gmail.com (DQ2)` }
     ailleurs: [
       { texte: "CHU Grenoble Alpes" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: [],
     machines: "",
     avisIm: "",
@@ -547,15 +431,7 @@ thelie.alexis@gmail.com (DQ2)` }
     ailleurs: [
       { texte: "Radiologie interventionnelle au CHU Gabriel Montpied", url: "https://www.chu-clermontferrand.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1912,65 + 100 % frais de transport` },
@@ -564,10 +440,6 @@ thelie.alexis@gmail.com (DQ2)` }
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `plus besoin, mais possibilité de réviser la synthèse pendant le temps libre (DQ2)` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `MN : 2` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 4 accélérateurs Varian (2 Novalis et 2 Clinac). Scanner dédié RT dans le service de radiothérapie (CQ mensuel fait par les DQ1).
 R&V sur ARIA ; dosimétrie sur Eclipse. CQ pré-traitement : Delta4, Lucy, PDIP.
@@ -580,8 +452,6 @@ RX — au CHU : service de radiologie interventionnelle situé au CHU Gabriel Mo
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `RT : 4 accélérateurs, libres à partir de 18 h – 19 h (en fonction des patients et de l'affluence).
 
 MN : machines disponibles en fin d'après-midi en fonction des programmes (16 h 30 – 17 h).` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `MN (3 premiers mois de stage) : le stage concerne uniquement le service de MN du centre Jean Perrin.
 
 RX : malheureusement, pas grand-chose à dire. Nous devions réaliser 3 mois au sein du service de radiologie de CJP et du CHU, mais le Covid-19 en a décidé autrement.
@@ -620,15 +490,7 @@ auappavou.richard@gmail.com (DQ1)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1900 + 75 % frais de transport` },
@@ -639,9 +501,6 @@ auappavou.richard@gmail.com (DQ1)` }
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `RT : 9
 Imagerie : 2 (1 en MN à 100 %, 1 partagé 50/50 entre MN et RX)` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `4` },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie :
 - 1 scanner Siemens
@@ -712,8 +571,6 @@ Toutes les fiches sont faites sous forme de rapports écrits : ça prend donc un
 Le self est incroyable !!
 
 Pour poser des congés, c'est très simple et l'équipe est très flexible.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `theo.letersec@gmail.com (IM)
 
 valentine.david85@gmail.com (IM)
@@ -746,15 +603,7 @@ sayahfarzam@gmail.com (DQ1, promo 2021-2024)` }
     ailleurs: [
       { texte: "CH Métropole Savoie" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1850` },
@@ -763,10 +612,6 @@ sayahfarzam@gmail.com (DQ1, promo 2021-2024)` }
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `théoriquement non` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `Imagerie : 3 physiciennes (1 en MN, 1 en interventionnelle, 1 à 20 % MN et 80 % conventionnelle)` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 2 Halcyon, 2 tomothérapies, 1 CyberKnife.
 
@@ -793,8 +638,6 @@ Horaires libres et choix de l'ordre des manips à voir avec les physiciens, mais
 MN : corrections des fiches à la fin des trois mois uniquement, autonomie complète à la fin du stage, mais encadrement pour les premières manips et la prise en main de chaque appareil.
 
 Radio : les CQI sont sous-traités, il est intéressant d'aller les voir si ça tombe dans la bonne période.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Bien bosser en autonomie, ne pas hésiter à venir poser ses questions et à demander régulièrement un suivi des fiches. Bonne équipe avec une bonne entente.
 
 À savoir : renouvellement complet du service prévu pour 2024, avec construction de nouveaux bunkers (3 à 5)… Physiciens potentiellement très pris par cette activité et la routine.` },
@@ -825,37 +668,8 @@ Radio : les CQI sont sous-traités, il est intéressant d'aller les voir si ça 
     ailleurs: [
       { texte: "Partenariat avec CLB", id: "lyon-clb" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: [],
     machines: "",
     avisIm: "",
@@ -878,15 +692,7 @@ Radio : les CQI sont sous-traités, il est intéressant d'aller les voir si ça 
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1860` },
@@ -895,10 +701,7 @@ Radio : les CQI sont sous-traités, il est intéressant d'aller les voir si ça 
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `non` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `3-4` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
       { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: `1` },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `MN : 5 TEMP, 2 TEP, 1 D-SPECT.
 
@@ -921,12 +724,9 @@ Inconvénients : bureau éloigné des différents services ; partie clinique pas
 Dans l'ensemble, le stage s'est bien déroulé !
 
 Conseil : n'hésitez pas à demander pour aller voir de la clinique :)` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Physicien très accessible, qui accompagne tout au long du stage ; manque d'autonomie qui peut être pesant. L'ambiance est bonne.
 
 Ne pas hésiter à sortir du bureau pour se faire connaître des équipes qui ne sont pas à proximité.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `nagy.antho@gmail.com (promo 2023-2026)
 
 reibel.claire@caramail.fr (promo 2023-2026)
@@ -961,15 +761,7 @@ vincent.beaudoux2@gmail.com (promo 2021-2023)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `env. 2100` },
@@ -978,10 +770,7 @@ vincent.beaudoux2@gmail.com (promo 2021-2023)` }
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `11` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `3` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 1 tomothérapie, 2 Radixact, 2 Halcyon, 1 CyberKnife, 1 IRM-Linac et 1 TrueBeam (et 1 X-Strahl).
 Curiethérapie HDR.
@@ -993,14 +782,11 @@ MN : 16 h.
 RX : 17 h.
 
 Anciennes promos : machines disponibles à partir de 16 h 30, 18 h au plus tard.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Bonne organisation du service, grosse équipe, physiciens très accessibles en cas de questions mais autonomie +. Bonne ambiance d'équipe (pauses cafés incroyables, sorties au bar, karaoké, restaurants, foot si vous proposez !). Les locaux sont partagés entre les physiciens et les stagiaires, ce qui permet une bonne communication.
 
 Parc impressionnant.
 
 Implication en routine clinique (réalisation des CQ, dosimétrie, les différents projets mis en place). Forte implication en curie (lundi et mercredi après-midi) : en S3/S4, ce sont les DQ qui font toutes les dosis curie. Pas de PSQA inutile. Les CQ du TrueBeam et de l'Halcyon sont en partie gérés par les DQ.` },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `AUTONOMIE+++, physiciens accessibles en cas de questions.
 
 Parc impressionnant.
@@ -1038,15 +824,7 @@ vincent.beaudoux2@gmail.com (promo 2021-2023)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1650` },
@@ -1054,24 +832,11 @@ vincent.beaudoux2@gmail.com (promo 2021-2023)` }
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui en RT, quelques semaines avant les examens` },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `RX : les mesures se font dans un service d'urgence, donc les horaires sont (très) variables. À noter qu'une machine est quasiment tout le temps disponible (RX conventionnelle).
 
 MN : les machines sont disponibles à 17 h au plus tard, le plus souvent 16 h. Un activimètre est à contrôler le matin à 6 h 30 (mensuellement).
 
-RT : TOP le matin par les techniciens et dosimétristes (6 h 30 pour y assister). Les machines sont disponibles après les traitements pour les DQA et les fiches de compétences. Pour les CQ mensuels et annuels, la machine est réservée toute la journée (possible d'en profiter pour quelques fiches également).` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
+RT : TOP le matin par les techniciens et dosimétristes (6 h 30 pour y assister). Les machines sont disponibles après les traitements pour les DQA et les fiches de compétences. Pour les CQ mensuels et annuels, la machine est réservée toute la journée (possible d'en profiter pour quelques fiches également).` }
     ],
     machinesListe: [],
     machines: "",
@@ -1097,15 +862,7 @@ RT : TOP le matin par les techniciens et dosimétristes (6 h 30 pour y assister)
     ailleurs: [
       { texte: "1 jour d'observation aux HCL (Hospices Civils de Lyon)", id: "lyon-chu" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1915` },
@@ -1116,10 +873,6 @@ RT : TOP le matin par les techniciens et dosimétristes (6 h 30 pour y assister)
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `MN : 1 à temps plein (peu disponible), 1 à 50 %
 
 RX : 1 physicienne à mi-temps` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 6 machines, dont 1 linac Elekta. 1 scanner de RT. CQ patients en VMAT, tomothérapie et CyberKnife.
 
@@ -1142,12 +895,10 @@ Bonne ambiance générale au sein du centre et accès facile au travail réalis�
 
 Radiologie : la physicienne est très organisée et impliquée, elle met en place un planning pour le déroulement du stage.
 Beaucoup de CQ internes réalisés par des entreprises sous-traitantes.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Médecine nucléaire : autonomie +++.
 
 Radiologie : la physicienne est très organisée.
 Beaucoup de CQ internes réalisés par des entreprises sous-traitantes.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `AUTONOMIE AUTONOMIE AUTONOMIE. Physiciens disponibles en cas de questions.
 
 Accessibilité à tout sans difficulté particulière.
@@ -1183,29 +934,16 @@ hug.rousseau8@gmail.com` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [
-      { texte: "AP-HM – Hôpital de la Timone" }
+      { texte: "AP-HM – Hôpital de la Timone", id: "marseille-timone" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `2466` },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `oui` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `13 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `8, dont 4 en RT à plein temps, 2 partagés RT + IM et 2 partagés RT + MN` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 4 accélérateurs, 3 Elekta et 1 IRM-Linac MRIdian.
 
@@ -1213,14 +951,11 @@ TPS : RayStation et ViewRay.` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Disponibilité des machines pour les DQ sur les jours de CQ et de maintenance.
 
 TOP et CQ quotidiens et hebdomadaires faits par les manips.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Les physiciens sont disponibles pour les questions et sympathiques.
 
 Beaucoup d'autonomie est attendue tout au long du stage.
 
 Les fiches font l'objet d'oraux à présenter devant les physiciens pour validation.` },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Les DQPRM sont autonomes et peuvent poser des questions aux physiciens quand ils en ont besoin.
 
 Toutes les fiches sont à présenter à l'équipe de physiciens, pour s'assurer qu'il n'y a pas d'erreurs dans l'apprentissage.
@@ -1260,15 +995,7 @@ adam.renard@yahoo.com` }
     ailleurs: [
       { texte: "Institut Paoli Calmettes", id: "marseille-paoli" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1954` },
@@ -1276,11 +1003,6 @@ adam.renard@yahoo.com` }
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui (dernière semaine avant les exams, uniquement révision)` },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 3 Versa, dont un inutilisé par manque de manips.
 
@@ -1295,9 +1017,6 @@ RX : créneau pris par le physicien pour les manips des fiches.
 
 Promo 2024-2026 — MN : gamma-caméras et TEP disponibles au plus tard à 17 h (souvent vers 16 h). Temps machine disponible pendant les vacances très important.` },
       { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `1 mois d'observation au début du stage.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Très bon encadrement dans les 3 domaines. Très bonne ambiance.
 
 À l'arrivée au centre, 2 semaines d'observation dans chaque domaine, ce qui est un plus pour les révisions des exams.
@@ -1335,37 +1054,8 @@ brahim.mehadji@outlook.fr` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: [],
     machines: "",
     avisIm: "",
@@ -1390,36 +1080,18 @@ brahim.mehadji@outlook.fr` }
     ailleurs: [
       { texte: "CHU-Nancy" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `non` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `7 : 1 à temps plein en MN, 5 à temps plein en RT et 1 partagé RT/RX` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 2 TrueBeam STx, 1 Radixact, 1 tomothérapie, curiethérapie.` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `MN : pour les mesures des fiches, les gamma-caméras sont disponibles vers 16 h et les TEP vers 18 h ; des créneaux sont généralement bloqués pour les CQ réglementaires.
 
 RX : les machines sont dispos vers 17 h.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Équipe jeune, sympa et dynamique. Très bonne ambiance et très bon encadrement dans les 3 domaines (les physiciens sont toujours disponibles pour répondre à vos questions).
 
 Les horaires sont libres tant que le travail est fait !
@@ -1451,15 +1123,7 @@ En radiothérapie : participation à la routine clinique — réalisation des CQ
     ailleurs: [
       { texte: "Une semaine de MN à la Timone (Marseille)", id: "marseille-timone" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `2400` },
@@ -1469,21 +1133,13 @@ En radiothérapie : participation à la routine clinique — réalisation des CQ
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `sûrement` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `Imagerie : 1 physicienne à temps plein à l'HNFC
 RT : équipe de 4` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Imagerie : les machines sont disponibles de façon ponctuelle.
 
 MN et scanner : disponibilité après 17 h 30.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Attention, l'HNFC pour le stage d'imagerie n'est pas à Montbéliard mais à Trévenans (90).
 
 L'hôpital se situe à Trévenans, à 15 min de Belfort. C'est préférable de chercher un logement à Belfort plutôt qu'à Montbéliard.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Équipe très sympathique. Autonomie, initiative et communication importantes à avoir.` },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `achag.ilyas21@gmail.com
 
@@ -1514,15 +1170,7 @@ manyani39@gmail.com` }
       { texte: "Les 3 premiers mois de formation (RX) au CHU de Montpellier, facilement accessible en tram (arrêt CHU Lapeyronie) : équipements répartis entre les 3 pôles Lapeyronie, Arnaud de Villeneuve et Gui de Chauliac", url: "https://www.chu-montpellier.fr" },
       { texte: "Traitements à l'Y-90 à Gui de Chauliac, avec une autre physicienne : réalisation de dosimétries sur place, présence au bloc lors des injections", url: "https://www.chu-montpellier.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1915` },
@@ -1536,8 +1184,6 @@ RX (au CHU de Montpellier) : 1 physicien à 80 %` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `6` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `2
 RX (au CHU de Montpellier) : 2 techniciens, qui présentent tous les CQ` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 4 TrueBeam (dont 2 STx), 2 Ethos, 1 IRM-Linac (ViewRay).
 Curiethérapie : 3 chambres PDR et un bunker HDR (Elekta).
@@ -1566,8 +1212,6 @@ Dès notre arrivée en S2, on nous laisse la main sur les machines pour les CQ (
 Tâches attribuées aux DQ : RIOP (CQ + traitement), avec en moyenne 3 RIOP (max 5) par semaine ; CQ scanner.
 
 Seul inconvénient : le bureau est petit (3 postes) et on le partage avec les étudiants en master. Par moments, il faut alterner et s'arranger pour trouver un PC ailleurs (ce qui est faisable). En revanche, le bureau est bien placé : à proximité du bureau des techniciens, des machines, de la dosimétrie, etc. Le self est moyen et assez cher (malgré la remise de 30 %).` },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Équipe très sympathique et à l'écoute. Autonomie importante.` },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `maunet.mathis@gmail.com (promo 2023-2026)
 
@@ -1605,15 +1249,7 @@ galliano.geoffrey@gmail.com (IM, RT)` }
     ailleurs: [
       { texte: "Fiche RIV à réaliser en collaboration avec Strasbourg, à l'ICANS (frais de déplacement pris en charge les jours concernés, 50 minutes de train, horaires flexibles)", id: "strasbourg-icans" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1900` },
@@ -1622,10 +1258,6 @@ galliano.geoffrey@gmail.com (IM, RT)` }
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `à voir, mais sûrement oui` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `Imagerie : 2 à plein temps` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Imagerie — très grand parc : 1 TEP-CT, 1 gamma-caméra, 3 activimètres, 10 arceaux, 4 salles fixes interventionnelles, 3 scanners, 10 salles RX conventionnelles, 1 EOS, 5 mobiles, 1 mammo, 3 IRM.
 Utilisation du DACS en routine.` },
@@ -1639,10 +1271,6 @@ Très bonne équipe, bonne ambiance, physiciens dédiés en imagerie donc très 
 Pas de contraintes sur les horaires de travail ni sur les congés.
 
 Possibilité d'obtenir un logement avec le centre hospitalier sur site (loyer réduit) : renseignements à voir directement avec les encadrants après le choix de stage.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `ringuenoire.clement@gmail.com (IM, promo 2023-2025)
 
 thymele.muller-stahn@orange.fr (IM, promo 2023-2025)` }
@@ -1671,15 +1299,7 @@ thymele.muller-stahn@orange.fr (IM, promo 2023-2025)` }
     ailleurs: [
       { texte: "Équipements et contrôles répartis entre les deux sites du CHRU : Nancy centre et Brabois (la fiche IRM est faite à Brabois)", url: "https://www.chu-nancy.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1913,64 (CHRU)` },
@@ -1689,10 +1309,6 @@ thymele.muller-stahn@orange.fr (IM, promo 2023-2025)` }
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `plus besoin` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `MN : 2 (dont 1 à temps partiel)
 RX : 3 (dont 1 à temps partiel)` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `MN : 3 gamma-caméras Symbia T (Siemens), 1 D-SPECT (cœur), 1 Veriton, 3 TEP Vereos (Philips).
 Avis récent — 2 labos chauds (1 thérapie + 1 traitement) avec plusieurs activimètres, 1 TEP-CT Siemens, 3 TEP-CT Vereos (Philips), 2 SPECT Symbia T, 2 SPECT Veriton. Traitements : 90-Y, 177-Lu (prostate et TNE), I-131. Nombreux fantômes disponibles.
@@ -1718,10 +1334,6 @@ L'observation en IRM est aussi possible, mais à la demande.
 Organisation générale
 Pour la MN, c'est à vous de faire votre planning et de présenter ou d'envoyer vos fiches.
 Pour la RX, il y a un planning pour la réalisation des fiches, avec les jours de congés des physiciens (faire très attention aux congés pour la signature de vos fiches).` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `rachaussin@gmail.com
 
 jacquemin.manon01@gmail.com` }
@@ -1748,37 +1360,8 @@ jacquemin.manon01@gmail.com` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: null,
     machines: "",
     avisIm: "",
@@ -1803,15 +1386,7 @@ jacquemin.manon01@gmail.com` }
     ailleurs: [
       { texte: "Imagerie au CHU de Nantes : la moitié à l'Hôtel-Dieu (Nantes centre) et la moitié à Laennec (Saint-Herblain) ; seule la mammographie est faite à l'ICO", url: "https://www.chu-nantes.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1917` },
@@ -1823,7 +1398,6 @@ jacquemin.manon01@gmail.com` }
 MN : 2` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `8` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `3` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
       { theme: "service", cle: "equipe.autres", titre: "Autres", texte: `4 biomédicaux` },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 1 Clinac avec 5 énergies d'électrons (ICT, bain d'électrons), 1 Novalis TrueBeam (stéréo, gating), 2 Radixact, 2 Halcyon équipés SGRT VisionRT, HDR.
@@ -1837,8 +1411,6 @@ Imagerie (CHU de Nantes) : beaucoup de machines — arceaux, bi-tube, 4 IRM, 4 s
 Promos précédentes — MN : les machines ne sont disponibles qu'après 17 h 30 pour le SPECT (voire plus tard) et 18 h 30 pour la TEP.
 
 Promos précédentes — RT : plage de traitement de 8 h à 20 h. Les mesures se font majoritairement au Clinac (dispo à partir de 15 h 30 – 16 h), plus d'accélérateur disponible la journée. Un physicien est là en cas de besoin si mesure après les plages de traitement.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `MN
 Toute la médecine nucléaire est à faire dans le service de MN. Tout est fait sur Python, pas d'utilisation des logiciels constructeurs.
 Tout le service est sympa — comme partout, il y a des gens avec qui le courant ne passe pas. Les 2 physiciens et les médecins sont sympas et disponibles pour répondre aux questions. Vous serez formés sur les machines, notamment la réalisation des CQ, puis vous serez livrés à vous-même.
@@ -1854,9 +1426,7 @@ DQ2 : très bonne ambiance, très impliqué en routine clinique, voire dans les 
 
 PS : pour la dosimétrie, vous aurez un référent en dosi qui vous forme tout au long de la formation (dosimétristes très sympas).
 
-Inclusion dans la clinique ++. Équipe très sympa et disponible, autonomie +.` },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
+Inclusion dans la clinique ++. Équipe très sympa et disponible, autonomie +.` }
     ],
     machinesListe: ["Clinac", "TrueBeam", "Radixact", "Halcyon", "Curiethérapie HDR", "SPECT-CT", "Gamma-caméra", "TEP", "IRM", "Scanner", "Mammographe"],
     machines: "",
@@ -1883,27 +1453,13 @@ Inclusion dans la clinique ++. Équipe très sympa et disponible, autonomie +.` 
       { texte: "Formation RT sur 2 sites : principalement sur le 1er ; 1 semaine sur le 2ᵉ site au S2 pour la fiche CQ, et environ 1 mois au S3 pour les fiches photons petits champs et planification en stéréotaxie" },
       { texte: "Pas de salle de radiologie interventionnelle dédiée : visite prévue à Monaco si possible" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1954` },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `oui` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `Imagerie : 2 à temps plein (1 en charge de la MN, 1 sur la partie RX) ; un 3ᵉ physicien tout juste diplômé a été recruté` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT — 1er site :
 - 1 Clinac 21EX en fin de service
@@ -1975,8 +1531,6 @@ Autre promo : un physicien dédié MN à plein temps, très bon encadrement et s
 
 En radio : bonne disponibilité, beaucoup de temps passé sur la correction des fiches, une certaine part d'autonomie nécessaire. La fiche IRM n'est pas traitée.
 Il y a aussi un physicien dédié, dont l'encadrement est également top : il effectue les manips devant vous, puis vous laisse gérer en autonomie. Il propose et laisse une grande marge de manœuvre pour approfondir les sujets et proposer des projets annexes supplémentaires. Il est aussi fortement recommandé de passer du temps dans le service : utilité +++ pour la synthèse.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `roxane.brunel@hotmail.fr (IM, RT, promo 2024-2026)
 
 sylviedeoliveiraduarte@gmail.com
@@ -2011,37 +1565,8 @@ matduncanj@gmail.com (DQ1)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: null,
     machines: "",
     avisIm: "",
@@ -2066,29 +1591,16 @@ matduncanj@gmail.com (DQ1)` }
     ailleurs: [
       { texte: "ICM val d’Aurelle" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1941` },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `non` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `Imagerie : 2
 MN : 2 physiciennes
 Promo 2024-2026 : 4 physiciens à présent (2 jeunes physiciens embauchés)` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 1 Clinac 2100D non utilisé en clinique (utilisé seulement par les DQ), plus les autres linacs.
 
@@ -2116,9 +1628,6 @@ Commentaire Lisa DQ 24/26 (merci de ne pas supprimer) : stage en cours, partie i
 - À retenir : soyez rigoureux et suivez les instructions de mise en forme à la lettre (physicien pointilleux ++++++).
 - À noter, l'importance de votre binôme co-DQ ! Une belle coopération est toujours utile et appréciable, afin de réaliser votre stage dans les meilleures conditions possibles.
 - Privilégiez l'esprit d'équipe plutôt que l'esprit de compétition : vous avancerez plus vite et plus efficacement ensemble ;)` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `En RT : un planning de fiches est mis en place par les physiciens, avec des deadlines. Implication rapide en routine clinique (première dosi sur un vrai patient en février).
 
 Horaires en RT : 2 jours de garde par semaine (7 h 30 – 15 h ou 12 h – 19 h 30) ; les 3 autres jours (9 h – 17 h) sont dispos pour les révisions et les fiches.` },
@@ -2150,15 +1659,7 @@ mathildebigot4@gmail.com` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1870` },
@@ -2170,9 +1671,6 @@ mathildebigot4@gmail.com` }
 RX : 1
 RT : 5` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `3` },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie : 2 accélérateurs Synergy (Elekta), 1 TrueBeam STx (Varian) et 1 tomothérapie.
 
@@ -2187,13 +1685,11 @@ RX : mesures faites en journée, sauf pour le scanner, qui est plutôt disponibl
       { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `MN : tuteur qui accompagne ++. Il apprécie la programmation Python et fait un point théorique sur les fiches avant de les commencer.
 
 Radiologie : autonomie attendue +++.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `RX : très bonne ambiance dans le service et physicien disponible.
 
 MN : très bonne ambiance aussi, physicien disponible également, formation très complète en MN.
 
 Globalement, les deux physiciens sont très présents ; prise d'initiatives et autonomie appréciées. Super ambiance générale dans le service, avec tous les membres de l'équipe (médecins nucléaires, radiopharmaciens ou manips).` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Avis DQ2 :
 Radiologie : bon suivi et très bonne ambiance.
 MN : bon suivi et très bonne ambiance (autonomie et prise d'initiative appréciées).
@@ -2239,15 +1735,7 @@ coline.gautheron@gmail.com (DQ2, promo 2018-2020)` }
       { texte: "Observation d'actes de radiologie interventionnelle à l'HEGP pendant 2 semaines", id: "paris-hegp" },
       { texte: "Observation de la RIV (gélules d'iode et Lutathera) à l'Institut Curie Saint-Cloud, environ 5 jours répartis pendant le stage", id: "saint-cloud-curie" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1925 (1887,5 + 50 % frais de transport)` },
@@ -2261,8 +1749,6 @@ RT : 10 sur site
 Une seule équipe de physiciens regroupant les physiciens d'imagerie et de RT.` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `7` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `5` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `MN : 1 SPECT avec 99mTc, 1 TEP avec 18F (Siemens).
 
@@ -2291,7 +1777,6 @@ Le petit plus de Curie Paris, ce sont vraiment les manips radio, qui sont tops e
 À savoir que Curie est le spécialiste du sein et qu'ils font de la stéréo sur TrueBeam. Beaucoup de localisations sont réalisées, et pas mal de pédiatrie également.
 
 Au-delà de ça, le cadre est vraiment top, les équipes bienveillantes et les congés bien respectés. Beaucoup de conférences sont proposées chaque semaine sur des thèmes autour du cancer (physique, biologie, médecine…).` },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Planning des fiches défini dès le début du semestre, en réunion avec un ou deux physiciens référents pour chaque fiche.
 
 La première fiche introductive est réalisée en allant en observation les 2-3 premières semaines sur les différents postes, en suivant le parcours patient : consultation d'annonce, scanner de RT, dosimétrie, etc.
@@ -2340,15 +1825,7 @@ hiron.quentin@gmail.com (IM, promo 2019)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `CDD` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1958 + 75 % frais de transport` },
@@ -2356,11 +1833,6 @@ hiron.quentin@gmail.com (IM, promo 2019)` }
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `oui` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui` },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 1 TrueBeam STx avec ExacTrac (stéréo), 2 TrueBeam avec AlignRT, 1 CyberKnife.
 
@@ -2368,7 +1840,6 @@ Curiethérapie : 1 projecteur de source (Ir-192) + curie prostate (grains d'iode
 
 TPS : Eclipse et Precision (CK).` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Traitements de 8 h à 15 h 30, puis machines disponibles pour les CQ ou les mesures du DQ :)` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Accessibilité : métro 8 terminus Balard, T3a Balard, RER C Pont du Garigliano.
 
 Horaires flexibles (vous pouvez venir quand vous voulez tant que vous faites votre quota horaire, logique).
@@ -2378,9 +1849,6 @@ Bonne équipe, légèrement en sous-effectif, mais bonne ambiance. Savoir être 
 Beaucoup de routine clinique (dosimétrie, curie, CQ).
 
 Aucune difficulté rencontrée pour poser des congés.` },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `ambrabm@gmail.com (promo 2023-2025)` }
     ],
     machinesListe: ["TrueBeam", "CyberKnife", "Curiethérapie HDR", "Curiethérapie LDR"],
@@ -2407,37 +1875,8 @@ Aucune difficulté rencontrée pour poser des congés.` },
     ailleurs: [
       { texte: "St-Cloud-Institut Curie" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: [],
     machines: "",
     avisIm: "",
@@ -2460,37 +1899,8 @@ Aucune difficulté rencontrée pour poser des congés.` },
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: null,
     machines: "",
     avisIm: "",
@@ -2515,15 +1925,7 @@ Aucune difficulté rencontrée pour poser des congés.` },
     ailleurs: [
       { texte: "Hôpital St Louis, GHU St Louis" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `CDD` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1750 + 75 % frais de transport` },
@@ -2533,9 +1935,6 @@ Aucune difficulté rencontrée pour poser des congés.` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `11 (RT)` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `2` },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Machines de RT et radiochirurgie :
 - 1 TrueBeam avec ExacTrac (stéréo intra et extra) → sera remplacé par un Edge en 2026
@@ -2552,7 +1951,6 @@ Autre matériel : cuve SunScan 3D (Sun Nuclear, arrivée fin 2024), Delta4 (Scan
 
 Anciennes promos : 1 linac, 1 TB STx, 1 GammaKnife, 1 tomo, CT, IRM-Linac, curiethérapie HDR/PDR.` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Plages horaires dédiées pour les CQ.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Équipe sympathique et bienveillante. Le service présente un parc très varié et intéressant pour se former ! Les fiches sont bien encadrées : pour chacune d'entre elles, un physicien est désigné responsable.
 
 Il est demandé aux DQPRM de participer aux TOP (1 à 2 par semaine en général), au CQ hebdomadaire des chambres de curiethérapie PDR, et de se greffer aux CQ machines (particulièrement durant le S2, comme cette partie fait l'objet d'une fiche).
@@ -2560,8 +1958,6 @@ Il est demandé aux DQPRM de participer aux TOP (1 à 2 par semaine en général
 Remarques :
 - Il est demandé de déposer vos congés en décalé avec votre co-DQ.
 - Accès via M5 ou M6, + parc Vélib dans l'enceinte de la Pitié-Salpêtrière.` },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Être capable de bosser en autonomie, physiciens en radiothérapie disponibles ++, plateau technique intéressant.` },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `thymele.muller-stahn@orange.fr (RT, promo 2023-2025)
 
@@ -2595,28 +1991,16 @@ tkayosra@yahoo.fr (promo 2021-2023)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `oui` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui` },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `RT : 5,5
 MN et RX : 1,5` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `2` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 4 accélérateurs Elekta + 1 CyberKnife.
 
@@ -2626,10 +2010,6 @@ TPS : RayStation.` },
 TOP faits par les manips. DQA 4 soirs par semaine, à se répartir entre les DQ.
 
 En MN et TEP, machines dispos tôt l'après-midi.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Très bon encadrement en imagerie et en radiothérapie, l'équipe est jeune et disponible. Le suivi des fiches est régulier, avec un planning bien établi.
 
 Nos horaires sont libres, tant que le travail est fait !
@@ -2665,15 +2045,7 @@ kilien.parent@gmail.com` }
     ailleurs: [
       { texte: "Environ 4 fiches (sur ~16) se font au CHU de Reims, situé juste à côté : radiologie conventionnelle possible à l'Institut ou au CHU, interventionnelle uniquement au CHU", url: "https://www.chu-reims.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1899` },
@@ -2684,8 +2056,6 @@ kilien.parent@gmail.com` }
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `5 à temps complet et 2 à temps partiel (1 jour et 2 jours par semaine) ; 1 physicien en imagerie à Godinot et 1 à temps partiel au CHU` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `3` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `2 maintenance RT + 1 radioprotection/MN` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 2 accélérateurs Elekta + 1 tomothérapie + 1 linac sur le site de Soissons.
 TPS : Monaco.
@@ -2715,8 +2085,6 @@ DQ 24-26 : pour notre part, les horaires sont flexibles, on fait notre propre pl
 Excellente ambiance de travail, étudiants dans l'open space. Nous n'avons pas beaucoup connu le CHU, car la physicienne est en congé maternité, mais notre tuteur de Godinot (C. Hoog) est un excellent encadrant et est très pédagogue.
 PS : il organise des quizz tous les premiers mercredis du mois dans un bar du centre de Reims, vous serez les bienvenus :)
 Possibilité de garer la voiture sur le parking personnel, mais il y a un manque de place à partir de 9 h 30.` },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: `Travail en autonomie complète, même pour la cuve et autre. Les physiciens sont toujours là pour répondre aux questions, mais pas de suivi, pas de points sur les fiches, et intégration compliquée dans certaines tâches (peu d'informations communiquées au DQ).` },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Équipe chaleureuse, jeune, dynamique et disponible.
 
@@ -2764,15 +2132,7 @@ severine.lannoy@outlook.fr` }
     ailleurs: [
       { texte: "1 semaine d'observation d'examens au CHU de Brest (partie radiologie)", id: "brest-chru" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1871 + 75 % frais de transport (ou indemnités kilométriques vélo)` },
@@ -2784,8 +2144,6 @@ severine.lannoy@outlook.fr` }
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `6` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `2 mesures physiques
 3 biomédicaux` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 1 CyberKnife, 1 Versa, 2 Halcyon, 1 IRM-Linac Elekta Unity, 1 scanner Confidence (Siemens), curiethérapie HDR (projecteur + TPS Elekta).
 TPS : RayStation ; Monaco pour l'IRM-Linac ; Precision pour le CyberKnife.
@@ -2794,7 +2152,6 @@ RX : 1 scanner AS64 (Siemens), 1 table de radiologie conventionnelle Luminos (Si
 Remarque : l'IRM-Linac Unity peut également servir à l'acquisition d'images durant le stage d'imagerie.
 
 MN : 1 gamma-caméra CZT (GE), 2 gamma-caméras TEMP/TDM (GE et Siemens), 2 TEP/TDM (Siemens et GE).` },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
       { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Le stage se déroule dans un CLCC. Pour la partie MN, il y a beaucoup d'examens différents. Les imageurs sont tout aussi divers. C'est plaisant de travailler en MN. Pour la partie radiologie, cela se passe également au centre. Le stage est donc plus focalisé sur la MN que sur la radiologie.
 
 Il faut être très investi pour que le stage se passe bien, en étant ponctuel et en n'ayant pas peur de compter ses heures (8 h – 18 h tous les jours). Si la personne paraît ne pas s'investir dans le stage, il est possible que les tuteurs aient un a priori négatif. Je vais partager une anecdote pour clarifier ce que je veux dire. À la toute fin du stage, on nous a reproché de ne pas avoir vu beaucoup d'examens radiologiques. Nous avions dit qu'aucun physicien ne nous avait dit ou guidé pour nous faire voir davantage d'examens. On nous a répondu que l'on était autonomes pour aller les voir tout seuls et que l'on aurait pu aller leur demander de voir plus d'examens. Cela démontre qu'il faut faire preuve d'autonomie et ne pas hésiter à parler ou à aller vers les tuteurs en cas de problème. À part cela, le stage s'est bien déroulé. Ce n'était pas le cas pour un étudiant d'imagerie en 2024.
@@ -2862,28 +2219,16 @@ lemaire.lucien@outlook.fr (DQ1, promo 2022-2025)` }
       { texte: "2 fiches de radiologie interventionnelle à Caen (l'ensemble des autres fiches sont réalisées au CHB)" },
       { texte: "En 3ᵉ semestre, les fiches curiethérapie sont faites au CFB à Caen", id: "caen-baclesse" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1950` },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `oui` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `Imagerie : 2 à temps plein
 RT : 8` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `7` },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT : 2 TrueBeam Novalis, 1 Halcyon (installation juillet 2021) + 2ᵉ Halcyon (2022) + 3ᵉ Halcyon Ethos (2025).
 Promos précédentes : 2 TrueBeam STx + 3 Halcyon ; installation Ethos sur Halcyon, projet d'installation d'un ZapX et aussi d'une 6ᵉ machine.
@@ -2896,8 +2241,6 @@ Radiologie : 2 mammographes + 1 scanner GE + 1 salle radio et un mobile + 1 arce
 Promos précédentes : les machines finissent les traitements vers 19 h. En cas de besoin des machines pour des mesures, possible de venir le samedi (le jour est récupérable).
 
 MN : les caméras entre 16 h 30 et 17 h ; TEP pas avant 18 h 30.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Pas de planning particulier : c'est à l'étudiant de s'organiser selon la disponibilité des machines et des physiciens.
 
 Les 2 physiciens sont présents à tout moment pour une éventuelle aide. Autonomie ++++++++++++++.
@@ -2908,7 +2251,6 @@ Les 2 physiciens sont présents à tout moment pour une éventuelle aide. Autono
 Généralement, le travail avec les physiciens et l'équipe en service est assez agréable. Ils sont bienveillants et disponibles en cas de besoin.
 
 Au niveau de l'organisation du stage, ça demande plus d'autonomie pour l'organisation des fiches, et il faut vraiment solliciter les gens en cas de besoin.` },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `pannier.mathilde@orange.fr (promo 2020-2022)
 
 assia.benhamla46@gmail.com (promo 2022-2025)
@@ -2939,27 +2281,14 @@ manyani39@gmail.com (RT, promo 2022-2025)` }
     ailleurs: [
       { texte: "Prévoir 10 jours dans un autre hôpital pour la partie RX interventionnelle (conventions avec Lariboisière gérées par l'établissement)", url: "https://hopital-lariboisiere.aphp.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
       { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: `oui` },
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `2 en RX/MN` },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `1 en imagerie` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Imagerie : 1 scanner GE, 1 table radio Primax, 1 mobile, 3 mammographes/tomosynthèse GE, 1 IRM GE.
 
@@ -2967,11 +2296,7 @@ MN : 1 gamma-caméra, 1 TEP Philips Vereos.
 
 Promos précédentes : à prévoir, le remplacement d'un des mammographes et l'agrandissement du service de MN.` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Promos précédentes : disponibilité des machines globalement à partir de 17 h – 17 h 30, et une des deux gamma-caméras disponible certaines journées.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Im: prévoir de faire 10 jours dans un autre hôpital pour la partie Rx interventionnelle (conventions avec Lariboisière gérées par l'établissement). Deux physiciens en RX/MN et un technicien en imagerie en cours de formation sur les CQ. Disponibilité des machines globalement à partir de 17h-17h30, et une des deux gamma caméra disponible certaines journées. A prévoir : le remplacement d'un des mammographes, l'agrandissement du service de MN.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `tanguyferran@gmail.com` }
     ],
     machinesListe: ["Scanner", "Mammographe", "IRM", "Gamma-caméra", "TEP"],
@@ -2999,15 +2324,7 @@ Promos précédentes : à prévoir, le remplacement d'un des mammographes et l'a
       { texte: "La majorité des fiches de radiologie (sauf les fiches scanner et IRM) se font aux Hôpitaux civils de Colmar, à 30 minutes de train de Strasbourg. L'abonnement de train est remboursé à hauteur de 75 %. Salle de radiologie interventionnelle dédiée aux tests pour les DQ, et centre de médecine nucléaire tout neuf (1 TEP/CT Omni Legend GE et 2 gamma-caméras NM/CT 870 DR).", url: "https://www.ch-colmar.fr" },
       { texte: "Plus de filière SIRT depuis le divorce avec le CHU de Strasbourg, mais il est toujours possible d'aller observer le geste au CHU", url: "https://www.chru-strasbourg.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1856 + 75 % frais de transport` },
@@ -3020,8 +2337,6 @@ MN : 2 à temps plein
 RX (aux Hôpitaux civils de Colmar) : 2 physiciennes à temps plein` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `6` },
       { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: `2` },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `RT — appareils Varian : 1 Ethos HyperSight pour l'adaptatif, 1 Halcyon HyperSight, 1 TrueBeam STx (avec ExacTrac et Dyn'R) et 1 Clinac iX Silhouette (avec VisionRT), 1 projecteur de source Flexitron (HDR).
 RT — appareils de tomothérapie : 1 Radixact et 1 Tomo HD.
@@ -3068,7 +2383,6 @@ Très bonne équipe, bonne ambiance, physicien disponible et investi. Bonne int�
 
 Partie RX
 Pour plus d'infos sur la partie radio à Colmar, contacter les DQ 22-24.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Équipe se montrant disponible en RT. Il est cependant nécessaire de prendre des initiatives au niveau des fiches et des manips à faire.` },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `thymele.muller-stahn@orange.fr (IM, promo 2023-2025)
 
@@ -3099,15 +2413,7 @@ c.ringuenoire@icans.eu (IM, promo 2023-2025)` }
       { texte: "6 semaines prévues pour la découverte de l'activité clinique non oncologique au CHU (Purpan et Rangueil), avec 3 à 4 fiches prévues et des projets (présentation aux équipes…)", url: "https://www.chu-toulouse.fr" },
       { texte: "5 jours de formation en RX au CH de Carcassonne, répartis sur les 6 mois (une dizaine de jours selon une autre promo). Il est mieux qu'un des deux DQ ait le permis pour emprunter la voiture du CLCC, car le trajet Toulouse – CH Carcassonne est long en transport en commun (encore mieux si l'un des deux a une voiture)", url: "https://www.ch-carcassonne.fr" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1780` },
@@ -3118,8 +2424,6 @@ c.ringuenoire@icans.eu (IM, promo 2023-2025)` }
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `RT : 9
 Imagerie : 2 à temps plein (Oncopole), 3 au CHU et 1 à Carcassonne` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `6` },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
       { theme: "service", cle: "equipe.autres", titre: "Autres", texte: `2 APM
 10 radiothérapeutes
 45 manipulateurs` },
@@ -3134,8 +2438,6 @@ Anciennes promos : gros centre, 7/8 machines + curiethérapie.` },
       { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: `Amplitude horaire des traitements : 7 h 30 – 20 h.
 
 Mesures pour les fiches possibles après les traitements (horaire variable) ou à la fin d'une journée de CQ.` },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Fiches faites en majorité à l'Oncopole (CLCC).
 
 Autonomie +++ au CLCC, plus d'encadrement au CHU.
@@ -3197,15 +2499,7 @@ gwenaelle.sidorski@gmail.com (IM, RT, promo 2023-2026)` }
     ailleurs: [
       { texte: "Partie radiologie réalisée à Orléans", id: "orleans" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1770` },
@@ -3213,20 +2507,7 @@ gwenaelle.sidorski@gmail.com (IM, RT, promo 2023-2026)` }
       { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: `non` },
       { theme: "conditions", cle: "conges", titre: "Congés", texte: `12,5 jours par semestre` },
       { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: `oui` },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Avoir une bonne autonomie.` },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
+      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Avoir une bonne autonomie.` }
     ],
     machinesListe: [],
     machines: "",
@@ -3250,37 +2531,8 @@ gwenaelle.sidorski@gmail.com (IM, RT, promo 2023-2026)` }
     revisions: "",
     equipe: { physiciens: "", dosimetristes: "", techniciens: "", ingenieurs: "", autres: "" },
     ailleurs: [],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
-    sections: [
-      { theme: "conditions", cle: "statut", titre: "Statut", texte: "" },
-      { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: "" },
-      { theme: "conditions", cle: "retraite", titre: "Cotisation retraite", texte: "" },
-      { theme: "conditions", cle: "chomage", titre: "Cotisation chômage", texte: "" },
-      { theme: "conditions", cle: "conges", titre: "Congés", texte: "" },
-      { theme: "conditions", cle: "revisions", titre: "Révisions sur place", texte: "" },
-      { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: "" },
-      { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: "" },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
-      { theme: "service", cle: "equipe.autres", titre: "Autres", texte: "" },
-      { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
-      { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: "" },
-      { theme: "machines", cle: "machines", titre: "Disponibilité", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisRecents", cle: "avisRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: "" },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
-      { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: "" },
-      { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: "" }
-    ],
+    themes: [],
+    sections: [],
     machinesListe: null,
     machines: "",
     avisIm: "",
@@ -3306,15 +2558,7 @@ gwenaelle.sidorski@gmail.com (IM, RT, promo 2023-2026)` }
       { texte: "1 semaine de radiologie interventionnelle à la Pitié-Salpêtrière", id: "paris-salpetriere" },
       { texte: "1 semaine de MN à Créteil" }
     ],
-    themes: [
-      { cle: "conditions", titre: "Conditions" },
-      { cle: "service", titre: "Service de physique médicale" },
-      { cle: "machines", titre: "Machines et disponibilités" },
-      { cle: "avisRecents", titre: "Avis des promos récentes" },
-      { cle: "avisPrecedents", titre: "Avis des promos précédentes" },
-      { cle: "commentaires-anciennes-promos", titre: "Commentaires (anciennes promos)" },
-      { cle: "contacts", titre: "Contacts étudiants" }
-    ],
+    themes: [],
     sections: [
       { theme: "conditions", cle: "statut", titre: "Statut", texte: `Stagiaire` },
       { theme: "conditions", cle: "salaire", titre: "Salaire (net)", texte: `1900` },
@@ -3325,8 +2569,6 @@ gwenaelle.sidorski@gmail.com (IM, RT, promo 2023-2026)` }
       { theme: "service", cle: "equipe.physiciens", titre: "Physiciens", texte: `RT : 13
 Imagerie : 1 physicienne à temps plein en RX (responsable de l'EAP en imagerie), 2 physiciens à temps plein en MN (dont un fraîchement diplômé en 2024)` },
       { theme: "service", cle: "equipe.dosimetristes", titre: "Dosimétristes", texte: `8` },
-      { theme: "service", cle: "equipe.techniciens", titre: "Techniciens", texte: "" },
-      { theme: "service", cle: "equipe.ingenieurs", titre: "Ingénieurs", texte: "" },
       { theme: "service", cle: "equipe.autres", titre: "Autres", texte: `5 chargés de CQ` },
       { theme: "machines", cle: "machinesListe", type: "machines", titre: "Machines", pos: "haut", texte: "" },
       { theme: "machines", titre: "Détails", pos: "haut", just: true, texte: `Radiothérapie :
@@ -3403,7 +2645,6 @@ S3 : répartition 2 semaines dosi et 2 semaines curiethérapie (alternance étud
       { theme: "avisPrecedents", cle: "avisAncIm", titre: "Imagerie (RX / MN)", pos: "haut", just: true, texte: `Beaucoup de temps en observation uniquement (sans pouvoir avancer les fiches) au début du semestre. Beaucoup de matériel disponible pour faire les CQ.
 
 Un peu de routine, mais secondaire par rapport à l'observation et aux fiches.` },
-      { theme: "avisPrecedents", cle: "avisAncRth", titre: "Radiothérapie", pos: "haut", just: true, texte: "" },
       { theme: "commentaires-anciennes-promos", titre: "", pos: "haut", just: true, texte: `Etre capable de bosser en autonomie.` },
       { theme: "contacts", cle: "contacts", titre: "", pos: "haut", texte: `amelie.tourais@gmail.com (IM)
 
