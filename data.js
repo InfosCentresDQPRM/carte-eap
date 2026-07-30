@@ -110,7 +110,7 @@ const CENTRES = [
     nom: "Lille (CHU)",
     etablissement: "CHU de Lille – hôpital Claude Huriez",
     ville: "Lille",
-    lat: 50.61090, lng: 3.03467,
+    lat: 50.60711, lng: 3.03214,
     actif: true,
     places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } }
   },
@@ -119,7 +119,7 @@ const CENTRES = [
     nom: "Lille (COL)",
     etablissement: "Centre Oscar Lambret",
     ville: "Lille",
-    lat: 50.61276, lng: 3.03108,
+    lat: 50.61270, lng: 3.03099,
     actif: true,
     places: { S1: { im: 0, rth: 2 }, S2: { im: 0, rth: 2 }, S3: { im: 0, rth: 2 } }
   },
@@ -266,6 +266,24 @@ const CENTRES = [
     lat: 47.83536, lng: 1.92015,
     actif: true,
     places: { S1: { im: 2, rth: 0 }, S2: { im: 2, rth: 1 }, S3: { im: 0, rth: 1 } }
+  },
+  {
+    id: "paris",
+    nom: "Bichat/Beaujon",
+    etablissement: "Claude-Bernard AP-HP",
+    ville: "Paris",
+    lat: 48.89874, lng: 2.33161,
+    actif: false,
+    places: { S1: { im: 2, rth: 0 }, S2: { im: 0, rth: 0 }, S3: { im: 0, rth: 0 } }
+  },
+  {
+    id: "paris-2",
+    nom: "Paris Tenon",
+    etablissement: "Tenon AP-HP",
+    ville: "Paris",
+    lat: 48.86606, lng: 2.40169,
+    actif: false,
+    places: { S1: { im: 1, rth: 0 }, S2: { im: 0, rth: 1 }, S3: { im: 0, rth: 1 } }
   },
   {
     id: "paris-curie",
