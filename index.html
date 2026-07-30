@@ -168,6 +168,7 @@ del.df-sup, ins.df-add { display: inline; }
 .mach-liste-centres { display: grid; gap: 6px; }
 .aills { display: grid; gap: 7px; }
 .aill-ligne { margin: 0; font-size: 13px; line-height: 1.55; color: #2c3345; }
+.aill-ligne.just { text-align: justify; }
 .aill, .aill-lien { display: inline-flex; align-items: center; vertical-align: baseline; margin-left: 2px; padding: 1px 9px; border-radius: 999px; background: #fdf3e7; border: 1px solid #f0dcc2; color: #a96a32; font: 600 11px "Inter"; cursor: pointer; text-decoration: none; white-space: nowrap; }
 .aill:hover, .aill-lien:hover { background: #fae7ce; }
 .res { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; text-align: left; padding: 9px 11px; border: 1px solid #eceae3; border-radius: 10px; background: #fff; margin: 0; font: 600 13px "Inter"; color: #1b2a4a; cursor: pointer; }
@@ -376,7 +377,7 @@ mark.surl { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 
     <button id="apropos-fermer" type="button" aria-label="Fermer">&times;</button>
     <p class="sur-titre">À propos</p>
     <h2>Carte des centres EAP</h2>
-    <p>Cette carte a été mise en place afin d'y voir plus clair dans le choix des stages. Toutes les fiches sont entièrement personnalisables : chacun peut y partager un retour d'expérience ou mettre à jour les informations d'un centre.</p>
+    <p>Cette carte a été mise en place pour y voir plus clair dans le choix des stages. Toutes les fiches sont entièrement personnalisables : chacun peut y partager un retour d'expérience ou mettre à jour les informations d'un centre.</p>
     <p>Cette liberté engage la responsabilité de chacun : merci de ne pas supprimer d'informations sans raison et de veiller à l'exactitude de ce que vous publiez.</p>
     <p>Pour signaler un problème ou faire une suggestion : <a href="mailto:infos.centres.dqprm@gmail.com">infos.centres.dqprm@gmail.com</a></p>
   </div>
@@ -939,6 +940,7 @@ function sAilleurs(arr) {
     var s = "{ texte: " + JSON.stringify(a.texte || "");
     if (a.id) s += ", id: " + JSON.stringify(a.id);
     if (a.url) s += ", url: " + JSON.stringify(a.url);
+    if (a.just) s += ", just: true";
     return s + " }";
   });
   return "[\n      " + lignes.join(",\n      ") + "\n    ]";
@@ -1004,6 +1006,7 @@ var ENTETE_INFOS = [
   "//   equipe : effectifs du service de physique médicale",
   "//   ailleurs : parties de formation dans d'autres centres,",
   "//     { texte: \"...\", id: \"id-dun-centre-de-la-carte\" } ou { texte: \"...\", url: \"https://...\" }",
+  "//     just: true = texte justifi\u00e9.",
   "//   themes : ordre et titres des grands blocs de la fiche, [{ cle, titre }] — [] = ordre standard.",
   "//     Clés standard : conditions, service, machines, avisRecents, avisPrecedents,",
   "//     commentaires-anciennes-promos, contacts.",
@@ -1421,10 +1424,18 @@ function serialiserFichierData(centres) {
     if (e.valeur && e.valeur.data && e.valeur.data.nom) return e.valeur.data.nom;
     return e.cle;
   }
+  // Historique : chargé par tranches, du plus récent au plus ancien.
+  var HISTO_TRANCHE = 200;
+  function requeteHisto(centreId, avantId) {
+    return "journal?select=id,quand,cible,cle,nom:valeur->data->>nom" +
+      (centreId ? "&cible=eq.centres&cle=eq." + encodeURIComponent(centreId) : "") +
+      (avantId ? "&id=lt." + avantId : "") +
+      "&order=id.desc&limit=" + HISTO_TRANCHE;
+  }
   function ouvrirHistorique(racine, cibleCle) {
-    apiLire("journal?select=id,quand,cible,cle,nom:valeur->data->>nom&order=id.desc&limit=50", function (lignes) {
+    apiLire(requeteHisto(null, null), function (lignes) {
       if (!lignes) { alert("Historique indisponible pour le moment."); return; }
-      naviguer({ type: "historique", entrees: lignes, cible: cibleCle || null }, racine);
+      naviguer({ type: "historique", entrees: lignes, cible: cibleCle || null, centreId: null, fin: lignes.length < HISTO_TRANCHE }, racine);
       if (cibleCle) {
         var el = ficheContenu.querySelector(".histo-cible");
         if (el && el.scrollIntoView) el.scrollIntoView({ block: "center" });
@@ -1433,12 +1444,28 @@ function serialiserFichierData(centres) {
   }
   function ouvrirHistoriqueFiche(id) {
     var c = centreParId(id);
-    apiLire("journal?select=id,quand,cible,cle,nom:valeur->data->>nom&cible=eq.centres&cle=eq." + encodeURIComponent(id) + "&order=id.desc&limit=50", function (lignes) {
+    apiLire(requeteHisto(id, null), function (lignes) {
       if (!lignes) { alert("Historique indisponible pour le moment."); return; }
-      naviguer({ type: "historique", entrees: lignes, filtre: c ? c.nom : id });
+      naviguer({ type: "historique", entrees: lignes, filtre: c ? c.nom : id, centreId: id, fin: lignes.length < HISTO_TRANCHE });
     });
   }
-  function historiqueHtml(entrees, cible, filtre) {
+  // Tranche suivante : ajoutée à la liste en place, sans quitter la vue.
+  function chargerHistoSuite() {
+    var v = vueCourante;
+    if (!v || v.type !== "historique" || v.fin || v.enCours || !v.entrees.length) return;
+    v.enCours = true;
+    var dernier = v.entrees[v.entrees.length - 1].id;
+    apiLire(requeteHisto(v.centreId || null, dernier), function (lignes) {
+      v.enCours = false;
+      if (!lignes) { alert("Historique indisponible pour le moment."); return; }
+      v.entrees = v.entrees.concat(lignes);
+      if (lignes.length < HISTO_TRANCHE) v.fin = true;
+      var pos = ficheContenu.scrollTop;
+      afficherVue(v);
+      ficheContenu.scrollTop = pos;
+    });
+  }
+  function historiqueHtml(entrees, cible, filtre, fin) {
     var h = filtre
       ? '<p class="sur-titre">Journal \u00b7 ' + esc(filtre) + '</p><h2>Historique de la fiche</h2>'
       : '<p class="sur-titre">Journal</p><h2>Historique des modifications</h2>';
@@ -1450,6 +1477,7 @@ function serialiserFichierData(centres) {
       return '<button type="button" class="res histo-item' + (estCible ? " histo-cible" : "") + '" data-id="' + e.id + '">' +
         esc(nomCible(e)) + "<span>" + esc(quandLisible(e.quand)) + "</span></button>";
     }).join("") + "</div>";
+    if (!fin) h += '<button type="button" id="histo-plus" class="gc-nouveau">Modifications plus anciennes</button>';
     return h;
   }
   function ouvrirHistoDiff(entreeId) {
@@ -1569,7 +1597,7 @@ function serialiserFichierData(centres) {
     function ligneAilleurs(a) {
       var cible = a.id ? (function () { var x = centreParId(a.id); return "fiche : " + (x ? (x.nom || a.id) : a.id); })()
         : a.url ? "lien : " + a.url : "";
-      return (a.texte || "") + (cible ? " \u2014 " + cible : "");
+      return (a.texte || "") + (cible ? " \u2014 " + cible : "") + (a.just ? " \u2014 justifi\u00e9" : "");
     }
     if (JSON.stringify(alA) !== JSON.stringify(alB)) {
       var corpsAill = "";
@@ -1810,13 +1838,14 @@ function serialiserFichierData(centres) {
     if (refs) h += '<div class="refs">' + refs + "</div>";
     if (inf.ailleurs && inf.ailleurs.length) {
       h += '<section class="sec"><h3>Formation en partie ailleurs</h3><div class="aills">' + inf.ailleurs.map(function (a) {
-        if (a.id && !apercu) return '<p class="aill-ligne">' + esc(a.texte) + ' <button type="button" class="aill" data-id="' + esc(a.id) + '">fiche \u2192</button></p>';
-        if (a.url) return '<p class="aill-ligne">' + esc(a.texte) + ' <a class="aill-lien" href="' + esc(a.url) + '" target="_blank" rel="noopener">lien \u2197</a></p>';
+        var cl = "aill-ligne" + (a.just ? " just" : "");
+        if (a.id && !apercu) return '<p class="' + cl + '">' + esc(a.texte) + ' <button type="button" class="aill" data-id="' + esc(a.id) + '">fiche \u2192</button></p>';
+        if (a.url) return '<p class="' + cl + '">' + esc(a.texte) + ' <a class="aill-lien" href="' + esc(a.url) + '" target="_blank" rel="noopener">lien \u2197</a></p>';
         if (a.id) {
           var cible = centreParId(a.id);
-          return '<p class="aill-ligne">' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : "") + "</p>";
+          return '<p class="' + cl + '">' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : "") + "</p>";
         }
-        return '<p class="aill-ligne">' + esc(a.texte) + "</p>";
+        return '<p class="' + cl + '">' + esc(a.texte) + "</p>";
       }).join("") + "</div></section>";
     }
     themesDe(inf).forEach(function (th) {
@@ -1831,7 +1860,7 @@ function serialiserFichierData(centres) {
 
   function gestionHtml() {
     var h = '<p class="sur-titre">Gestion</p><h2>Centres</h2>';
-    h += '<p class="etab">Cochez pour afficher un centre sur la carte, décochez pour le masquer. Cliquez sur un nom pour ouvrir sa fiche.</p>';
+    h += '<p class="etab">Cochez ou décochez les cases pour activer ou désactiver les centres. Cliquez sur un nom pour ouvrir sa fiche.</p>';
     h += '<button type="button" id="gc-nouveau" class="gc-nouveau">+ Nouveau centre (placer un point sur la carte)</button>';
     var liste = CENTRES.slice().sort(function (a, b) { return (a.nom || "").localeCompare(b.nom || "", "fr"); });
     h += liste.map(function (c) {
@@ -1882,7 +1911,6 @@ function serialiserFichierData(centres) {
   function gestionMachinesHtml() {
     var h = '<p class="sur-titre">Gestion</p><h2>Machines</h2>';
     if (editionEnAttente) {
-      h += '<p class="etab">Créez la machine souhaitée : elle sera ajoutée au centre et vous reviendrez à la fiche en cours de modification, sans rien perdre.</p>';
       h += '<button type="button" id="gcm-retour-edition" class="gc-nouveau">\u2190 Revenir à la fiche sans créer de machine</button>';
     }
     h += '<button type="button" id="gcm-cat" class="gc-nouveau">+ Nouvelle catégorie</button>';
@@ -1940,7 +1968,7 @@ function serialiserFichierData(centres) {
     } else if (v.type === "historique") {
       ficheCentre = null;
       ficheMode = "historique";
-      ficheContenu.innerHTML = historiqueHtml(v.entrees, v.cible, v.filtre);
+      ficheContenu.innerHTML = historiqueHtml(v.entrees, v.cible, v.filtre, v.fin);
     } else if (v.type === "histo-diff") {
       ficheCentre = null;
       ficheMode = "histo-diff";
@@ -2106,9 +2134,10 @@ function serialiserFichierData(centres) {
   function aillItem(a) {
     a = a || { texte: "", id: "", url: "" };
     var mode = a.id ? "centre" : (a.url ? "url" : "aucun");
-    var h = '<div class="aill-row" data-mode="' + mode + '">';
+    var h = '<div class="aill-row" data-mode="' + mode + '"' + (a.just ? ' data-just="1"' : "") + ">";
     h += '<div class="aill-haut">';
     h += '<textarea class="aill-texte" placeholder="Ce qui se fait ailleurs">' + esc(a.texte || "") + "</textarea>";
+    h += '<button type="button" class="btn-mini btn-just' + (a.just ? " actif" : "") + '">\u2261</button>';
     h += '<button type="button" class="btn-mini rouge aill-del">&times;</button>';
     h += "</div>";
     h += '<div class="aill-bas">';
@@ -2408,6 +2437,7 @@ function serialiserFichierData(centres) {
               var url = el.querySelector(".aill-url").value.trim();
               if (url) e.url = url;
             }
+            if (el.dataset.just === "1") e.just = true;
             out.push(e);
           });
           return out;
@@ -2600,7 +2630,7 @@ function serialiserFichierData(centres) {
     if (inf.ailleurs && inf.ailleurs.length) {
       h += '<section><h3>Formation en partie ailleurs</h3>' + inf.ailleurs.map(function (a) {
         var cible = a.id ? centreParId(a.id) : null;
-        return '<p class="texte">\u2022 ' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : a.url ? " (" + esc(a.url) + ")" : "") + "</p>";
+        return '<p class="texte' + (a.just ? " just" : "") + '">\u2022 ' + esc(a.texte) + (cible ? " (" + esc(cible.nom) + ")" : a.url ? " (" + esc(a.url) + ")" : "") + "</p>";
       }).join("") + "</section>";
     }
     themesDe(inf).forEach(function (th) {
@@ -2843,13 +2873,14 @@ function serialiserFichierData(centres) {
       naviguer({ type: "machine", nom: b.dataset.mach });
       return;
     }
+    if (ev.target.closest("#histo-plus")) { chargerHistoSuite(); return; }
     if ((b = ev.target.closest(".histo-item"))) { ouvrirHistoDiff(b.dataset.id); return; }
     if (ev.target.closest(".fiche-maj")) { ouvrirHistorique(false, ficheCentre ? ficheCentre.id : null); return; }
     if (ev.target.closest(".fiche-histo") && ficheCentre) { ouvrirHistoriqueFiche(ficheCentre.id); return; }
     if ((b = ev.target.closest(".gc-suppr"))) {
       var cS = centreParId(b.dataset.id);
       var nomS = cS ? (cS.nom || cS.id) : b.dataset.id;
-      if (confirm("Supprimer « " + nomS + " » ?\n\nToutes les infos de ce centre (fiche, avis, contacts…) disparaîtront de la carte.\nCette suppression reste récupérable dans l'historique.")) {
+      if (confirm("Supprimer « " + nomS + " » ?\n\nToutes les infos de ce centre (fiche, avis, contacts…) disparaîtront de la carte.")) {
         desarmerItem();
         supprimerCentre(b.dataset.id);
       } else {
@@ -3004,7 +3035,7 @@ function serialiserFichierData(centres) {
       return;
     }
     if ((b = ev.target.closest(".btn-just"))) {
-      var itJ = b.closest(".ssec-item");
+      var itJ = b.closest(".ssec-item, .aill-row");
       if (itJ.dataset.just === "1") { delete itJ.dataset.just; b.classList.remove("actif"); }
       else { itJ.dataset.just = "1"; b.classList.add("actif"); }
       return;
