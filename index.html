@@ -1167,14 +1167,27 @@ function serialiserFichierData(centres) {
   // Dernière version connue de chaque centre (horodatage de la base), pour détecter
   // qu'une fiche a été modifiée ailleurs pendant qu'on l'éditait ici.
   var MAJ_CONNUES = {};
+  // Empreinte de ce que la base contient déjà, pour ne jamais réécrire une
+  // fiche inchangée : sans cela, valider une fiche sans y toucher créerait une
+  // entrée d'historique sans différence visible.
+  var ETAT_BASE = {};
+  function signatureCentre(c) {
+    return JSON.stringify({ data: copieData(c), infos: INFOS[c.id] || {} });
+  }
+  function noterEtatBase(c) { ETAT_BASE[c.id] = signatureCentre(c); }
   function sauverCentre(c) {
     if (!BASE || !enLigne) { majEtat(BASE ? "echec" : "local"); return; }
+    var sig = signatureCentre(c);
+    if (ETAT_BASE[c.id] === sig) { majEtat("enligne"); return; }
     apiEcrire("centres", [{ id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }], function (ok, lignes) {
-      if (ok && lignes && lignes[0] && lignes[0].maj) {
-        MAJ_CONNUES[c.id] = lignes[0].maj;
-        majGlobale(lignes[0].maj);
+      if (ok) {
+        ETAT_BASE[c.id] = sig;
+        if (lignes && lignes[0] && lignes[0].maj) {
+          MAJ_CONNUES[c.id] = lignes[0].maj;
+          majGlobale(lignes[0].maj);
+        }
+        diffuserMaj();
       }
-      if (ok) diffuserMaj();
       majEtat(ok ? "enligne" : "echec");
     }, true);
   }
@@ -1183,6 +1196,7 @@ function serialiserFichierData(centres) {
     for (var i = CENTRES.length - 1; i >= 0; i--) { if (CENTRES[i].id === id) CENTRES.splice(i, 1); }
     delete INFOS[id];
     delete MAJ_CONNUES[id];
+    delete ETAT_BASE[id];
   }
   // Suppression douce : le centre est marqué supprimé en base (donc archivé dans
   // l'historique et restaurable), puis retiré de la carte et de toutes les listes.
@@ -1323,14 +1337,22 @@ function serialiserFichierData(centres) {
         appliquerData(c, lignes[0].data || {});
         INFOS[id] = lignes[0].infos || {};
         MAJ_CONNUES[id] = lignes[0].maj;
+        noterEtatBase(c);
       }
       muter(c);
       sauverCentre(c);
       if (apres) apres();
     });
   }
+  var ETAT_REGLAGES = null;
+  function signatureReglages() {
+    return JSON.stringify({ machines: MACHINES, categories: CATS });
+  }
   function sauverMachines() {
     if (!BASE || !enLigne) return;
+    var sigR = signatureReglages();
+    if (ETAT_REGLAGES === sigR) return;
+    ETAT_REGLAGES = sigR;
     apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok) {
       if (ok) diffuserMaj();
       majEtat(ok ? "enligne" : "echec");
@@ -1360,8 +1382,10 @@ function serialiserFichierData(centres) {
       INFOS[l.id] = l.infos || {};
       MAJ_CONNUES[l.id] = l.maj;
     });
+    CENTRES.forEach(noterEtatBase);
   }
   function appliquerReglages(val) {
+    ETAT_REGLAGES = null;
     var lm = Array.isArray(val) ? val : (val && Array.isArray(val.machines) ? val.machines : null);
     var lc = (val && Array.isArray(val.categories)) ? val.categories : null;
     if (lm) {
@@ -1370,6 +1394,7 @@ function serialiserFichierData(centres) {
       CATS.length = 0;
       (lc || []).forEach(function (c) { if (c && c.id && c.nom) CATS.push({ id: c.id, nom: c.nom, parent: c.parent || null }); });
     }
+    ETAT_REGLAGES = signatureReglages();
   }
   // Mise à jour silencieuse quand une modification est diffusée par un autre onglet.
   var majDifferee = false;
@@ -1396,6 +1421,8 @@ function serialiserFichierData(centres) {
         var graine = CENTRES.map(function (c) { return { id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }; });
         apiEcrire("centres", graine, function (ok1, ecrites) {
           (ecrites || []).forEach(function (l) { if (l && l.id) MAJ_CONNUES[l.id] = l.maj; });
+          CENTRES.forEach(noterEtatBase);
+          ETAT_REGLAGES = signatureReglages();
           apiEcrire("reglages", [{ cle: "machines", valeur: { machines: MACHINES, categories: CATS } }], function (ok2) {
             enLigne = ok1 && ok2;
             majEtat(enLigne ? "enligne" : "horsligne");
@@ -2349,6 +2376,32 @@ function serialiserFichierData(centres) {
     });
   }
 
+  // Forme de stockage d'une fiche : mêmes clés et mêmes valeurs implicites que
+  // les fichiers exportés (pas de pos « gauche », de just/masque faux ni de
+  // themesAucun faux). Sans cela, revalider une fiche sans rien changer
+  // réécrirait toutes ses cases et créerait une entrée d'historique sans
+  // différence visible.
+  function infosStockables(inf) {
+    var f = JSON.parse(JSON.stringify(inf || {}));
+    if (!f.themesAucun) delete f.themesAucun;
+    f.themes = (f.themes || []).map(function (t) {
+      var n = { cle: t.cle, titre: t.titre };
+      if (t.masque) n.masque = true;
+      return n;
+    });
+    f.sections = (f.sections || []).map(function (s) {
+      var n = { theme: s.theme };
+      if (s.cle) n.cle = s.cle;
+      if (s.type) n.type = s.type;
+      n.titre = s.titre || "";
+      if (s.pos === "haut") n.pos = "haut";
+      if (s.just) n.just = true;
+      if (s.masque) n.masque = true;
+      n.texte = s.texte || "";
+      return n;
+    });
+    return f;
+  }
   function lireForm(c, pourBrouillon) {
     function v(nom) {
       var el = ficheContenu.querySelector('[name="' + nom + '"]');
@@ -3112,7 +3165,7 @@ function serialiserFichierData(centres) {
           CENTRES.push(c);
         }
         appliquerData(c, lu.data);
-        INFOS[c.id] = lu.infos;
+        INFOS[c.id] = infosStockables(lu.infos);
         effacerBrouillon(c.id);
         sauverCentre(c);
         vueCourante = { type: "centre", id: c.id };
