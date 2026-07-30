@@ -1501,17 +1501,14 @@ function serialiserFichierData(centres) {
         "&cle=eq." + encodeURIComponent(apres.cle) + "&id=lt." + apres.id +
         "&order=id.desc&limit=1", function (prec) {
         var avant = prec && prec.length ? prec[0] : null;
-        var publie = false;
         if (!avant) {
+          // Pas de version antérieure au journal : on compare à l'état publié.
           var ref = apres.cible === "centres"
             ? REF_PUBLIEE.centres[apres.cle]
             : (apres.cle === "machines" ? { valeur: { cle: "machines", valeur: REF_PUBLIEE.reglages } } : null);
-          if (ref) {
-            avant = apres.cible === "centres" ? { valeur: ref } : ref;
-            publie = true;
-          }
+          if (ref) avant = apres.cible === "centres" ? { valeur: ref } : ref;
         }
-        naviguer({ type: "histo-diff", apres: apres, avant: avant, publie: publie });
+        naviguer({ type: "histo-diff", apres: apres, avant: avant });
       });
     });
   }
@@ -1690,8 +1687,7 @@ function serialiserFichierData(centres) {
     return h;
   }
   function histoDiffHtml(v) {
-    var h = '<p class="sur-titre">Modification du ' + esc(quandLisible(v.apres.quand)) +
-      (v.publie ? " \u00b7 compar\u00e9e \u00e0 la version publi\u00e9e" : "") + "</p>";
+    var h = '<p class="sur-titre">Modification du ' + esc(quandLisible(v.apres.quand)) + "</p>";
     h += v.apres.cible === "reglages"
       ? histoDiffReglagesHtml(v.avant ? v.avant.valeur : null, v.apres.valeur || {})
       : histoDiffCentreHtml(v.avant ? v.avant.valeur : null, v.apres.valeur || {});
