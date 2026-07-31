@@ -2084,6 +2084,33 @@ function serialiserFichierData(centres) {
     fermerFiche();
   });
 
+  // Flèches ← et → : passer d'une fiche à la suivante, dans l'ordre du tableau
+  // et parmi les centres que les filtres laissent visibles.
+  function ficheVoisine(pas) {
+    if (ficheMode !== "vue" || !ficheCentre) return;
+    if (!aproposEl.hidden || !cmpOverlay.hidden || placement || editionEnAttente || apercuEdition) return;
+    var liste = lignesTriees();
+    if (!liste.length) return;
+    var i = -1;
+    for (var k = 0; k < liste.length; k++) if (liste[k].id === ficheCentre.id) { i = k; break; }
+    var j = i === -1 ? (pas > 0 ? 0 : liste.length - 1) : i + pas;
+    if (j < 0 || j >= liste.length) return;
+    var c = liste[j];
+    // Déplacement latéral : la pile de retour n'est pas alimentée.
+    vueCourante = { type: "centre", id: c.id };
+    afficherVue(vueCourante);
+    centrerSurCentre(c);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    if (ficheEl.hidden || ficheMode !== "vue") return;
+    var a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.isContentEditable)) return;
+    e.preventDefault();
+    ficheVoisine(e.key === "ArrowRight" ? 1 : -1);
+  });
+
   // ——— Éditeur ———
   function champ(label, nom, valeur, astuce) {
     return "<label>" + label + '</label><input name="' + nom + '" value="' + esc(valeur || "") + '">' + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
