@@ -77,6 +77,9 @@ body { font-family: "Inter", system-ui, sans-serif; color: #2c3345; }
 .maj-ligne { margin: 22px 0 0; padding-top: 10px; border-top: 1px solid #eceae3; }
 .tb-outils { display: flex; justify-content: flex-end; margin: 0 0 8px; }
 .tb-cible td { background: #fdf3df !important; transition: background .4s; }
+.tb tbody tr.tb-actuel td { background: #eef4fd; }
+.tb tbody tr.tb-actuel td:first-child { box-shadow: inset 3px 0 0 #1f6fd6; }
+.tb tbody tr.tb-actuel .tb-nom { color: #1f6fd6; }
 .histo-liste { display: grid; gap: 7px; margin: 12px 0 0; }
 .histo-item span { display: block; margin-top: 2px; font: 400 11.5px "Inter"; color: #8a8f9c; }
 .df-sup { background: #fbe4e1; color: #b3382f; text-decoration: line-through; text-decoration-thickness: 1px; border-radius: 3px; padding: 0 2px; }
@@ -2030,6 +2033,7 @@ function serialiserFichierData(centres) {
     ficheEl.hidden = false;
     ficheContenu.scrollTop = 0;
     majRetour();
+    majLigneTableau(false);
   }
   // Amène la carte sur un centre en gardant le niveau de zoom courant.
   function centrerSurCentre(c) {
@@ -2065,6 +2069,7 @@ function serialiserFichierData(centres) {
     apercuEdition = null;
     ficheEl.hidden = true;
     majRetour();
+    majLigneTableau(false);
     verifierMajDifferee();
   }
   document.getElementById("fiche-fermer").addEventListener("click", fermerFiche);
@@ -2100,6 +2105,7 @@ function serialiserFichierData(centres) {
     vueCourante = { type: "centre", id: c.id };
     afficherVue(vueCourante);
     centrerSurCentre(c);
+    majLigneTableau(true);
   }
   document.addEventListener("keydown", function (e) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
@@ -2851,7 +2857,7 @@ function serialiserFichierData(centres) {
       "</tr></thead><tbody>";
     lignes.forEach(function (c) {
       var coche = cmp.indexOf(c.id) !== -1;
-      h += "<tr>";
+      h += '<tr data-id="' + esc(c.id) + '"' + (ficheCentre && ficheCentre.id === c.id ? ' class="tb-actuel"' : "") + ">";
       h += '<td class="tb-c"><input type="checkbox" class="tb-cmp" data-id="' + esc(c.id) + '"' + (coche ? " checked" : "") +
         (!coche && pleine ? " disabled" : "") + "></td>";
       h += '<td><button type="button" class="tb-nom" data-id="' + esc(c.id) + '">' + esc(c.nom) + "</button></td>";
@@ -2889,6 +2895,21 @@ function serialiserFichierData(centres) {
       lignes.push(l.join(";"));
     });
     telecharger("centres-eap.csv", "\ufeff" + lignes.join("\r\n"));
+  }
+  // Met en évidence, dans le tableau, la ligne du centre dont la fiche est
+  // ouverte. defiler = amener cette ligne dans la partie visible.
+  function majLigneTableau(defiler) {
+    if (tableauEl.hidden) return;
+    var trs = tableauEl.querySelectorAll("tbody tr");
+    var courante = null;
+    for (var i = 0; i < trs.length; i++) {
+      var actif = !!ficheCentre && trs[i].getAttribute("data-id") === ficheCentre.id;
+      trs[i].classList.toggle("tb-actuel", actif);
+      if (actif) courante = trs[i];
+    }
+    if (courante && defiler && typeof courante.scrollIntoView === "function") {
+      courante.scrollIntoView({ block: "nearest" });
+    }
   }
   function basculerVue() {
     tableauEl.hidden = !tableauEl.hidden;
