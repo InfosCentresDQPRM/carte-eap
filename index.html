@@ -2031,6 +2031,12 @@ function serialiserFichierData(centres) {
     ficheContenu.scrollTop = 0;
     majRetour();
   }
+  // Amène la carte sur un centre en gardant le niveau de zoom courant.
+  function centrerSurCentre(c) {
+    if (!c || typeof carte.flyTo !== "function") return;
+    var z = typeof carte.getZoom === "function" ? carte.getZoom() : VUE_METRO.zoom;
+    carte.flyTo([c.lat, c.lng], z, { duration: 1.2 });
+  }
   function naviguer(v, racine) {
     if (racine || ficheEl.hidden || ficheMode === "edition") histo = [];
     else if (vueCourante) histo.push(vueCourante);
@@ -2039,8 +2045,13 @@ function serialiserFichierData(centres) {
   }
   function retour() {
     if (!histo.length) return;
+    var depuis = vueCourante;
     vueCourante = histo.pop();
     afficherVue(vueCourante);
+    // Retour d'une fiche de centre vers une autre : la carte suit.
+    if (depuis && depuis.type === "centre" && vueCourante && vueCourante.type === "centre") {
+      centrerSurCentre(centreParId(vueCourante.id));
+    }
   }
   btnRetour.addEventListener("click", retour);
 
@@ -2964,7 +2975,9 @@ function serialiserFichierData(centres) {
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
       // Un appui long venant d'armer la suppression ne doit pas aussi ouvrir la fiche.
       if (longReussi) { longReussi = false; return; }
+      var versAill = b.classList.contains("aill");
       naviguer({ type: "centre", id: b.dataset.id });
+      if (versAill) centrerSurCentre(centreParId(b.dataset.id));
       return;
     }
     if (ev.target.closest("#gc-nouveau")) { demarrerNouveau(); return; }
