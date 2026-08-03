@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /infos.js
+Disallow: /data.js
