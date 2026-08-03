@@ -3087,14 +3087,6 @@ function serialiserFichierData(centres) {
       return;
     }
     if (clicStats(ev.target)) return;
-    if ((b = ev.target.closest(".mail-voile"))) {
-      var mV = (b.dataset.m || "").split("").reverse().join("");
-      var aV = document.createElement("a");
-      aV.href = "mailto:" + mV;
-      aV.textContent = mV;
-      b.replaceWith(aV);
-      return;
-    }
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
       if (longReussi) { longReussi = false; return; }
       var versAill = b.classList.contains("aill");
@@ -3683,6 +3675,14 @@ function serialiserFichierData(centres) {
     choisirRech(b.dataset.id);
   });
   document.addEventListener("click", function (ev) {
+    var bV = ev.target.closest(".mail-voile");
+    if (bV) {
+      var mV = (bV.dataset.m || "").split("").reverse().join("");
+      var aV = document.createElement("a");
+      aV.href = "mailto:" + mV;
+      aV.textContent = mV;
+      bV.replaceWith(aV);
+    }
     if (!ev.target.closest("#rech-zone")) fermerRech();
   });
 
