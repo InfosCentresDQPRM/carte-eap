@@ -1166,7 +1166,8 @@ function serialiserFichierData(centres) {
       })
       .catch(function () { alert("Statistiques indisponibles pour le moment."); });
   }
-  function statsHtml(donnees) {
+  function statsHtml(donnees, sel) {
+    sel = sel || {};
     var parJour = {}, parHeure = {}, grille = {}, i;
     donnees.forEach(function (l) {
       var v = Number(l.n) || 0;
@@ -1180,6 +1181,7 @@ function serialiserFichierData(centres) {
       var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() - i);
       jours.push(x.getFullYear() + "-" + ("0" + (x.getMonth() + 1)).slice(-2) + "-" + ("0" + x.getDate()).slice(-2));
     }
+    function jm(j) { var p = j.split("-"); return p[2] + "/" + p[1]; }
     var total = 0, maxJ = 1;
     jours.forEach(function (j) { total += parJour[j] || 0; if ((parJour[j] || 0) > maxJ) maxJ = parJour[j]; });
     var aujKey = jours[29];
@@ -1189,25 +1191,30 @@ function serialiserFichierData(centres) {
     h += '<section class="sec"><h3>Visites par jour</h3><svg class="stats-svg" viewBox="0 0 300 96" xmlns="http://www.w3.org/2000/svg">';
     for (i = 0; i < 30; i++) {
       var vj = parJour[jours[i]] || 0;
-      var hh = vj ? Math.max(2, Math.round(vj / maxJ * 70)) : 0;
-      if (hh) h += '<rect x="' + (i * 10 + 1) + '" y="' + (78 - hh) + '" width="8" height="' + hh + '" rx="1.5" fill="#1f6fd6"></rect>';
+      var hh = vj ? Math.max(2, Math.round(vj / maxJ * 66)) : 0;
+      var selJ = sel.jour === jours[i];
+      if (hh) h += '<rect x="' + (i * 10 + 1) + '" y="' + (78 - hh) + '" width="8" height="' + hh + '" rx="1.5" fill="' + (selJ ? "#1b2a4a" : "#1f6fd6") + '"><title>' + jm(jours[i]) + " \u2014 " + vj + "</title></rect>";
       else h += '<rect x="' + (i * 10 + 1) + '" y="77" width="8" height="1" fill="#e3e0d8"></rect>';
-      if (i % 7 === 1) {
-        var p = jours[i].split("-");
-        h += '<text x="' + (i * 10 + 5) + '" y="92" text-anchor="middle" font-size="7.5" fill="#8a8f9c">' + p[2] + "/" + p[1] + "</text>";
-      }
+      if (selJ && vj) h += '<text x="' + (i * 10 + 5) + '" y="' + (74 - hh) + '" text-anchor="middle" font-size="8" font-weight="700" fill="#1b2a4a">' + vj + "</text>";
+      h += '<rect data-st-jour="' + jours[i] + '" x="' + (i * 10) + '" y="0" width="10" height="86" fill="transparent" style="cursor:pointer"></rect>';
+      if (i % 7 === 1) h += '<text x="' + (i * 10 + 5) + '" y="92" text-anchor="middle" font-size="7.5" fill="#8a8f9c">' + jm(jours[i]) + "</text>";
     }
     h += "</svg></section>";
 
-    var maxH = 1;
-    for (i = 0; i < 24; i++) if ((parHeure[i] || 0) > maxH) maxH = parHeure[i];
-    h += '<section class="sec"><h3>Par heure</h3><svg class="stats-svg" viewBox="0 0 240 84" xmlns="http://www.w3.org/2000/svg">';
+    var serieH = {}, maxH = 1;
     for (i = 0; i < 24; i++) {
-      var vh = parHeure[i] || 0;
-      var h2 = vh ? Math.max(2, Math.round(vh / maxH * 58)) : 0;
-      if (h2) h += '<rect x="' + (i * 10 + 1) + '" y="' + (66 - h2) + '" width="8" height="' + h2 + '" rx="1.5" fill="#a96a32"></rect>';
-      else h += '<rect x="' + (i * 10 + 1) + '" y="65" width="8" height="1" fill="#e3e0d8"></rect>';
-      if (i % 6 === 0) h += '<text x="' + (i * 10 + 5) + '" y="80" text-anchor="middle" font-size="7.5" fill="#8a8f9c">' + i + " h</text>";
+      serieH[i] = sel.jour ? (grille[sel.jour + "|" + i] || 0) : (parHeure[i] || 0);
+      if (serieH[i] > maxH) maxH = serieH[i];
+    }
+    h += '<section class="sec"><h3>Par heure \u2014 ' + (sel.jour ? jm(sel.jour) : "30 jours") + '</h3><svg class="stats-svg" viewBox="0 0 240 96" xmlns="http://www.w3.org/2000/svg">';
+    for (i = 0; i < 24; i++) {
+      var vh = serieH[i];
+      var h2 = vh ? Math.max(2, Math.round(vh / maxH * 56)) : 0;
+      if (h2) h += '<rect x="' + (i * 10 + 1) + '" y="' + (76 - h2) + '" width="8" height="' + h2 + '" rx="1.5" fill="' + (sel.heure === i ? "#7a4a1e" : "#a96a32") + '"><title>' + i + " h \u2014 " + vh + "</title></rect>";
+      else h += '<rect x="' + (i * 10 + 1) + '" y="75" width="8" height="1" fill="#e3e0d8"></rect>';
+      if (sel.heure === i && vh) h += '<text x="' + (i * 10 + 5) + '" y="' + (72 - h2) + '" text-anchor="middle" font-size="8" font-weight="700" fill="#7a4a1e">' + vh + "</text>";
+      h += '<rect data-st-heure="' + i + '" x="' + (i * 10) + '" y="0" width="10" height="86" fill="transparent" style="cursor:pointer"></rect>';
+      if (i % 6 === 0) h += '<text x="' + (i * 10 + 5) + '" y="90" text-anchor="middle" font-size="7.5" fill="#8a8f9c">' + i + " h</text>";
     }
     h += "</svg></section>";
 
@@ -1218,18 +1225,36 @@ function serialiserFichierData(centres) {
       for (var k2 = 0; k2 < 24; k2++) {
         var vg = grille[jours[i] + "|" + k2] || 0;
         var op = vg ? (0.25 + 0.75 * vg / maxG).toFixed(2) : 0;
-        h += '<rect x="' + (i * 10 + 17) + '" y="' + (k2 * 6 + 2) + '" width="8" height="4.6" rx="1" fill="' + (vg ? "#1f6fd6" : "#f0eee7") + '"' + (vg ? ' opacity="' + op + '"' : "") + "></rect>";
+        h += '<rect x="' + (i * 10 + 17) + '" y="' + (k2 * 6 + 2) + '" width="8" height="4.6" rx="1" fill="' + (vg ? "#1f6fd6" : "#f0eee7") + '"' + (vg ? ' opacity="' + op + '"' : "") + ">" + (vg ? "<title>" + jm(jours[i]) + " " + k2 + " h \u2014 " + vg + "</title>" : "") + "</rect>";
       }
-      if (i % 7 === 1) {
-        var p2 = jours[i].split("-");
-        h += '<text x="' + (i * 10 + 21) + '" y="166" text-anchor="middle" font-size="7.5" fill="#8a8f9c">' + p2[2] + "/" + p2[1] + "</text>";
-      }
+      if (sel.jour === jours[i]) h += '<rect class="st-cadre" x="' + (i * 10 + 16.2) + '" y="1.2" width="9.6" height="146" rx="2" fill="none" stroke="#1b2a4a" stroke-width="1"></rect>';
+      h += '<rect data-st-jour="' + jours[i] + '" x="' + (i * 10 + 16) + '" y="0" width="10" height="150" fill="transparent" style="cursor:pointer"></rect>';
+      if (i % 7 === 1) h += '<text x="' + (i * 10 + 21) + '" y="166" text-anchor="middle" font-size="7.5" fill="#8a8f9c">' + jm(jours[i]) + "</text>";
     }
     for (var k3 = 0; k3 < 24; k3 += 6) {
       h += '<text x="13" y="' + (k3 * 6 + 7) + '" text-anchor="end" font-size="7.5" fill="#8a8f9c">' + k3 + "</text>";
     }
     h += "</svg></section>";
     return h;
+  }
+  function clicStats(cible) {
+    var v = vueCourante;
+    if (!v || v.type !== "stats" || ficheMode !== "stats") return false;
+    var el = cible.closest("[data-st-jour], [data-st-heure]");
+    if (!el) return false;
+    v.sel = v.sel || {};
+    if (el.hasAttribute("data-st-jour")) {
+      var j = el.getAttribute("data-st-jour");
+      v.sel.jour = v.sel.jour === j ? null : j;
+      v.sel.heure = null;
+    } else {
+      var he = Number(el.getAttribute("data-st-heure"));
+      v.sel.heure = v.sel.heure === he ? null : he;
+    }
+    var pos = ficheContenu.scrollTop;
+    ficheContenu.innerHTML = statsHtml(v.donnees || [], v.sel);
+    ficheContenu.scrollTop = pos;
+    return true;
   }
   (function () {
     var presEl = document.getElementById("presence");
@@ -2077,7 +2102,7 @@ function serialiserFichierData(centres) {
     } else if (v.type === "stats") {
       ficheCentre = null;
       ficheMode = "stats";
-      ficheContenu.innerHTML = statsHtml(v.donnees || []);
+      ficheContenu.innerHTML = statsHtml(v.donnees || [], v.sel);
     } else if (v.type === "historique") {
       ficheCentre = null;
       ficheMode = "historique";
@@ -3061,6 +3086,7 @@ function serialiserFichierData(centres) {
       }
       return;
     }
+    if (clicStats(ev.target)) return;
     if ((b = ev.target.closest(".mail-voile"))) {
       var mV = (b.dataset.m || "").split("").reverse().join("");
       var aV = document.createElement("a");
