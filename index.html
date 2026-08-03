@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
 <title>Centres EAP — DQPRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,6 +121,8 @@ del.df-sup, ins.df-add { display: inline; }
 .fiche-barre { display: flex; align-items: center; gap: 8px; margin: 8px 8px 0; flex: none; }
 #fiche-presence { margin-left: auto; display: flex; align-items: center; gap: 5px; font: 700 11px "Inter"; color: #8a8f9c; }
 #fiche-presence[hidden] { display: none; }
+.mail-voile { border: 0; background: none; padding: 0; font: inherit; color: #1f6fd6; cursor: pointer; border-bottom: 1px dotted #1f6fd6; }
+.mail-voile .mv-ic { font-size: 11px; margin-left: 3px; opacity: .65; }
 #fp-edite-zone { display: flex; align-items: center; gap: 5px; color: #b3382f; }
 #fp-edite-zone[hidden] { display: none; }
 #fiche-retour { border: 0; border-radius: 999px; background: #f1efe9; color: #1b2a4a; font: 600 12px "Inter"; padding: 7px 13px; cursor: pointer; }
@@ -496,7 +499,6 @@ function classify(c, sem, mod) {
   return "rth";
 }
 
-// Catégories de machines (hiérarchiques : parent = id d'une autre catégorie ou null).
 var CATS = (typeof CATEGORIES !== "undefined" && Array.isArray(CATEGORIES)) ? CATEGORIES : [];
 function modalitesDe(c) {
   var im = false, rth = false;
@@ -533,7 +535,6 @@ function machinesDuCentre(machines, inf) {
   if (!t) return [];
   return machines.filter(function (m) { return regexMachine(m).test(t); });
 }
-// Présence d'une machine dans un centre : liste explicite si définie, sinon détection dans les textes.
 function centreALaMachine(c, nomMachine) {
   var inf = INFOS[c.id];
   if (inf && Array.isArray(inf.machinesListe)) return inf.machinesListe.indexOf(nomMachine) !== -1;
@@ -542,7 +543,6 @@ function centreALaMachine(c, nomMachine) {
   if (!machine) return false;
   return regexMachine(machine).test(texteRecherche(inf));
 }
-// Filtre ET : le centre doit posséder toutes les machines sélectionnées.
 function passeFiltreMachines(c, machs) {
   if (!machs || !machs.length) return true;
   for (var i = 0; i < machs.length; i++) if (!centreALaMachine(c, machs[i])) return false;
@@ -561,12 +561,6 @@ function computeStats(centres, sem, mod, machs, taille) {
   return { centres: nc, places: np };
 }
 
-// ——— Gabarit des fiches (blocs et cases proposés à l'édition) — voir outil-fiches.js ———
-// Gabarit des fiches : blocs et cases standard proposés à la création et à
-// l'édition. Ce module COMPLÈTE une fiche pour l'éditeur — il n'en transforme
-// jamais le contenu : textes, titres et ordre existants restent intacts, et les
-// cases ajoutées (marquées canon) ne sont enregistrées que si on les remplit.
-// Fichier partagé : embarqué dans la carte et réutilisé par les scripts Node.
 (function (racine) {
   "use strict";
 
@@ -580,8 +574,6 @@ function computeStats(centres, sem, mod, machs, taille) {
     ["contacts", "Contacts étudiants"]
   ];
 
-  // Cases canoniques de chaque bloc, dans l'ordre d'affichage.
-  // id interne : cle réelle, ou "#details" pour la case Détails (sans cle).
   var CASES_CANON = {
     conditions: [
       { cle: "statut", titre: "Statut" },
@@ -617,8 +609,6 @@ function computeStats(centres, sem, mod, machs, taille) {
     ]
   };
 
-  // Ordre des clés d'une section = ordre de la sérialisation (sSections), pour
-  // des écritures JSON stables d'une passe à l'autre.
   var CLES_SECTION = ["theme", "cle", "type", "titre", "pos", "just", "masque", "texte"];
   function secOrdonnee(s) {
     var n = {};
@@ -633,8 +623,6 @@ function computeStats(centres, sem, mod, machs, taille) {
       .replace(/\s+/g, " ").trim();
   }
 
-  // Rattachement d'une section existante à une case canonique de son bloc :
-  // d'abord par le titre affiché (il porte le sens voulu), sinon par la cle.
   var TITRES_VERS_ID = {
     conditions: { "statut": "statut", "salaire (net)": "salaire", "cotisation retraite": "retraite", "cotisation chomage": "chomage", "conges": "conges", "revisions sur place": "revisions" },
     service: { "physiciens": "equipe.physiciens", "dosimetristes": "equipe.dosimetristes", "techniciens": "equipe.techniciens", "ingenieurs": "equipe.ingenieurs", "autres": "equipe.autres" },
@@ -652,9 +640,6 @@ function computeStats(centres, sem, mod, machs, taille) {
     return null;
   }
 
-  // Textes encore rangés dans les anciens champs (fiches jamais rééditées) :
-  // convertis en sections de leur bloc, seulement si le bloc n'a pas déjà de
-  // case à clé — même règle de préséance que la carte (elementsDuBloc).
   var HERITES = {
     conditions: [["statut", "Statut"], ["salaire", "Salaire (net)"], ["retraite", "Cotisation retraite"], ["chomage", "Cotisation ch\u00f4mage"], ["conges", "Cong\u00e9s"], ["revisions", "R\u00e9visions sur place"]],
     service: [["equipe.physiciens", "Physiciens"], ["equipe.dosimetristes", "Dosim\u00e9tristes"], ["equipe.techniciens", "Techniciens"], ["equipe.ingenieurs", "Ing\u00e9nieurs"], ["equipe.autres", "Autres"]],
@@ -683,16 +668,9 @@ function computeStats(centres, sem, mod, machs, taille) {
     return f;
   }
 
-  // ——— Complète une fiche pour l'éditeur, sans rien transformer ———
-  // - anciens champs migrés en sections (fiches jamais rééditées) ;
-  // - blocs standard manquants insérés à leur rang, sans déplacer les existants ;
-  // - cases canoniques manquantes ajoutées vides en fin de bloc, marquées canon
-  //   (la validation ne les garde que remplies).
   function completerPourEdition(inf) {
     var f = migrerHerites(JSON.parse(JSON.stringify(inf || {})));
 
-    // Blocs : ordre existant conservé ; les standards absents s'insèrent chacun
-    // après le dernier bloc standard qui le précède dans l'ordre canonique.
     var rang = {};
     THEMES_CANON.forEach(function (t, i) { rang[t[0]] = i; });
     var themes;
@@ -715,8 +693,6 @@ function computeStats(centres, sem, mod, machs, taille) {
       return n;
     });
 
-    // Cases : chaque case canonique absente de son bloc est proposée vide, en
-    // fin de bloc (l'éditeur regroupe par bloc, l'ordre du tableau est conservé).
     f.sections = f.sections || [];
     THEMES_CANON.forEach(function (t) {
       var cleBloc = t[0];
@@ -755,7 +731,6 @@ function computeStats(centres, sem, mod, machs, taille) {
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else racine.OutilFiches = api;
 })(typeof window !== "undefined" ? window : this);
-// ——— Fin du gabarit des fiches ———
 
 var THEMES = [
   ["conditions", "Conditions"],
@@ -792,9 +767,6 @@ function themesEgaleStandard(ths) {
   }
   return true;
 }
-// Cases héritées des anciennes fiches : décrites comme des sections ordinaires,
-// pour que titre, position, visibilité, ordre et suppression se règlent partout pareil.
-// toujours = proposée même vide ; mod = proposée si le centre a cette modalité.
 var CHAMPS_HERITES = {
   conditions: [
     { cle: "statut", titre: "Statut", pos: "gauche", toujours: true },
@@ -835,7 +807,6 @@ function lireHerite(inf, cle) {
   var v = m.length > 1 ? ((inf[m[0]] || {})[m[1]]) : inf[cle];
   return v || "";
 }
-// Cases d'un bloc, dans l'ordre : sections enregistrées + champs hérités pas encore repris.
 function elementsDuBloc(inf, cleBloc, pourEdition, mods) {
   inf = inf || {};
   var libres = (inf.sections || []).filter(function (s) { return s.theme === cleBloc; });
@@ -1084,11 +1055,8 @@ function serialiserFichierData(centres) {
   var state = { sem: "tous", mod: "tous", taille: "tous", machs: [] };
   var VUE_METRO = { centre: [46.6, 2.6], zoom: 6 };
   var VUE_MQ = { centre: [14.64, -61.02], zoom: 10 };
-  // Fond sobre ET en français : Plan IGN « atténué » (tuiles vectorielles Géoplateforme, sans clé).
-  // Autres styles IGN : gris.json (niveaux de gris), standard.json (plus contrasté).
   var STYLE_VECTEUR = "https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/attenue.json";
   var ATTRIB = '&copy; <a href="https://www.ign.fr/">IGN</a> — Géoplateforme';
-  // Secours raster si MapLibre indisponible (sobre mais libellés partiellement en anglais) :
   var TUILES_SECOURS = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
   var ATTRIB_SECOURS = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
   var TUILES_SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -1108,7 +1076,6 @@ function serialiserFichierData(centres) {
       L.control.layers({ "Plan": plan, "Satellite": sat }, null, { position: "topright" }).addTo(map);
     }
   }
-  // Ville depuis la position (géocodage inverse Géoplateforme, sans clé, silencieux en cas d'échec).
   function villeDepuis(latlng, cb) {
     try {
       fetch("https://data.geopf.fr/geocodage/reverse?lon=" + latlng.lng + "&lat=" + latlng.lat)
@@ -1126,13 +1093,18 @@ function serialiserFichierData(centres) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
     });
   }
+  var mailsEnClair = false;
   function lierMails(t) {
     return t.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, function (m) {
-      return '<a href="mailto:' + m + '">' + m + "</a>";
+      if (mailsEnClair) return '<a href="mailto:' + m + '">' + m + "</a>";
+      var loc = m.split("@")[0];
+      var seg = loc.split(/[._-]/)[0];
+      var debut = seg.length >= 3 ? seg : loc.slice(0, 4);
+      var inv = m.split("").reverse().join("");
+      return '<button type="button" class="mail-voile" data-m="' + inv + '" title="Afficher l\u2019adresse">' + debut + '\u2026<span class="mv-ic">\u2709</span></button>';
     });
   }
 
-  // ——— Base partagée (Supabase, via son API REST — voir config.js et README) ———
   var BASE = (typeof CONFIG_SUPABASE !== "undefined" && CONFIG_SUPABASE && CONFIG_SUPABASE.url && CONFIG_SUPABASE.cle)
     ? { url: CONFIG_SUPABASE.url.replace(/\/+$/, "").replace(/\/rest\/v1$/, ""), cle: CONFIG_SUPABASE.cle } : null;
   var enLigne = false;
@@ -1167,12 +1139,7 @@ function serialiserFichierData(centres) {
       })
       .catch(function () { cb(false, null); });
   }
-  // Dernière version connue de chaque centre (horodatage de la base), pour détecter
-  // qu'une fiche a été modifiée ailleurs pendant qu'on l'éditait ici.
   var MAJ_CONNUES = {};
-  // Empreinte de ce que la base contient déjà, pour ne jamais réécrire une
-  // fiche inchangée : sans cela, valider une fiche sans y toucher créerait une
-  // entrée d'historique sans différence visible.
   var ETAT_BASE = {};
   function signatureCentre(c) {
     return JSON.stringify({ data: copieData(c), infos: INFOS[c.id] || {} });
@@ -1194,20 +1161,16 @@ function serialiserFichierData(centres) {
       majEtat(ok ? "enligne" : "echec");
     }, true);
   }
-  // Retire un centre de la mémoire locale (sans toucher à la base).
   function retirerCentreLocal(id) {
     for (var i = CENTRES.length - 1; i >= 0; i--) { if (CENTRES[i].id === id) CENTRES.splice(i, 1); }
     delete INFOS[id];
     delete MAJ_CONNUES[id];
     delete ETAT_BASE[id];
   }
-  // Suppression douce : le centre est marqué supprimé en base (donc archivé dans
-  // l'historique et restaurable), puis retiré de la carte et de toutes les listes.
   function supprimerCentre(id, apres) {
     var c = centreParId(id);
     if (!c) { if (apres) apres(); return; }
     if (!BASE || !enLigne) {
-      // Hors ligne : on retire seulement de l'affichage courant.
       retirerCentreLocal(id);
       render();
       majEtat(BASE ? "echec" : "local");
@@ -1324,8 +1287,6 @@ function serialiserFichierData(centres) {
       if (l && l.length) majGlobale(l[0].quand);
     });
   }
-  // Modification ciblée d'un centre : on repart de la version fraîche de la base,
-  // on applique le petit changement dessus, puis on enregistre — rien d'autre n'est écrasé.
   function majCentreCible(id, muter, apres) {
     var c = centreParId(id);
     if (!c) return;
@@ -1361,10 +1322,6 @@ function serialiserFichierData(centres) {
       majEtat(ok ? "enligne" : "echec");
     });
   }
-  // État publié dans data.js / infos.js, figé avant que la base ne remplace
-  // CENTRES et INFOS. Sert de version de référence pour comparer une
-  // modification qui n'a pas de version antérieure dans le journal
-  // (typiquement la première après une remise à zéro de l'historique).
   var REF_PUBLIEE = (function () {
     var r = { centres: {}, reglages: { machines: [], categories: [] } };
     CENTRES.forEach(function (c) {
@@ -1377,8 +1334,6 @@ function serialiserFichierData(centres) {
   function appliquerLignesCentres(lignes) {
     CENTRES.length = 0;
     lignes.forEach(function (l) {
-      // Un centre supprimé (suppression douce) reste en base pour l'historique,
-      // mais n'apparaît plus nulle part dans la carte.
       if (l.data && l.data.supprime) return;
       var c = Object.assign({ id: l.id }, l.data || {});
       CENTRES.push(c);
@@ -1399,7 +1354,6 @@ function serialiserFichierData(centres) {
     }
     ETAT_REGLAGES = signatureReglages();
   }
-  // Mise à jour silencieuse quand une modification est diffusée par un autre onglet.
   var majDifferee = false;
   function rafraichirDonnees() {
     if (!BASE || !enLigne) return;
@@ -1420,7 +1374,6 @@ function serialiserFichierData(centres) {
     apiLire("centres?select=*&order=id.asc", function (lignes) {
       if (lignes === null) { majEtat("horsligne"); return; }
       if (!lignes.length) {
-        // Première ouverture : la base se remplit avec les données embarquées.
         var graine = CENTRES.map(function (c) { return { id: c.id, data: copieData(c), infos: INFOS[c.id] || {} }; });
         apiEcrire("centres", graine, function (ok1, ecrites) {
           (ecrites || []).forEach(function (l) { if (l && l.id) MAJ_CONNUES[l.id] = l.maj; });
@@ -1451,7 +1404,6 @@ function serialiserFichierData(centres) {
     return null;
   }
 
-  // ——— Historique des modifications (table journal de la base) ———
   function quandLisible(iso) {
     var d = new Date(iso);
     if (isNaN(d)) return iso || "";
@@ -1467,7 +1419,6 @@ function serialiserFichierData(centres) {
     if (e.valeur && e.valeur.data && e.valeur.data.nom) return e.valeur.data.nom;
     return e.cle;
   }
-  // Historique : chargé par tranches, du plus récent au plus ancien.
   var HISTO_TRANCHE = 200;
   function requeteHisto(centreId, avantId) {
     return "journal?select=id,quand,cible,cle,nom:valeur->data->>nom" +
@@ -1492,7 +1443,6 @@ function serialiserFichierData(centres) {
       naviguer({ type: "historique", entrees: lignes, filtre: c ? c.nom : id, centreId: id, fin: lignes.length < HISTO_TRANCHE });
     });
   }
-  // Tranche suivante : ajoutée à la liste en place, sans quitter la vue.
   function chargerHistoSuite() {
     var v = vueCourante;
     if (!v || v.type !== "historique" || v.fin || v.enCours || !v.entrees.length) return;
@@ -1532,7 +1482,6 @@ function serialiserFichierData(centres) {
         "&order=id.desc&limit=1", function (prec) {
         var avant = prec && prec.length ? prec[0] : null;
         if (!avant) {
-          // Pas de version antérieure au journal : on compare à l'état publié.
           var ref = apres.cible === "centres"
             ? REF_PUBLIEE.centres[apres.cle]
             : (apres.cle === "machines" ? { valeur: { cle: "machines", valeur: REF_PUBLIEE.reglages } } : null);
@@ -1542,7 +1491,6 @@ function serialiserFichierData(centres) {
       });
     });
   }
-  // Différences mot à mot : segments communs, supprimés (rouge barré), ajoutés (vert).
   function diffMots(a, b) {
     a = a || ""; b = b || "";
     if (a === b) return esc(a);
@@ -1790,8 +1738,6 @@ function serialiserFichierData(centres) {
     return h;
   }
 
-  // Mise en forme légère : **gras**, *italique*, __souligné__ (vérifié sans effet
-  // sur les textes repris mot pour mot du tableau des promos).
   function formaterTexte(t) {
     return esc(t)
       .replace(/\*\*([^\n]+?)\*\*/g, "<strong>$1</strong>")
@@ -2035,7 +1981,6 @@ function serialiserFichierData(centres) {
     majRetour();
     majLigneTableau(false);
   }
-  // Amène la carte sur un centre en gardant le niveau de zoom courant.
   function centrerSurCentre(c) {
     if (!c || typeof carte.flyTo !== "function") return;
     var z = typeof carte.getZoom === "function" ? carte.getZoom() : VUE_METRO.zoom;
@@ -2052,7 +1997,6 @@ function serialiserFichierData(centres) {
     var depuis = vueCourante;
     vueCourante = histo.pop();
     afficherVue(vueCourante);
-    // Retour d'une fiche de centre vers une autre : la carte suit.
     if (depuis && depuis.type === "centre" && vueCourante && vueCourante.type === "centre") {
       centrerSurCentre(centreParId(vueCourante.id));
     }
@@ -2089,8 +2033,6 @@ function serialiserFichierData(centres) {
     fermerFiche();
   });
 
-  // Flèches ← et → : passer d'une fiche à la suivante, dans l'ordre du tableau
-  // et parmi les centres que les filtres laissent visibles.
   function ficheVoisine(pas) {
     if (ficheMode !== "vue" || !ficheCentre) return;
     if (!aproposEl.hidden || !cmpOverlay.hidden || placement || editionEnAttente || apercuEdition) return;
@@ -2101,7 +2043,6 @@ function serialiserFichierData(centres) {
     var j = i === -1 ? (pas > 0 ? 0 : liste.length - 1) : i + pas;
     if (j < 0 || j >= liste.length) return;
     var c = liste[j];
-    // Déplacement latéral : la pile de retour n'est pas alimentée.
     vueCourante = { type: "centre", id: c.id };
     afficherVue(vueCourante);
     centrerSurCentre(c);
@@ -2117,7 +2058,6 @@ function serialiserFichierData(centres) {
     ficheVoisine(e.key === "ArrowRight" ? 1 : -1);
   });
 
-  // ——— Éditeur ———
   function champ(label, nom, valeur, astuce) {
     return "<label>" + label + '</label><input name="' + nom + '" value="' + esc(valeur || "") + '">' + (astuce ? '<p class="astuce">' + astuce + "</p>" : "");
   }
@@ -2245,8 +2185,6 @@ function serialiserFichierData(centres) {
   }
 
   function formHtml(c, creation, infBrouillon) {
-    // L'édition part toujours du gabarit standard (mêmes blocs et cases partout,
-    // terminologie RX / RT / MN) ; rien n'est enregistré tant qu'on ne valide pas.
     var inf = infBrouillon || OutilFiches.completerPourEdition(infosDe(c));
     var resp = inf.responsables || {};
     var h = '<p class="sur-titre">' + (creation ? "Création" : esc(c.ville)) + "</p><h2>" + (creation ? "Nouveau centre" : esc(c.nom)) + "</h2>";
@@ -2313,8 +2251,6 @@ function serialiserFichierData(centres) {
     ficheEl.hidden = false;
     ficheContenu.scrollTop = 0;
   }
-  // Brouillon de secours : les saisies d'édition sont conservées dans le navigateur
-  // et proposées à la réouverture si elles n'ont pas été validées.
   function cleBrouillon(id) { return "eap-brouillon-" + id; }
   function sauverBrouillon() {
     if (ficheMode !== "edition" || !ficheCentre || ficheCentre.id === null) return;
@@ -2357,9 +2293,7 @@ function serialiserFichierData(centres) {
   ficheContenu.addEventListener("change", function () {
     if (ficheMode === "edition") brouillonBientot();
   });
-  // Édition mise de côté le temps de créer une machine, restaurée ensuite avec son brouillon.
   var editionEnAttente = null;
-  // Aperçu de la fiche telle qu'elle s'afficherait, sans rien enregistrer.
   var apercuEdition = null;
   function ouvrirCreationMachine() {
     if (!ficheCentre) return;
@@ -2420,11 +2354,6 @@ function serialiserFichierData(centres) {
     });
   }
 
-  // Forme de stockage d'une fiche : mêmes clés et mêmes valeurs implicites que
-  // les fichiers exportés (pas de pos « gauche », de just/masque faux ni de
-  // themesAucun faux). Sans cela, revalider une fiche sans rien changer
-  // réécrirait toutes ses cases et créerait une entrée d'historique sans
-  // différence visible.
   function infosStockables(inf) {
     var f = JSON.parse(JSON.stringify(inf || {}));
     if (!f.themesAucun) delete f.themesAucun;
@@ -2492,7 +2421,6 @@ function serialiserFichierData(centres) {
           s.texte = "";
           var chips = [];
           el.querySelectorAll(".mach-liste .mchip").forEach(function (chip) { chips.push(chip.dataset.nom); });
-          // Case du gabarit restée vide : gardée au brouillon, jamais stockée.
           if (canon && !chips.length && !s.masque && !pourBrouillon) return;
           if (canon && pourBrouillon) s.canon = true;
           machinesItem = true;
@@ -2507,8 +2435,6 @@ function serialiserFichierData(centres) {
         sections.push(s);
       });
     });
-    // Ce qui n'est plus au formulaire a été supprimé manuellement (case ou bloc entier) :
-    // les champs hérités correspondants sont vidés — le journal de la base garde chaque état.
     return {
       data: {
         nom: v("c-nom") || c.nom || "Centre",
@@ -2575,7 +2501,6 @@ function serialiserFichierData(centres) {
     };
   }
 
-  // ——— Comparaison de deux centres ———
   var cmp = [];
   var cmpBarre = document.getElementById("cmp-barre");
   var cmpTxt = document.getElementById("cmp-txt");
@@ -2728,9 +2653,12 @@ function serialiserFichierData(centres) {
   document.getElementById("cmp-vider").addEventListener("click", function () { cmp = []; majCmp(); });
   document.getElementById("cmp-fermer").addEventListener("click", fermerComparaison);
 
-  // ——— Export PDF d'une fiche (impression navigateur : « Enregistrer en PDF ») ———
   var cadreImpression = null;
   function ficheImprimableHtml(c) {
+    mailsEnClair = true;
+    try { return ficheImprimableCorps(c); } finally { mailsEnClair = false; }
+  }
+  function ficheImprimableCorps(c) {
     var inf = infosDe(c);
     var h = '<p class="sur-titre">' + esc(c.ville) + "</p><h1>" + esc(c.nom) + "</h1>";
     h += '<p class="etab">' + esc(c.etablissement) + "</p>";
@@ -2813,7 +2741,6 @@ function serialiserFichierData(centres) {
     });
   }
 
-  // ——— Vue tableau (mêmes filtres que la carte) ———
   var tableauEl = document.getElementById("tableau");
   var basculeBtn = document.getElementById("vue-bascule");
   var triTable = { col: "nom", sens: 1 };
@@ -2896,8 +2823,6 @@ function serialiserFichierData(centres) {
     });
     telecharger("centres-eap.csv", "\ufeff" + lignes.join("\r\n"));
   }
-  // Met en évidence, dans le tableau, la ligne du centre dont la fiche est
-  // ouverte. defiler = amener cette ligne dans la partie visible.
   function majLigneTableau(defiler) {
     if (tableauEl.hidden) return;
     var trs = tableauEl.querySelectorAll("tbody tr");
@@ -2931,7 +2856,6 @@ function serialiserFichierData(centres) {
     }
   });
 
-  // ——— Placement d'un point sur la carte ———
   var placement = null;
   var barrePl = document.getElementById("placement");
   var txtPl = document.getElementById("placement-txt");
@@ -3020,8 +2944,15 @@ function serialiserFichierData(centres) {
       }
       return;
     }
+    if ((b = ev.target.closest(".mail-voile"))) {
+      var mV = (b.dataset.m || "").split("").reverse().join("");
+      var aV = document.createElement("a");
+      aV.href = "mailto:" + mV;
+      aV.textContent = mV;
+      b.replaceWith(aV);
+      return;
+    }
     if ((b = ev.target.closest(".aill")) || (b = ev.target.closest(".gc-nom")) || (b = ev.target.closest(".mach-res"))) {
-      // Un appui long venant d'armer la suppression ne doit pas aussi ouvrir la fiche.
       if (longReussi) { longReussi = false; return; }
       var versAill = b.classList.contains("aill");
       naviguer({ type: "centre", id: b.dataset.id });
@@ -3150,7 +3081,6 @@ function serialiserFichierData(centres) {
       var d = ta.selectionStart, f = ta.selectionEnd, val = ta.value;
       var sel = val.slice(d, f);
       if (sel.length >= 2 * n && sel.slice(0, n) === mq && sel.slice(-n) === mq) {
-        // déjà mis en forme : on retire les marqueurs
         var nu = sel.slice(n, sel.length - n);
         ta.value = val.slice(0, d) + nu + val.slice(f);
         ta.focus();
@@ -3295,7 +3225,6 @@ function serialiserFichierData(centres) {
     else if (ev.target.closest("#gs-infos")) telecharger("infos.js", serialiserFichierInfos(MACHINES, CATS, INFOS, CENTRES.map(function (c) { return c.id; })));
   });
 
-  // ——— Appui long (6 s) sur une ligne de « Gérer les centres » pour armer la suppression ———
   var appuiSuppr = null, itemArme = null, longReussi = false;
   function desarmerItem() {
     if (itemArme) { itemArme.classList.remove("gc-arme"); itemArme = null; }
@@ -3352,7 +3281,6 @@ function serialiserFichierData(centres) {
     setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
   }
 
-  // ——— Filtre machines (ET logique) ———
   var selMach = document.getElementById("sel-mach");
   var filtChips = document.getElementById("filt-chips");
   function remplirSelectMachines() {
@@ -3434,20 +3362,17 @@ function serialiserFichierData(centres) {
     ouvrirHistorique(ficheEl.hidden);
   });
 
-  // ——— À propos ———
   var aproposEl = document.getElementById("apropos");
   document.getElementById("btn-apropos").addEventListener("click", function () { aproposEl.hidden = false; });
   document.getElementById("apropos-fermer").addEventListener("click", function () { aproposEl.hidden = true; });
   aproposEl.addEventListener("click", function (ev) { if (ev.target === aproposEl) aproposEl.hidden = true; });
 
-  // ——— Recherche d'un centre ———
   var rechEl = document.getElementById("recherche");
   var rechListe = document.getElementById("rech-liste");
   function fermerRech() {
     rechListe.hidden = true;
     rechListe.innerHTML = "";
   }
-  // Texte de recherche d'une fiche : identité + tout le contenu affiché (cases, machines).
   var cacheTexteFiche = {};
   function texteFiche(c) {
     if (cacheTexteFiche[c.id]) return cacheTexteFiche[c.id];
@@ -3522,7 +3447,6 @@ function serialiserFichierData(centres) {
       }
     }
   }
-  // Surlignage des mots recherchés dans la fiche ouverte ; un clic l'efface.
   function cleTexte(s) {
     return Array.from(s).map(function (ch) {
       var n = ch.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -3645,7 +3569,6 @@ function serialiserFichierData(centres) {
   });
   carte.on("moveend", majEncart);
 
-  // ——— Panneau et encart repliables (préférence propre à chaque navigateur) ———
   var panneauEl = document.getElementById("panneau");
   var miniEl = document.getElementById("mini");
   var btnPanneauOuvrir = document.getElementById("panneau-ouvrir");
